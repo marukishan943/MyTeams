@@ -1,19 +1,53 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:myteams/core/di/injection_container.dart';
+import 'package:myteams/features/auth/domain/entities/app_user.dart';
+import 'package:myteams/features/auth/domain/repositories/auth_repository.dart';
 import 'package:myteams/main.dart';
 
-void main() {
-  testWidgets('Splash screen smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const SynergyApp());
+class FakeAuthRepository implements AuthRepository {
+  @override
+  AppUser? get currentUser => null;
 
-    // Verify that our brand title starts on the screen.
+  @override
+  Stream<AppUser?> get authStateChanges => Stream.value(null);
+
+  @override
+  Future<AppUser> signInWithEmail({required String email, required String password}) async {
+    return const AppUser(id: '1', email: 'test@example.com');
+  }
+
+  @override
+  Future<AppUser> signUpWithEmail({required String email, required String password}) async {
+    return const AppUser(id: '1', email: 'test@example.com');
+  }
+
+  @override
+  Future<void> signOut() async {}
+
+  @override
+  Future<void> sendPasswordResetEmail({required String email}) async {}
+
+  @override
+  Future<void> verifyOTP({required String email, required String token}) async {}
+
+  @override
+  Future<void> resetPassword({required String newPassword}) async {}
+}
+
+void main() {
+  setUp(() {
+    if (!sl.isRegistered<AuthRepository>()) {
+      sl.registerLazySingleton<AuthRepository>(() => FakeAuthRepository());
+    }
+  });
+
+  testWidgets('Splash screen smoke test', (WidgetTester tester) async {
+    await tester.pumpWidget(const SynergyApp());
     expect(find.text('SYNERGY'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 3));
   });
 }
+
+
+
