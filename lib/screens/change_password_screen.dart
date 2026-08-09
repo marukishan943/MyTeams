@@ -2,37 +2,39 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../features/auth/presentation/bloc/auth_bloc.dart';
-
 import '../features/auth/presentation/bloc/auth_event.dart';
 import '../features/auth/presentation/bloc/auth_state.dart';
 import '../theme/app_colors.dart';
 import '../widgets/app_button.dart';
 import '../widgets/app_text_field.dart';
 
-class ResetPasswordScreen extends StatefulWidget {
-  const ResetPasswordScreen({super.key});
+class ChangePasswordScreen extends StatefulWidget {
+  const ChangePasswordScreen({super.key});
 
   @override
-  State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
+  State<ChangePasswordScreen> createState() => _ChangePasswordScreenState();
 }
 
-class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
+class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _passwordController = TextEditingController();
+  final _currentPasswordController = TextEditingController();
+  final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
   @override
   void dispose() {
-    _passwordController.dispose();
+    _currentPasswordController.dispose();
+    _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  void _handleResetPassword(BuildContext context) {
+  void _handleChangePassword(BuildContext context) {
     if (_formKey.currentState!.validate()) {
       context.read<AuthBloc>().add(
-            AuthPasswordResetSubmitted(
-              newPassword: _passwordController.text,
+            AuthChangePasswordRequested(
+              currentPassword: _currentPasswordController.text,
+              newPassword: _newPasswordController.text,
             ),
           );
     }
@@ -44,10 +46,14 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
     return BlocConsumer<AuthBloc, AuthState>(
       listener: (context, state) {
-        if (state is AuthPasswordResetSuccess) {
-          context.go(
-            '/success?message=Your+password+has+been+successfully+reset.+You+can+now+log+in+with+your+new+password.&buttonText=Back+to+Sign+In&isLoginFlow=false',
+        if (state is AuthChangePasswordSuccess) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Password updated successfully!'),
+              backgroundColor: AppColors.secondary,
+            ),
           );
+          context.pop();
         } else if (state is AuthFailure) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -82,50 +88,69 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Reset Password',
+                          'Change Password',
                           style: theme.textTheme.displayLarge?.copyWith(
                             fontSize: 28,
                           ),
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          "Create a new password. Make sure it's different from previous passwords.",
+                          'Enter your current password and set a new password for your account.',
                           style: theme.textTheme.bodyMedium,
                         ),
                         const SizedBox(height: 32),
 
-                        // Password
+                        // Current Password
                         AppTextField(
-                          label: 'New Password',
-                          hint: 'Enter your new password',
-                          controller: _passwordController,
+                          label: 'Current Password',
+                          hint: 'Enter current password',
+                          controller: _currentPasswordController,
                           isPassword: true,
                           prefixIcon: Icons.lock_outline,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Please enter a password';
-                            }
-                            if (value.length < 8) {
-                              return 'Password must be at least 8 characters';
+                              return 'Please enter your current password';
                             }
                             return null;
                           },
                         ),
                         const SizedBox(height: 20),
 
-                        // Confirm Password
+                        // New Password
+                        AppTextField(
+                          label: 'New Password',
+                          hint: 'Enter new password',
+                          controller: _newPasswordController,
+                          isPassword: true,
+                          prefixIcon: Icons.lock_reset_outlined,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter a new password';
+                            }
+                            if (value.length < 8) {
+                              return 'Password must be at least 8 characters';
+                            }
+                            if (value == _currentPasswordController.text) {
+                              return 'New password must be different from current password';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Confirm New Password
                         AppTextField(
                           label: 'Confirm New Password',
-                          hint: 'Confirm your new password',
+                          hint: 'Re-enter new password',
                           controller: _confirmPasswordController,
                           isPassword: true,
-                          prefixIcon: Icons.lock_outline,
+                          prefixIcon: Icons.lock_reset_outlined,
                           textInputAction: TextInputAction.done,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Please confirm your password';
+                              return 'Please confirm your new password';
                             }
-                            if (value != _passwordController.text) {
+                            if (value != _newPasswordController.text) {
                               return 'Passwords do not match';
                             }
                             return null;
@@ -133,11 +158,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         ),
                         const SizedBox(height: 32),
 
-                        // Reset Button
+                        // Submit Button
                         AppButton(
-                          text: 'Update Password',
+                          text: 'Change Password',
                           isLoading: isLoading,
-                          onPressed: () => _handleResetPassword(context),
+                          onPressed: () => _handleChangePassword(context),
                         ),
                       ],
                     ),
@@ -151,4 +176,3 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 }
-

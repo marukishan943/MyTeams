@@ -65,3 +65,21 @@ class AuthPasswordResetSubmitted extends AuthEvent {
   @override
   List<Object?> get props => [newPassword];
 }
+
+/// Request Google OAuth sign in.
+class AuthGoogleSignInRequested extends AuthEvent {}
+
+/// Request password change while logged in.
+class AuthChangePasswordRequested extends AuthEvent {
+  final String currentPassword;
+  final String newPassword;
+
+  const AuthChangePasswordRequested({
+    required this.currentPassword,
+    required this.newPassword,
+  });
+
+  @override
+  List<Object?> get props => [currentPassword, newPassword];
+}
+

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../core/di/injection_container.dart';
 import '../features/auth/presentation/bloc/auth_bloc.dart';
 import '../features/auth/presentation/bloc/auth_event.dart';
 import '../features/auth/presentation/bloc/auth_state.dart';
@@ -21,7 +20,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _rememberMe = false;
-  bool _isGoogleLoading = false;
+  bool _isGoogleSignIn = false;
 
   @override
   void dispose() {
@@ -32,6 +31,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _handleLogin(BuildContext context) {
     if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isGoogleSignIn = false;
+      });
       context.read<AuthBloc>().add(
             AuthSignInRequested(
               email: _emailController.text.trim(),
@@ -41,165 +43,212 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _handleGoogleLogin() {
+  void _handleGoogleLogin(BuildContext context) {
     setState(() {
-      _isGoogleLoading = true;
+      _isGoogleSignIn = true;
     });
-
-    // Simulate Google SSO flow
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      if (mounted) {
-        setState(() {
-          _isGoogleLoading = false;
-        });
-        context.go(
-          '/success?message=Google+workspace+authenticated+successfully.&buttonText=Go+to+Dashboard&isLoginFlow=true',
-        );
-      }
-    });
+    context.read<AuthBloc>().add(AuthGoogleSignInRequested());
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return BlocProvider<AuthBloc>(
-      create: (context) => sl<AuthBloc>(),
-      child: BlocConsumer<AuthBloc, AuthState>(
-        listener: (context, state) {
-          if (state is Authenticated) {
-            context.go(
-              '/success?message=You+have+successfully+logged+in+to+your+workspace.&buttonText=Go+to+Dashboard&isLoginFlow=true',
-            );
-          } else if (state is AuthFailure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.errorMessage),
-                backgroundColor: AppColors.error,
-              ),
-            );
-          }
-        },
-        builder: (context, state) {
-          final isLoading = state is AuthLoading;
+    return BlocConsumer<AuthBloc, AuthState>(
+      listener: (context, state) {
+        if (state is Authenticated) {
+          final showChangePass = !_isGoogleSignIn;
+          context.go(
+            '/success?message=You+have+successfully+logged+in+to+your+workspace.&buttonText=Go+to+Dashboard&isLoginFlow=true&showChangePassword=$showChangePass',
+          );
+        } else if (state is AuthFailure) {
 
-          return Scaffold(
-            backgroundColor: AppColors.background,
-            appBar: AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-                onPressed: () => context.pop(),
-              ),
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.errorMessage),
+              backgroundColor: AppColors.error,
             ),
-            body: SafeArea(
-              child: Center(
-                child: SingleChildScrollView(
-                  child: Container(
-                    constraints: const BoxConstraints(maxWidth: 480),
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Heading Text
-                          Text(
-                            'Welcome back!',
-                            style: theme.textTheme.displayLarge?.copyWith(
-                              fontSize: 28,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Log in to your workspace to continue.',
-                            style: theme.textTheme.bodyMedium,
-                          ),
-                          const SizedBox(height: 32),
+          );
+        }
+      },
+      builder: (context, state) {
+        final isLoading = state is AuthLoading;
 
-                           // Email input
-                           AppTextField(
-                             label: 'Email Address',
-                             hint: 'name@example.com',
-                             controller: _emailController,
-                             keyboardType: TextInputType.emailAddress,
-                             prefixIcon: Icons.email_outlined,
-                             validator: (value) {
-                               if (value == null || value.trim().isEmpty) {
-                                 return 'Please enter your email';
-                               }
-                               final emailRegex = RegExp(r'^\S+@\S+\.\S+$');
-                               if (!emailRegex.hasMatch(value)) {
-                                 return 'Please enter a valid email address';
-                               }
-                               return null;
-                             },
-                           ),
-                           const SizedBox(height: 20),
-
-                          // Password input
-                          AppTextField(
-                            label: 'Password',
-                            hint: 'Enter your password',
-                            controller: _passwordController,
-                            isPassword: true,
-                            prefixIcon: Icons.lock_outline,
-                            textInputAction: TextInputAction.done,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter your password';
-                              }
-                              if (value.length < 6) {
-                                return 'Password must be at least 6 characters';
-                              }
-                              return null;
-                            },
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+              onPressed: () => context.pop(),
+            ),
+          ),
+          body: SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 480),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Heading Text
+                        Text(
+                          'Welcome back!',
+                          style: theme.textTheme.displayLarge?.copyWith(
+                            fontSize: 28,
                           ),
-                          const SizedBox(height: 16),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Log in to your workspace to continue.',
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 32),
 
-                          // Remember Me & Forgot Password Row
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: Checkbox(
-                                      value: _rememberMe,
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _rememberMe = value ?? false;
-                                        });
-                                      },
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  GestureDetector(
-                                    onTap: () {
+                         // Email input
+                         AppTextField(
+                           label: 'Email Address',
+                           hint: 'name@example.com',
+                           controller: _emailController,
+                           keyboardType: TextInputType.emailAddress,
+                           prefixIcon: Icons.email_outlined,
+                           validator: (value) {
+                             if (value == null || value.trim().isEmpty) {
+                               return 'Please enter your email';
+                             }
+                             final emailRegex = RegExp(r'^\S+@\S+\.\S+$');
+                             if (!emailRegex.hasMatch(value)) {
+                               return 'Please enter a valid email address';
+                             }
+                             return null;
+                           },
+                         ),
+                         const SizedBox(height: 20),
+
+                        // Password input
+                        AppTextField(
+                          label: 'Password',
+                          hint: 'Enter your password',
+                          controller: _passwordController,
+                          isPassword: true,
+                          prefixIcon: Icons.lock_outline,
+                          textInputAction: TextInputAction.done,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your password';
+                            }
+                            if (value.length < 6) {
+                              return 'Password must be at least 6 characters';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Remember Me & Forgot Password Row
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: Checkbox(
+                                    value: _rememberMe,
+                                    onChanged: (value) {
                                       setState(() {
-                                        _rememberMe = !_rememberMe;
+                                        _rememberMe = value ?? false;
                                       });
                                     },
-                                    child: Text(
-                                      'Remember me',
-                                      style: theme.textTheme.bodyMedium?.copyWith(
-                                        fontWeight: FontWeight.w500,
-                                        color: AppColors.textPrimary,
-                                      ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _rememberMe = !_rememberMe;
+                                    });
+                                  },
+                                  child: Text(
+                                    'Remember me',
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      fontWeight: FontWeight.w500,
+                                      color: AppColors.textPrimary,
                                     ),
                                   ),
-                                ],
+                                ),
+                              ],
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                context.push('/forgot-password');
+                              },
+                              child: const Text(
+                                'Forgot Password?',
+                                style: TextStyle(
+                                  color: AppColors.secondary,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                              TextButton(
-                                onPressed: () {
-                                  context.push('/forgot-password');
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Login Button
+                        AppButton(
+                          text: 'Log In',
+                          isLoading: isLoading,
+                          onPressed: () => _handleLogin(context),
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Divider
+                        Row(
+                          children: [
+                            Expanded(child: Divider(color: AppColors.border, thickness: 1)),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: Text(
+                                'or continue with',
+                                style: theme.textTheme.bodySmall,
+                              ),
+                            ),
+                            Expanded(child: Divider(color: AppColors.border, thickness: 1)),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Google Login button
+                        AppButton(
+                          text: 'Sign In with Google',
+                          style: AppButtonStyle.google,
+                          isLoading: isLoading,
+                          onPressed: () => _handleGoogleLogin(context),
+                        ),
+                        const SizedBox(height: 32),
+
+                        // Sign up navigation footer
+                        Center(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                "Don't have an account? ",
+                                style: theme.textTheme.bodyMedium,
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  context.pushReplacement('/signup');
                                 },
-                                child: const Text(
-                                  'Forgot Password?',
-                                  style: TextStyle(
+                                child: Text(
+                                  'Sign Up',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
                                     color: AppColors.secondary,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -207,75 +256,17 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 24),
-
-                          // Login Button
-                          AppButton(
-                            text: 'Log In',
-                            isLoading: isLoading,
-                            onPressed: () => _handleLogin(context),
-                          ),
-                          const SizedBox(height: 20),
-
-                          // Divider
-                          Row(
-                            children: [
-                              Expanded(child: Divider(color: AppColors.border, thickness: 1)),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
-                                child: Text(
-                                  'or continue with',
-                                  style: theme.textTheme.bodySmall,
-                                ),
-                              ),
-                              Expanded(child: Divider(color: AppColors.border, thickness: 1)),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-
-                          // Google Login button
-                          AppButton(
-                            text: 'Sign In with Google',
-                            style: AppButtonStyle.google,
-                            isLoading: _isGoogleLoading,
-                            onPressed: _handleGoogleLogin,
-                          ),
-                          const SizedBox(height: 32),
-
-                          // Sign up navigation footer
-                          Center(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  "Don't have an account? ",
-                                  style: theme.textTheme.bodyMedium,
-                                ),
-                                GestureDetector(
-                                  onTap: () {
-                                    context.pushReplacement('/signup');
-                                  },
-                                  child: Text(
-                                    'Sign Up',
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: AppColors.secondary,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }
+

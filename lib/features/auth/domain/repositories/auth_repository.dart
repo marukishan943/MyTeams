@@ -33,9 +33,19 @@ abstract class AuthRepository {
     required String newPassword,
   });
 
+  /// Sign in using Google OAuth / Id Token.
+  Future<AppUser> signInWithGoogle();
+
+  /// Change current user password (re-authenticates with currentPassword).
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  });
+
   /// Get the currently authenticated user, or null if none.
   AppUser? get currentUser;
 
   /// Stream to listen to real-time auth state updates.
   Stream<AppUser?> get authStateChanges;
 }
+

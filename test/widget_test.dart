@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:myteams/core/di/injection_container.dart';
+
 import 'package:myteams/features/auth/domain/entities/app_user.dart';
 import 'package:myteams/features/auth/domain/repositories/auth_repository.dart';
 import 'package:myteams/main.dart';
@@ -33,7 +33,16 @@ class FakeAuthRepository implements AuthRepository {
 
   @override
   Future<void> resetPassword({required String newPassword}) async {}
+
+  @override
+  Future<AppUser> signInWithGoogle() async {
+    return const AppUser(id: '1', email: 'google@example.com');
+  }
+
+  @override
+  Future<void> changePassword({required String currentPassword, required String newPassword}) async {}
 }
+
 
 void main() {
   setUp(() {

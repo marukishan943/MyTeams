@@ -8,17 +8,20 @@ class SuccessScreen extends StatefulWidget {
   final String message;
   final String buttonText;
   final bool isLoginFlow;
+  final bool showChangePassword;
 
   const SuccessScreen({
     super.key,
     required this.message,
     required this.buttonText,
     this.isLoginFlow = false,
+    this.showChangePassword = false,
   });
 
   @override
   State<SuccessScreen> createState() => _SuccessScreenState();
 }
+
 
 class _SuccessScreenState extends State<SuccessScreen> with SingleTickerProviderStateMixin {
   late AnimationController _animController;
@@ -108,6 +111,17 @@ class _SuccessScreenState extends State<SuccessScreen> with SingleTickerProvider
                   text: widget.buttonText,
                   onPressed: _handleNavigate,
                 ),
+                if (widget.isLoginFlow && widget.showChangePassword) ...[
+                  const SizedBox(height: 12),
+                  AppButton(
+                    text: 'Change Password',
+                    style: AppButtonStyle.outlined,
+                    onPressed: () {
+                      context.push('/change-password');
+                    },
+                  ),
+                ],
+
                 const SizedBox(height: 16),
               ],
             ),

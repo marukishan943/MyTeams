@@ -16,6 +16,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthPasswordResetRequested>(_onAuthPasswordResetRequested);
     on<AuthOTPVerificationRequested>(_onAuthOTPVerificationRequested);
     on<AuthPasswordResetSubmitted>(_onAuthPasswordResetSubmitted);
+    on<AuthGoogleSignInRequested>(_onAuthGoogleSignInRequested);
+    on<AuthChangePasswordRequested>(_onAuthChangePasswordRequested);
   }
 
   Future<void> _onAuthCheckRequested(
@@ -120,4 +122,34 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(AuthFailure(errorMessage: e.toString().replaceAll('Exception: ', '')));
     }
   }
+
+  Future<void> _onAuthGoogleSignInRequested(
+    AuthGoogleSignInRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(AuthLoading());
+    try {
+      final user = await _authRepository.signInWithGoogle();
+      emit(Authenticated(user: user));
+    } catch (e) {
+      emit(AuthFailure(errorMessage: e.toString().replaceAll('Exception: ', '')));
+    }
+  }
+
+  Future<void> _onAuthChangePasswordRequested(
+    AuthChangePasswordRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(AuthLoading());
+    try {
+      await _authRepository.changePassword(
+        currentPassword: event.currentPassword,
+        newPassword: event.newPassword,
+      );
+      emit(AuthChangePasswordSuccess());
+    } catch (e) {
+      emit(AuthFailure(errorMessage: e.toString().replaceAll('Exception: ', '')));
+    }
+  }
 }
+

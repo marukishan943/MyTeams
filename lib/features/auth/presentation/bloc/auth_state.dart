@@ -45,3 +45,7 @@ class AuthOTPVerified extends AuthState {}
 
 /// State indicating the password has been successfully reset.
 class AuthPasswordResetSuccess extends AuthState {}
+
+/// State indicating the password has been successfully changed while logged in.
+class AuthChangePasswordSuccess extends AuthState {}
+

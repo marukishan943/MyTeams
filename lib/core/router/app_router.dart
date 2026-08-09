@@ -6,6 +6,7 @@ import '../../screens/signup_screen.dart';
 import '../../screens/forgot_password_screen.dart';
 import '../../screens/otp_verification_screen.dart';
 import '../../screens/reset_password_screen.dart';
+import '../../screens/change_password_screen.dart';
 import '../../screens/success_screen.dart';
 
 /// Declarative routing configuration using GoRouter.
@@ -51,18 +52,27 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const ResetPasswordScreen(),
     ),
     GoRoute(
+      path: '/change-password',
+      name: 'change-password',
+      builder: (context, state) => const ChangePasswordScreen(),
+    ),
+    GoRoute(
       path: '/success',
       name: 'success',
       builder: (context, state) {
         final message = state.uri.queryParameters['message'] ?? '';
         final buttonText = state.uri.queryParameters['buttonText'] ?? '';
         final isLoginFlow = state.uri.queryParameters['isLoginFlow'] == 'true';
+        final showChangePassword = state.uri.queryParameters['showChangePassword'] == 'true';
         return SuccessScreen(
           message: message,
           buttonText: buttonText,
           isLoginFlow: isLoginFlow,
+          showChangePassword: showChangePassword,
         );
       },
     ),
   ],
 );
+
+
