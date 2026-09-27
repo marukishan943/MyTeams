@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../domain/entities/app_user.dart';
 
 abstract class AuthEvent extends Equatable {
   const AuthEvent();
@@ -9,6 +10,16 @@ abstract class AuthEvent extends Equatable {
 
 /// Check if the user is already logged in (checked during splash screen).
 class AuthCheckRequested extends AuthEvent {}
+
+/// Fired when the auth state changes (e.g. deep link resolution)
+class AuthUserChanged extends AuthEvent {
+  final AppUser? user;
+
+  const AuthUserChanged(this.user);
+
+  @override
+  List<Object?> get props => [user];
+}
 
 /// Request login with email and password.
 class AuthSignInRequested extends AuthEvent {

@@ -20,7 +20,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _rememberMe = false;
-  bool _isGoogleSignIn = false;
 
   @override
   void dispose() {
@@ -31,9 +30,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _handleLogin(BuildContext context) {
     if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isGoogleSignIn = false;
-      });
       context.read<AuthBloc>().add(
             AuthSignInRequested(
               email: _emailController.text.trim(),
@@ -44,9 +40,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _handleGoogleLogin(BuildContext context) {
-    setState(() {
-      _isGoogleSignIn = true;
-    });
     context.read<AuthBloc>().add(AuthGoogleSignInRequested());
   }
 
@@ -57,10 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return BlocConsumer<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is Authenticated) {
-          final showChangePass = !_isGoogleSignIn;
-          context.go(
-            '/success?message=You+have+successfully+logged+in+to+your+workspace.&buttonText=Go+to+Dashboard&isLoginFlow=true&showChangePassword=$showChangePass',
-          );
+          context.go('/dashboard');
         } else if (state is AuthFailure) {
 
           ScaffoldMessenger.of(context).showSnackBar(

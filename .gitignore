@@ -51,4 +51,5 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
-
+# GitHub Workflows (avoid PAT workflow scope restriction)
+.github/

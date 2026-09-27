@@ -1,71 +1,43 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 
-class SynergyLogo extends StatelessWidget {
+class MyTeamsLogo extends StatelessWidget {
   final double size;
-  const SynergyLogo({super.key, this.size = 64});
+  const MyTeamsLogo({super.key, this.size = 64});
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return Container(
       width: size,
       height: size,
-      child: CustomPaint(
-        painter: _SynergyLogoPainter(),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [AppColors.primary, Color(0xFF5C6BC0)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(size * 0.25),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.3),
+            blurRadius: size * 0.25,
+            offset: Offset(0, size * 0.1),
+          ),
+        ],
+      ),
+      child: Center(
+        child: Icon(
+          Icons.business,
+          color: Colors.white,
+          size: size * 0.55,
+        ),
       ),
     );
   }
 }
 
-class _SynergyLogoPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paintPrimary = Paint()
-      ..color = AppColors.primary
-      ..style = PaintingStyle.fill
-      ..isAntiAlias = true;
-
-    final paintSecondary = Paint()
-      ..color = AppColors.secondary
-      ..style = PaintingStyle.fill
-      ..isAntiAlias = true;
-
-    final rect1 = Rect.fromLTWH(0, size.height * 0.15, size.width * 0.65, size.height * 0.65);
-    final rect2 = Rect.fromLTWH(size.width * 0.35, size.height * 0.25, size.width * 0.65, size.height * 0.65);
-
-    // Draw stylized overlapping rounded cards/shapes representing teamwork
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(rect1, Radius.circular(size.width * 0.18)),
-      paintPrimary,
-    );
-
-    // Secondary shape with blending (opacity) to represent collaboration
-    paintSecondary.color = AppColors.secondary.withOpacity(0.9);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(rect2, Radius.circular(size.width * 0.18)),
-      paintSecondary,
-    );
-
-    // Inner overlap accent
-    final paintAccent = Paint()
-      ..color = Colors.white.withOpacity(0.35)
-      ..style = PaintingStyle.fill;
-    
-    final overlapRect = Rect.fromLTRB(
-      size.width * 0.35,
-      size.height * 0.25,
-      size.width * 0.65,
-      size.height * 0.8,
-    );
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(overlapRect, Radius.circular(size.width * 0.08)),
-      paintAccent,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
+// Alias for backwards compatibility
+typedef SynergyLogo = MyTeamsLogo;
 
 class OnboardingIllustration extends StatelessWidget {
   final int index;

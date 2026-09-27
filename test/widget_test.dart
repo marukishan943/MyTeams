@@ -52,8 +52,8 @@ void main() {
   });
 
   testWidgets('Splash screen smoke test', (WidgetTester tester) async {
-    await tester.pumpWidget(const SynergyApp());
-    expect(find.text('SYNERGY'), findsOneWidget);
+    await tester.pumpWidget(const MyTeamsApp());
+    expect(find.text('MY TEAMS'), findsOneWidget);
     await tester.pump(const Duration(seconds: 3));
   });
 }

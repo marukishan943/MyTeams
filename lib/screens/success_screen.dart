@@ -48,13 +48,7 @@ class _SuccessScreenState extends State<SuccessScreen> with SingleTickerProvider
 
   void _handleNavigate() {
     if (widget.isLoginFlow) {
-      // Simulate dashboard loading or reload app state
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Navigating to workspace dashboard...'),
-          backgroundColor: AppColors.secondary,
-        ),
-      );
+      context.go('/dashboard');
     } else {
       // Return back to Login Screen
       context.go('/login');

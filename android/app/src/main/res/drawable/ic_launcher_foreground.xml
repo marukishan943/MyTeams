@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Central Halo Glow -->
+    <path
+        android:fillColor="#25FFFFFF"
+        android:pathData="M54,54m-28,0a28,28 0,1,1 56,0a28,28 0,1,1 -56,0" />
+
+    <!-- Left Wing Building -->
+    <path
+        android:fillColor="#E0FFFFFF"
+        android:pathData="M31,48h10v26h-10z" />
+
+    <!-- Right Wing Building -->
+    <path
+        android:fillColor="#E0FFFFFF"
+        android:pathData="M67,48h10v26h-10z" />
+
+    <!-- Central Main Building -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M38,36h32v38h-32z" />
+
+    <!-- Base Foundation Line -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M27,74h54v3h-54z" />
+
+    <!-- Windows Left Wing -->
+    <path
+        android:fillColor="#3949AB"
+        android:pathData="M33,52h2v4h-2z M33,59h2v4h-2z M37,52h2v4h-2z M37,59h2v4h-2z" />
+
+    <!-- Windows Right Wing -->
+    <path
+        android:fillColor="#3949AB"
+        android:pathData="M69,52h2v4h-2z M69,59h2v4h-2z M73,52h2v4h-2z M73,59h2v4h-2z" />
+
+    <!-- Windows Central Building (Grid of 6) -->
+    <path
+        android:fillColor="#3949AB"
+        android:pathData="M43,41h5v4h-5z M60,41h5v4h-5z M43,48h5v4h-5z M60,48h5v4h-5z M43,55h5v4h-5z M60,55h5v4h-5z" />
+
+    <!-- Central Entrance Doorway -->
+    <path
+        android:fillColor="#3949AB"
+        android:pathData="M50,64h8v10h-8z" />
+
+    <!-- Top Achievement Star (Gold #FFD700) -->
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M54,26 L56,31 L61,31 L57,34 L59,39 L54,36 L49,39 L51,34 L47,31 L52,31 Z" />
+
+</vector>

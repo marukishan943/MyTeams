@@ -24,7 +24,11 @@ class AuthRepositoryImpl implements AuthRepository {
       if (user == null) {
         throw const FormatException('Signup was successful, but no user data was returned.');
       }
-      return AppUser(id: user.id, email: user.email ?? '');
+      return AppUser(
+        id: user.id, 
+        email: user.email ?? '',
+        authProvider: user.appMetadata['provider'] as String?,
+      );
     } on supabase.AuthException catch (e) {
       throw Exception(e.message);
     } catch (e) {
@@ -46,7 +50,11 @@ class AuthRepositoryImpl implements AuthRepository {
       if (user == null) {
         throw const FormatException('Signin was successful, but no user data was returned.');
       }
-      return AppUser(id: user.id, email: user.email ?? '');
+      return AppUser(
+        id: user.id, 
+        email: user.email ?? '',
+        authProvider: user.appMetadata['provider'] as String?,
+      );
     } on supabase.AuthException catch (e) {
       throw Exception(e.message);
     } catch (e) {
@@ -113,29 +121,19 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<AppUser> signInWithGoogle() async {
+  Future<void> signInWithGoogle() async {
     try {
-      // 1. Initiate Supabase OAuth flow with Google
+      // Initiate Supabase OAuth flow with Google
+      // On success, the deep link callback will trigger authStateChanges
+      // which AuthBloc is listening to.
       final bool launched = await _supabaseClient.auth.signInWithOAuth(
         supabase.OAuthProvider.google,
         redirectTo: kIsWeb ? null : 'io.supabase.flutter://login-callback/',
       );
 
-
-      final user = _supabaseClient.auth.currentUser;
-      if (user != null) {
-        return AppUser(id: user.id, email: user.email ?? '');
-      }
-
       if (!launched) {
         throw Exception('Google authentication failed to launch.');
       }
-      
-      // Return transient user state if redirected
-      return AppUser(
-        id: user?.id ?? 'pending',
-        email: user?.email ?? 'google_user',
-      );
     } on supabase.AuthException catch (e) {
       throw Exception(e.message);
     } catch (e) {
@@ -174,7 +172,11 @@ class AuthRepositoryImpl implements AuthRepository {
   AppUser? get currentUser {
     final user = _supabaseClient.auth.currentUser;
     if (user == null) return null;
-    return AppUser(id: user.id, email: user.email ?? '');
+      return AppUser(
+        id: user.id, 
+        email: user.email ?? '',
+        authProvider: user.appMetadata['provider'] as String?,
+      );
   }
 
   @override
@@ -182,7 +184,11 @@ class AuthRepositoryImpl implements AuthRepository {
     return _supabaseClient.auth.onAuthStateChange.map((authState) {
       final user = authState.session?.user;
       if (user == null) return null;
-      return AppUser(id: user.id, email: user.email ?? '');
+        return AppUser(
+        id: user.id, 
+        email: user.email ?? '',
+        authProvider: user.appMetadata['provider'] as String?,
+      );
     });
   }
 }

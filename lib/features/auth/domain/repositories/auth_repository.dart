@@ -34,7 +34,7 @@ abstract class AuthRepository {
   });
 
   /// Sign in using Google OAuth / Id Token.
-  Future<AppUser> signInWithGoogle();
+  Future<void> signInWithGoogle();
 
   /// Change current user password (re-authenticates with currentPassword).
   Future<void> changePassword({

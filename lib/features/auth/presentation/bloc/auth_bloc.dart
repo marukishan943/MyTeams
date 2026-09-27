@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/repositories/auth_repository.dart';
 import 'auth_event.dart';
@@ -5,11 +6,13 @@ import 'auth_state.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepository _authRepository;
+  StreamSubscription? _authSubscription;
 
   AuthBloc({required AuthRepository authRepository})
       : _authRepository = authRepository,
         super(AuthInitial()) {
     on<AuthCheckRequested>(_onAuthCheckRequested);
+    on<AuthUserChanged>(_onAuthUserChanged);
     on<AuthSignInRequested>(_onAuthSignInRequested);
     on<AuthSignUpRequested>(_onAuthSignUpRequested);
     on<AuthSignOutRequested>(_onAuthSignOutRequested);
@@ -18,6 +21,27 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthPasswordResetSubmitted>(_onAuthPasswordResetSubmitted);
     on<AuthGoogleSignInRequested>(_onAuthGoogleSignInRequested);
     on<AuthChangePasswordRequested>(_onAuthChangePasswordRequested);
+
+    _authSubscription = _authRepository.authStateChanges.listen((user) {
+      add(AuthUserChanged(user));
+    });
+  }
+
+  @override
+  Future<void> close() {
+    _authSubscription?.cancel();
+    return super.close();
+  }
+
+  void _onAuthUserChanged(
+    AuthUserChanged event,
+    Emitter<AuthState> emit,
+  ) {
+    if (event.user != null) {
+      emit(Authenticated(user: event.user!));
+    } else {
+      emit(Unauthenticated());
+    }
   }
 
   Future<void> _onAuthCheckRequested(
@@ -127,10 +151,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthGoogleSignInRequested event,
     Emitter<AuthState> emit,
   ) async {
-    emit(AuthLoading());
     try {
-      final user = await _authRepository.signInWithGoogle();
-      emit(Authenticated(user: user));
+      await _authRepository.signInWithGoogle();
+      // We don't emit Authenticated here.
+      // The _authSubscription handles the deep link resolution.
     } catch (e) {
       emit(AuthFailure(errorMessage: e.toString().replaceAll('Exception: ', '')));
     }

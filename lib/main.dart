@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/config/supabase_config.dart';
 import 'core/di/injection_container.dart';
 import 'core/router/app_router.dart';
+import 'core/services/supabase_keep_alive_service.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'theme/app_theme.dart';
 
@@ -15,21 +16,23 @@ void main() async {
     publishableKey: SupabaseConfig.anonKey,
   );
 
+  // Ping Supabase to refresh activity status
+  SupabaseKeepAliveService.ping();
+
   await initDI();
 
-  runApp(const SynergyApp());
+  runApp(const MyTeamsApp());
 }
 
-class SynergyApp extends StatelessWidget {
-
-  const SynergyApp({super.key});
+class MyTeamsApp extends StatelessWidget {
+  const MyTeamsApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider<AuthBloc>(
       create: (context) => sl<AuthBloc>(),
       child: MaterialApp.router(
-        title: 'Synergy',
+        title: 'MY TEAMS',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         routerConfig: appRouter,
