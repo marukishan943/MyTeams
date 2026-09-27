@@ -14,10 +14,14 @@ import '../../features/crm/presentation/screens/add_lead_screen.dart';
 import '../../features/crm/presentation/screens/dashboard_screen.dart';
 import '../../features/crm/presentation/screens/lead_detail_screen.dart';
 import '../../features/crm/presentation/screens/sales_screen.dart';
+import '../../features/crm/presentation/screens/customers_screen.dart';
+import '../../features/crm/presentation/screens/add_customer_screen.dart';
 import '../../features/crm/presentation/bloc/lead_bloc.dart';
 import '../../features/crm/presentation/bloc/lead_event.dart';
 import '../../features/crm/presentation/bloc/lead_detail_bloc.dart';
 import '../../features/crm/presentation/bloc/sales_bloc.dart';
+import '../../features/crm/presentation/bloc/customer_bloc.dart';
+import '../../features/crm/presentation/bloc/customer_event.dart';
 import '../di/injection_container.dart';
 
 /// Declarative routing configuration using GoRouter.
@@ -133,6 +137,22 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => BlocProvider(
         create: (_) => SalesBloc()..add(LoadSales()),
         child: const SalesScreen(),
+      ),
+    ),
+    GoRoute(
+      path: '/customers',
+      name: 'customers',
+      builder: (context, state) => BlocProvider.value(
+        value: sl<CustomerBloc>()..add(const LoadCustomers()),
+        child: const CustomersScreen(),
+      ),
+    ),
+    GoRoute(
+      path: '/customers/add',
+      name: 'add-customer',
+      builder: (context, state) => BlocProvider.value(
+        value: sl<CustomerBloc>(),
+        child: const AddCustomerScreen(),
       ),
     ),
   ],

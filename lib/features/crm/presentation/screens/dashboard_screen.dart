@@ -118,7 +118,7 @@ class DashboardScreen extends StatelessWidget {
                     _DashboardItem(
                       icon: Icons.person_pin_outlined,
                       label: 'Customers',
-                      onTap: () {},
+                      onTap: () => context.push('/customers'),
                     ),
                     _DashboardItem(
                       icon: Icons.attach_money_outlined,
