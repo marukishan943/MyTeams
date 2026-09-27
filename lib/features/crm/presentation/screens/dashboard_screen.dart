@@ -123,7 +123,7 @@ class DashboardScreen extends StatelessWidget {
                     _DashboardItem(
                       icon: Icons.attach_money_outlined,
                       label: 'Sales',
-                      onTap: () {},
+                      onTap: () => context.push('/sales'),
                     ),
                   ],
                 ),

@@ -13,9 +13,11 @@ import '../../features/crm/presentation/screens/leads_screen.dart';
 import '../../features/crm/presentation/screens/add_lead_screen.dart';
 import '../../features/crm/presentation/screens/dashboard_screen.dart';
 import '../../features/crm/presentation/screens/lead_detail_screen.dart';
+import '../../features/crm/presentation/screens/sales_screen.dart';
 import '../../features/crm/presentation/bloc/lead_bloc.dart';
 import '../../features/crm/presentation/bloc/lead_event.dart';
 import '../../features/crm/presentation/bloc/lead_detail_bloc.dart';
+import '../../features/crm/presentation/bloc/sales_bloc.dart';
 import '../di/injection_container.dart';
 
 /// Declarative routing configuration using GoRouter.
@@ -124,6 +126,14 @@ final GoRouter appRouter = GoRouter(
           child: LeadDetailScreen(leadId: leadId),
         );
       },
+    ),
+    GoRoute(
+      path: '/sales',
+      name: 'sales',
+      builder: (context, state) => BlocProvider(
+        create: (_) => SalesBloc()..add(LoadSales()),
+        child: const SalesScreen(),
+      ),
     ),
   ],
 );
