@@ -100,6 +100,20 @@ class SalesBloc extends Bloc<SalesEvent, SalesState> {
           final company = lead['company']?.toString() ?? '';
           _cachedLeadNames[id] = company.isNotEmpty ? '$name, $company' : name;
         }
+
+        try {
+          final customersResponse = await client
+              .from('customers')
+              .select('id, name, company');
+
+          for (final customer in customersResponse as List) {
+            final id = customer['id'].toString();
+            final name = customer['name']?.toString() ?? '';
+            final company = customer['company']?.toString() ?? '';
+            _cachedLeadNames[id] =
+                company.isNotEmpty ? '$name, $company' : name;
+          }
+        } catch (_) {}
       }
 
       final allOrders = (ordersResponse as List)

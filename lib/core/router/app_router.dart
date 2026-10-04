@@ -14,6 +14,7 @@ import '../../features/crm/presentation/screens/add_lead_screen.dart';
 import '../../features/crm/presentation/screens/dashboard_screen.dart';
 import '../../features/crm/presentation/screens/lead_detail_screen.dart';
 import '../../features/crm/presentation/screens/sales_screen.dart';
+import '../../features/crm/presentation/screens/add_proforma_invoice_screen.dart';
 import '../../features/crm/presentation/bloc/lead_bloc.dart';
 import '../../features/crm/presentation/bloc/lead_event.dart';
 import '../../features/crm/presentation/bloc/lead_detail_bloc.dart';
@@ -134,6 +135,11 @@ final GoRouter appRouter = GoRouter(
         create: (_) => SalesBloc()..add(LoadSales()),
         child: const SalesScreen(),
       ),
+    ),
+    GoRoute(
+      path: '/sales/add-proforma',
+      name: 'add-proforma-invoice',
+      builder: (context, state) => const AddProformaInvoiceScreen(),
     ),
   ],
 );
