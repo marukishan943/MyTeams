@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/entities/lead.dart';
@@ -116,7 +117,7 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
       final custData = await client
           .from('customers')
           .select()
-          .order('name', ascending: true);
+          .order('created_at', ascending: false);
       _allCustomers = (custData as List).map((e) {
         return ProformaCustomer(
           id: e['id']?.toString() ?? '',
@@ -135,7 +136,7 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
       final leadsData = await client
           .from('leads')
           .select()
-          .order('name', ascending: true);
+          .order('created_at', ascending: false);
       _allLeads = (leadsData as List).map((e) {
         return Lead(
           id: e['id']?.toString() ?? '',
@@ -528,6 +529,8 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
                               : () async {
                                   if (formKey.currentState!.validate()) {
                                     setBState(() => isSubmitting = true);
+                                    final messenger =
+                                        ScaffoldMessenger.of(context);
                                     try {
                                       final client = Supabase.instance.client;
                                       final inserted = await client
@@ -559,17 +562,17 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
                                         staffName: _selectedStaff,
                                       );
 
-                                      if (mounted) {
-                                        setState(() {
-                                          _allCustomers.insert(0, newCust);
-                                          _selectedCustomer = newCust;
-                                        });
+                                      if (!mounted) return;
+                                      setState(() {
+                                        _allCustomers.insert(0, newCust);
+                                        _selectedCustomer = newCust;
+                                      });
+                                      if (bCtx.mounted) {
+                                        Navigator.pop(bCtx);
                                       }
-                                      Navigator.pop(bCtx);
                                     } catch (e) {
                                       setBState(() => isSubmitting = false);
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
+                                      messenger.showSnackBar(
                                         SnackBar(
                                           content: Text('Failed to add: $e'),
                                           backgroundColor: Colors.red,
@@ -597,7 +600,22 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
 
   void _onAddNewParty() async {
     if (_partyType == 'Customer') {
-      await _showQuickAddCustomerDialog();
+      try {
+        await context.push('/customers/add');
+      } catch (_) {
+        await _showQuickAddCustomerDialog();
+      }
+      if (!mounted) return;
+      await _loadParties();
+      if (_allCustomers.isNotEmpty && mounted) {
+        setState(() {
+          _selectedCustomer = _allCustomers.first;
+          if (_selectedCustomer!.staffName.isNotEmpty &&
+              _staffList.contains(_selectedCustomer!.staffName)) {
+            _selectedStaff = _selectedCustomer!.staffName;
+          }
+        });
+      }
     } else {
       await Navigator.push(
         context,
@@ -608,10 +626,15 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
           ),
         ),
       );
+      if (!mounted) return;
       await _loadParties();
-      if (_allLeads.isNotEmpty) {
+      if (_allLeads.isNotEmpty && mounted) {
         setState(() {
-          _selectedLead = _allLeads.last;
+          _selectedLead = _allLeads.first;
+          if (_selectedLead!.staffName.isNotEmpty &&
+              _staffList.contains(_selectedLead!.staffName)) {
+            _selectedStaff = _selectedLead!.staffName;
+          }
         });
       }
     }
