@@ -15,5 +15,15 @@ CREATE INDEX IF NOT EXISTS idx_lead_orders_date ON public.lead_orders(date DESC)
 CREATE INDEX IF NOT EXISTS idx_lead_orders_staff_name ON public.lead_orders(staff_name);
 CREATE INDEX IF NOT EXISTS idx_lead_orders_status ON public.lead_orders(status);
 
--- 3. Ensure realtime publication includes lead_orders
-ALTER PUBLICATION supabase_realtime ADD TABLE public.lead_orders;
+-- 3. Safely ensure realtime publication includes lead_orders
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables 
+        WHERE pubname = 'supabase_realtime' 
+        AND schemaname = 'public' 
+        AND tablename = 'lead_orders'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.lead_orders;
+    END IF;
+END $$;
