@@ -276,18 +276,19 @@ class _SalesScreenState extends State<SalesScreen>
             }
             return const SizedBox.shrink();
           }(),
-          floatingActionButton: _tabController.index == 1
+          floatingActionButton: (_tabController.index == 1 || _tabController.index == 2)
               ? FloatingActionButton(
                   backgroundColor: _kPrimaryBlue,
                   foregroundColor: Colors.white,
                   elevation: 4,
                   child: const Icon(Icons.add, size: 28),
                   onPressed: () async {
+                    final isProforma = _tabController.index == 1;
                     final salesBloc = context.read<SalesBloc>();
                     final res = await Navigator.push<bool>(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const AddProformaInvoiceScreen(),
+                        builder: (_) => AddProformaInvoiceScreen(isProforma: isProforma),
                       ),
                     );
                     if (res == true) {

@@ -38,7 +38,8 @@ class ProformaCustomer {
 }
 
 class AddProformaInvoiceScreen extends StatefulWidget {
-  const AddProformaInvoiceScreen({super.key});
+  final bool isProforma;
+  const AddProformaInvoiceScreen({super.key, this.isProforma = true});
 
   @override
   State<AddProformaInvoiceScreen> createState() =>
@@ -745,7 +746,7 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
         'round_off': _roundOff,
         'total_amount': _calculatedTotal,
         'items': _items.map((i) => i.toJson()).toList(),
-        'type': 'proforma_invoice',
+        'type': widget.isProforma ? 'proforma_invoice' : 'invoice',
       };
 
       await client.from('lead_orders').insert(insertData);
@@ -796,9 +797,9 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Add Proforma Invoice',
-          style: TextStyle(
+        title: Text(
+          widget.isProforma ? 'Add Proforma Invoice' : 'Add Invoice',
+          style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w600,
             fontSize: 18,
