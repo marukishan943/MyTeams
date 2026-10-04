@@ -53,3 +53,4 @@ app.*.map.json
 /android/app/release
 # GitHub Workflows (avoid PAT workflow scope restriction)
 .github/
+PROJECT_SUMMARY.md

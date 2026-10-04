@@ -9,6 +9,7 @@ import '../bloc/lead_detail_event.dart';
 import '../bloc/sales_bloc.dart';
 import '../../../../core/di/injection_container.dart';
 import 'order_detail_screen.dart';
+import 'add_proforma_invoice_screen.dart';
 
 const Color _kPrimaryBlue = Color(0xFF3949AB);
 
@@ -30,6 +31,9 @@ class _SalesScreenState extends State<SalesScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
+    _tabController.addListener(() {
+      if (mounted) setState(() {});
+    });
     context.read<SalesBloc>().add(LoadSales());
   }
 
@@ -45,15 +49,58 @@ class _SalesScreenState extends State<SalesScreen>
     final messenger = ScaffoldMessenger.of(context);
     try {
       final client = Supabase.instance.client;
-      final leadData = await client
-          .from('leads')
-          .select()
-          .eq('id', order.leadId)
-          .single();
+      Map<String, dynamic>? leadMap;
+
+      try {
+        final res = await client
+            .from('leads')
+            .select()
+            .eq('id', order.leadId)
+            .maybeSingle();
+        if (res != null) leadMap = res;
+      } catch (_) {}
+
+      if (leadMap == null) {
+        try {
+          final custRes = await client
+              .from('customers')
+              .select()
+              .eq('id', order.leadId)
+              .maybeSingle();
+          if (custRes != null) {
+            final c = custRes;
+            leadMap = {
+              'id': c['id'],
+              'name': c['name'] ?? 'Customer',
+              'company': c['company'] ?? '',
+              'phone': c['phone'] ?? '',
+              'email': c['email'] ?? '',
+              'staff_name': c['staff_name'] ?? order.staffName,
+              'city': c['city'] ?? '',
+              'territory': c['territory'] ?? '',
+              'stage': 'customer',
+              'status': 'active',
+            };
+          }
+        } catch (_) {}
+      }
+
+      leadMap ??= {
+        'id': order.leadId,
+        'name': 'Client',
+        'company': '',
+        'phone': '',
+        'email': '',
+        'staff_name': order.staffName,
+        'city': '',
+        'territory': '',
+        'stage': 'customer',
+        'status': 'active',
+      };
 
       if (!context.mounted) return;
 
-      final lead = LeadModel.fromJson(leadData as Map<String, dynamic>);
+      final lead = LeadModel.fromJson(leadMap);
       final bloc = sl<LeadDetailBloc>();
       bloc.add(LoadLeadDetail(lead.id));
 
@@ -229,6 +276,26 @@ class _SalesScreenState extends State<SalesScreen>
             }
             return const SizedBox.shrink();
           }(),
+          floatingActionButton: _tabController.index == 1
+              ? FloatingActionButton(
+                  backgroundColor: _kPrimaryBlue,
+                  foregroundColor: Colors.white,
+                  elevation: 4,
+                  child: const Icon(Icons.add, size: 28),
+                  onPressed: () async {
+                    final salesBloc = context.read<SalesBloc>();
+                    final res = await Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const AddProformaInvoiceScreen(),
+                      ),
+                    );
+                    if (res == true) {
+                      salesBloc.add(RefreshSales());
+                    }
+                  },
+                )
+              : null,
         );
       },
     );
