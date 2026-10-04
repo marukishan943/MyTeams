@@ -30,7 +30,7 @@ class _SalesScreenState extends State<SalesScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 6, vsync: this);
     _tabController.addListener(() {
       if (mounted) setState(() {});
     });
@@ -213,6 +213,7 @@ class _SalesScreenState extends State<SalesScreen>
                 Tab(text: 'Invoices'),
                 Tab(text: 'Orders'),
                 Tab(text: 'Payments'),
+                Tab(text: 'Inventory'),
               ],
             ),
           ),
@@ -271,6 +272,7 @@ class _SalesScreenState extends State<SalesScreen>
                   _buildListTab(filteredInvoices, state.leadNames),
                   _buildListTab(filteredOrders, state.leadNames),
                   _buildPaymentsTab(state, filteredProforma, filteredInvoices, filteredOrders),
+                  _buildInventoryTab(),
                 ],
               );
             }
@@ -892,6 +894,112 @@ class _SalesScreenState extends State<SalesScreen>
       ),
     );
   }
+  Widget _buildInventoryTab() {
+    // Mock inventory data matching the design
+    final List<Map<String, dynamic>> products = [
+      {
+        'name': 'TRANSPORT',
+        'subname': 'Stock Out',
+        'initials': 'TR',
+        'stock': -10,
+        'isStockOut': true,
+      },
+      {
+        'name': 'ZINC SPRAY 200ML',
+        'subname': 'ZINC SPRAY',
+        'initials': 'ZS',
+        'stock': 2924,
+        'isStockOut': false,
+      },
+      {
+        'name': 'ZINC SPRAY 400ML',
+        'subname': 'ZINC SPRAY',
+        'initials': 'ZS',
+        'stock': 2980,
+        'isStockOut': false,
+      },
+      {
+        'name': 'ZINC SPRAY 500ML',
+        'subname': 'ZINC SPRAY',
+        'initials': 'ZS',
+        'stock': 2639,
+        'isStockOut': false,
+      },
+    ];
+
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      itemCount: products.length,
+      separatorBuilder: (context, index) => const Divider(height: 32),
+      itemBuilder: (context, index) {
+        final p = products[index];
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8EAF6),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                p['initials'],
+                style: const TextStyle(color: _kPrimaryBlue, fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    p['name'],
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Colors.black87),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    p['subname'],
+                    style: const TextStyle(color: Colors.grey, fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  p['stock'].toString(),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: p['isStockOut'] ? Colors.red : Colors.green,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: p['isStockOut'] ? Colors.red.shade100 : Colors.green.shade100,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    p['isStockOut'] ? 'Low Stock' : 'In Stock',
+                    style: TextStyle(
+                      color: p['isStockOut'] ? Colors.red.shade700 : Colors.green.shade700,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 class _PaymentItem {
@@ -1117,4 +1225,5 @@ class _SalesFilterDialogState extends State<_SalesFilterDialog> {
       ),
     );
   }
+
 }

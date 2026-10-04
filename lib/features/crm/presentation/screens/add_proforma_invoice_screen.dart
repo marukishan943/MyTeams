@@ -7,6 +7,7 @@ import '../../domain/entities/lead.dart';
 import '../../domain/entities/lead_order.dart';
 import '../bloc/sales_bloc.dart';
 import 'add_item_screen.dart';
+import 'products_cart_screen.dart';
 import 'add_lead_screen.dart';
 import '../../../../core/di/injection_container.dart';
 import '../bloc/lead_bloc.dart';
@@ -653,6 +654,18 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
     }
   }
 
+  void _navigateToProductsCart() async {
+    final result = await Navigator.push<List<OrderItem>>(
+      context,
+      MaterialPageRoute(builder: (_) => const ProductsCartScreen()),
+    );
+    if (result != null && result.isNotEmpty && mounted) {
+      setState(() {
+        _items.addAll(result);
+      });
+    }
+  }
+
   // ── Save Proforma Invoice ───────────────────────────────────────────────────
 
   Future<void> _saveProformaInvoice() async {
@@ -1146,7 +1159,7 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
                   const SizedBox(width: 14),
                   // Blue Shopping Cart Button
                   GestureDetector(
-                    onTap: _navigateToAddItem,
+                    onTap: _navigateToProductsCart,
                     child: const Icon(
                       Icons.shopping_cart,
                       color: _kPrimaryBlue,
