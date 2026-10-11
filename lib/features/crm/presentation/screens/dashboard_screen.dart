@@ -105,6 +105,65 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _moduleVisibility = updated;
     });
 
+    // Write to company_settings (primary – used by web admin)
+    await _saveToCompanySettings(updated);
+
+    // Also write to SYS_CONFIG fallback record for backward compat
+    await _saveToSysConfig(updated);
+  }
+
+  Future<void> _setAllModules(bool visible) async {
+    final updated = {
+      'leads': visible,
+      'customers': visible,
+      'sales': visible,
+      'expenses': visible,
+      'reports': visible,
+      'settings': visible,
+    };
+
+    setState(() {
+      _moduleVisibility = updated;
+    });
+
+    // Write to company_settings (primary – used by web admin)
+    await _saveToCompanySettings(updated);
+
+    // Also write to SYS_CONFIG fallback record for backward compat
+    await _saveToSysConfig(updated);
+  }
+
+  /// Saves module visibility to [company_settings] table.
+  /// This is the primary store used by the web admin panel.
+  Future<void> _saveToCompanySettings(Map<String, bool> modules) async {
+    try {
+      final existing = await Supabase.instance.client
+          .from('company_settings')
+          .select('id')
+          .limit(1)
+          .maybeSingle();
+
+      if (existing != null && existing['id'] != null) {
+        await Supabase.instance.client
+            .from('company_settings')
+            .update({
+              'enabled_modules': modules,
+              'updated_at': DateTime.now().toIso8601String(),
+            })
+            .eq('id', existing['id']);
+      } else {
+        await Supabase.instance.client.from('company_settings').insert({
+          'enabled_modules': modules,
+          'created_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
+        });
+      }
+    } catch (_) {}
+  }
+
+  /// Saves module visibility to the [customers] SYS_CONFIG record.
+  /// This is the legacy fallback store for backward compatibility.
+  Future<void> _saveToSysConfig(Map<String, bool> modules) async {
     try {
       final res = await Supabase.instance.client
           .from('customers')
@@ -122,7 +181,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         } catch (_) {}
       }
 
-      currentPayload['modules'] = updated;
+      currentPayload['modules'] = modules;
       final jsonStr = jsonEncode(currentPayload);
 
       if (res != null && res['id'] != null) {
@@ -146,52 +205,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           'created_at': DateTime.now().toIso8601String(),
           'updated_at': DateTime.now().toIso8601String(),
         });
-      }
-    } catch (_) {}
-  }
-
-  Future<void> _setAllModules(bool visible) async {
-    final updated = {
-      'leads': visible,
-      'customers': visible,
-      'sales': visible,
-      'expenses': visible,
-      'reports': visible,
-      'settings': visible,
-    };
-
-    setState(() {
-      _moduleVisibility = updated;
-    });
-
-    try {
-      final res = await Supabase.instance.client
-          .from('customers')
-          .select('id, company')
-          .eq('customer_number', 'SYS_CONFIG')
-          .maybeSingle();
-
-      Map<String, dynamic> currentPayload = {};
-      if (res != null && res['company'] != null) {
-        try {
-          final parsed = jsonDecode(res['company'] as String);
-          if (parsed is Map) {
-            currentPayload = Map<String, dynamic>.from(parsed);
-          }
-        } catch (_) {}
-      }
-
-      currentPayload['modules'] = updated;
-      final jsonStr = jsonEncode(currentPayload);
-
-      if (res != null && res['id'] != null) {
-        await Supabase.instance.client
-            .from('customers')
-            .update({
-              'company': jsonStr,
-              'updated_at': DateTime.now().toIso8601String(),
-            })
-            .eq('id', res['id']);
       }
     } catch (_) {}
   }

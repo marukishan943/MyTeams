@@ -16,6 +16,7 @@ import {
   SlidersHorizontal,
   RotateCcw,
   Bell,
+  Loader2,
 } from 'lucide-react';
 import type { Lead, Customer, SalesOrder, DashboardCardsConfig, ModuleVisibilityConfig } from '../../types/crm';
 
@@ -34,6 +35,7 @@ interface DashboardViewProps {
   onResetCards: () => void;
   onSetAllCards: (visible: boolean) => void;
   moduleVisibility?: ModuleVisibilityConfig;
+  isSaving?: boolean;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -50,6 +52,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onToggleCard,
   onResetCards,
   onSetAllCards,
+  isSaving = false,
   moduleVisibility = {
     leads: true,
     customers: true,
@@ -176,20 +179,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             {showCardsDropdown && (
               <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-200 z-50 p-3 space-y-2 animate-in fade-in zoom-in-95 duration-150">
                 <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-                  <span className="text-xs font-bold text-gray-800">
-                    Dashboard Widgets
+                  <span className="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                    <span>Dashboard Widgets</span>
+                    {isSaving && <Loader2 className="w-3 h-3 text-[#3949ab] animate-spin" />}
                   </span>
                   <div className="flex items-center space-x-2 text-[11px]">
                     <button
-                      onClick={() => onSetAllCards(true)}
-                      className="text-[#3949ab] hover:underline font-semibold cursor-pointer"
+                      onClick={() => !isSaving && onSetAllCards(true)}
+                      disabled={isSaving}
+                      className={isSaving ? 'text-gray-300 cursor-not-allowed' : 'text-[#3949ab] hover:underline font-semibold cursor-pointer'}
                     >
                       Show All
                     </button>
                     <span className="text-gray-300">•</span>
                     <button
-                      onClick={onResetCards}
-                      className="text-gray-500 hover:text-gray-700 flex items-center gap-0.5 cursor-pointer"
+                      onClick={() => !isSaving && onResetCards()}
+                      disabled={isSaving}
+                      className={isSaving ? 'text-gray-300 cursor-not-allowed flex items-center gap-0.5' : 'text-gray-500 hover:text-gray-700 flex items-center gap-0.5 cursor-pointer'}
                     >
                       <RotateCcw className="w-3 h-3" />
                       Reset
@@ -204,8 +210,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     return (
                       <label
                         key={card.key}
-                        onClick={() => onToggleCard(card.key)}
-                        className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors text-xs"
+                        onClick={() => !isSaving && onToggleCard(card.key)}
+                        className={`flex items-center justify-between p-2 rounded-lg text-xs transition-colors ${
+                          isSaving ? 'opacity-60 cursor-not-allowed' : 'hover:bg-gray-50 cursor-pointer'
+                        }`}
                       >
                         <div className="flex items-center space-x-2 text-gray-700">
                           <Icon className="w-3.5 h-3.5 text-gray-400" />
@@ -216,8 +224,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         <input
                           type="checkbox"
                           checked={isVisible}
+                          disabled={isSaving}
                           onChange={() => {}}
-                          className="w-4 h-4 text-[#3949ab] rounded-sm border-gray-300 focus:ring-[#3949ab] cursor-pointer"
+                          className={`w-4 h-4 text-[#3949ab] rounded-sm border-gray-300 focus:ring-[#3949ab] ${
+                            isSaving ? 'cursor-not-allowed' : 'cursor-pointer'
+                          }`}
                         />
                       </label>
                     );

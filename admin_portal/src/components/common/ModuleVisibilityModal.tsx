@@ -18,6 +18,7 @@ import {
   Clock,
   Phone,
   ListTodo,
+  Loader2,
 } from 'lucide-react';
 import type { ModuleVisibilityConfig, DashboardCardsConfig } from '../../types/crm';
 
@@ -31,6 +32,7 @@ interface ModuleVisibilityModalProps {
   onToggleCard: (key: keyof DashboardCardsConfig) => void;
   onSetAllCards: (visible: boolean) => void;
   onResetDefaults: () => void;
+  isSaving?: boolean;
 }
 
 export const ModuleVisibilityModal: React.FC<ModuleVisibilityModalProps> = ({
@@ -43,6 +45,7 @@ export const ModuleVisibilityModal: React.FC<ModuleVisibilityModalProps> = ({
   onToggleCard,
   onSetAllCards,
   onResetDefaults,
+  isSaving = false,
 }) => {
   const [activeTab, setActiveTab] = useState<'modules' | 'cards'>('modules');
 
@@ -232,17 +235,20 @@ export const ModuleVisibilityModal: React.FC<ModuleVisibilityModalProps> = ({
           <div className="pb-3 flex items-center space-x-2 text-xs">
             <button
               onClick={() => {
+                if (isSaving) return;
                 if (activeTab === 'modules') onSetAllModules(true);
                 else onSetAllCards(true);
               }}
-              className="text-[#3949ab] hover:underline font-semibold cursor-pointer"
+              disabled={isSaving}
+              className={`font-semibold ${isSaving ? 'text-gray-300 cursor-not-allowed' : 'text-[#3949ab] hover:underline cursor-pointer'}`}
             >
               Show All
             </button>
             <span className="text-gray-300">•</span>
             <button
-              onClick={onResetDefaults}
-              className="text-gray-500 hover:text-gray-700 flex items-center gap-1 cursor-pointer"
+              onClick={() => !isSaving && onResetDefaults()}
+              disabled={isSaving}
+              className={`flex items-center gap-1 ${isSaving ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:text-gray-700 cursor-pointer'}`}
             >
               <RotateCcw className="w-3 h-3" />
               Reset Defaults
@@ -272,8 +278,12 @@ export const ModuleVisibilityModal: React.FC<ModuleVisibilityModalProps> = ({
                 return (
                   <div
                     key={mod.key}
-                    onClick={() => onToggleModule(mod.key)}
-                    className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                    onClick={() => !isSaving && onToggleModule(mod.key)}
+                    className={`p-3.5 rounded-xl border transition-all flex items-center justify-between ${
+                      isSaving
+                        ? 'cursor-not-allowed opacity-70'
+                        : 'cursor-pointer'
+                    } ${
                       isVisible
                         ? 'bg-white border-gray-200 hover:border-[#3949ab]/40 shadow-2xs'
                         : 'bg-gray-50 border-gray-200/60 opacity-60'
@@ -307,17 +317,21 @@ export const ModuleVisibilityModal: React.FC<ModuleVisibilityModalProps> = ({
                     </div>
 
                     <div className="shrink-0 flex items-center">
-                      <div
-                        className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors duration-200 ease-in-out cursor-pointer ${
-                          isVisible ? 'bg-[#3949ab]' : 'bg-gray-300'
-                        }`}
-                      >
+                      {isSaving ? (
+                        <Loader2 className="w-5 h-5 text-[#3949ab] animate-spin" />
+                      ) : (
                         <div
-                          className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${
-                            isVisible ? 'translate-x-5' : 'translate-x-0'
+                          className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors duration-200 ease-in-out cursor-pointer ${
+                            isVisible ? 'bg-[#3949ab]' : 'bg-gray-300'
                           }`}
-                        />
-                      </div>
+                        >
+                          <div
+                            className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${
+                              isVisible ? 'translate-x-5' : 'translate-x-0'
+                            }`}
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -334,8 +348,10 @@ export const ModuleVisibilityModal: React.FC<ModuleVisibilityModalProps> = ({
                 return (
                   <div
                     key={card.key}
-                    onClick={() => onToggleCard(card.key)}
-                    className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                    onClick={() => !isSaving && onToggleCard(card.key)}
+                    className={`p-3 rounded-xl border transition-all flex items-center justify-between ${
+                      isSaving ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'
+                    } ${
                       isVisible
                         ? 'bg-white border-gray-200 hover:border-[#3949ab]/40 shadow-2xs'
                         : 'bg-gray-50 border-gray-200/60 opacity-60'
@@ -363,17 +379,21 @@ export const ModuleVisibilityModal: React.FC<ModuleVisibilityModalProps> = ({
                     </div>
 
                     <div className="shrink-0 flex items-center">
-                      <div
-                        className={`w-10 h-5 flex items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out cursor-pointer ${
-                          isVisible ? 'bg-[#3949ab]' : 'bg-gray-300'
-                        }`}
-                      >
+                      {isSaving ? (
+                        <Loader2 className="w-4 h-4 text-[#3949ab] animate-spin" />
+                      ) : (
                         <div
-                          className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${
-                            isVisible ? 'translate-x-5' : 'translate-x-0'
+                          className={`w-10 h-5 flex items-center rounded-full p-0.5 transition-colors duration-200 ease-in-out cursor-pointer ${
+                            isVisible ? 'bg-[#3949ab]' : 'bg-gray-300'
                           }`}
-                        />
-                      </div>
+                        >
+                          <div
+                            className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${
+                              isVisible ? 'translate-x-5' : 'translate-x-0'
+                            }`}
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

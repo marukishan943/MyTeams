@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
   Layers,
   RotateCcw,
+  Loader2,
 } from 'lucide-react';
 import type { TeamUser, CompanyConfig, ModuleVisibilityConfig, DashboardCardsConfig } from '../../types/crm';
 
@@ -26,6 +27,7 @@ interface SettingsViewProps {
   dashboardCards?: DashboardCardsConfig;
   onToggleCard?: (key: keyof DashboardCardsConfig) => void;
   onResetDefaults?: () => void;
+  isSaving?: boolean;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -38,6 +40,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   dashboardCards,
   onToggleCard,
   onResetDefaults,
+  isSaving = false,
 }) => {
   const [activeTab, setActiveTab] = useState<
     'company' | 'users' | 'sales_settings' | 'templates' | 'modules'
@@ -502,6 +505,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#3949ab]/10 text-[#3949ab] font-bold">
                   UpTeams Customizer
                 </span>
+                {isSaving && (
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#3949ab] bg-[#3949ab]/10 px-2 py-0.5 rounded-full">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Saving to cloud...
+                  </span>
+                )}
               </h3>
               <p className="text-gray-500 text-[11px]">
                 Enable or disable system modules and dashboard widgets for your workspace.
@@ -510,8 +519,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             {onResetDefaults && (
               <button
                 type="button"
-                onClick={onResetDefaults}
-                className="inline-flex items-center space-x-1.5 px-3 py-1.5 border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                onClick={() => !isSaving && onResetDefaults()}
+                disabled={isSaving}
+                className={`inline-flex items-center space-x-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-semibold transition-colors ${
+                  isSaving
+                    ? 'text-gray-400 bg-gray-50 cursor-not-allowed'
+                    : 'text-gray-700 hover:bg-gray-50 cursor-pointer'
+                }`}
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Reset All Defaults</span>
@@ -538,8 +552,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 return (
                   <div
                     key={m.key}
-                    onClick={() => onToggleModule && onToggleModule(m.key)}
-                    className="p-3.5 rounded-xl border border-gray-200 bg-gray-50/50 hover:bg-white hover:border-[#3949ab]/40 transition-all flex items-center justify-between cursor-pointer"
+                    onClick={() => !isSaving && onToggleModule && onToggleModule(m.key)}
+                    className={`p-3.5 rounded-xl border border-gray-200 transition-all flex items-center justify-between ${
+                      isSaving
+                        ? 'cursor-not-allowed opacity-70 bg-gray-50'
+                        : 'cursor-pointer bg-gray-50/50 hover:bg-white hover:border-[#3949ab]/40'
+                    }`}
                   >
                     <div className="min-w-0 pr-3">
                       <div className="flex items-center space-x-2">
@@ -553,7 +571,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       <p className="text-gray-500 text-[11px] mt-0.5">{m.desc}</p>
                     </div>
                     <div className="shrink-0">
-                      {isVisible ? (
+                      {isSaving ? (
+                        <Loader2 className="w-5 h-5 text-[#3949ab] animate-spin" />
+                      ) : isVisible ? (
                         <ToggleRight className="w-6 h-6 text-[#3949ab]" />
                       ) : (
                         <ToggleLeft className="w-6 h-6 text-gray-300" />
@@ -587,14 +607,20 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 return (
                   <div
                     key={c.key}
-                    onClick={() => onToggleCard && onToggleCard(c.key)}
-                    className="p-3 rounded-lg border border-gray-200 bg-gray-50/50 hover:bg-white hover:border-[#3949ab]/40 transition-all flex items-center justify-between cursor-pointer"
+                    onClick={() => !isSaving && onToggleCard && onToggleCard(c.key)}
+                    className={`p-3 rounded-lg border border-gray-200 transition-all flex items-center justify-between ${
+                      isSaving
+                        ? 'cursor-not-allowed opacity-70 bg-gray-50'
+                        : 'cursor-pointer bg-gray-50/50 hover:bg-white hover:border-[#3949ab]/40'
+                    }`}
                   >
                     <span className={`font-semibold ${isVisible ? 'text-gray-900' : 'text-gray-400'}`}>
                       {c.label}
                     </span>
                     <div className="shrink-0">
-                      {isVisible ? (
+                      {isSaving ? (
+                        <Loader2 className="w-4 h-4 text-[#3949ab] animate-spin" />
+                      ) : isVisible ? (
                         <ToggleRight className="w-5 h-5 text-[#3949ab]" />
                       ) : (
                         <ToggleLeft className="w-5 h-5 text-gray-300" />

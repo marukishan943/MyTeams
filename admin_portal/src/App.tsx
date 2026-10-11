@@ -103,18 +103,27 @@ export function App() {
   });
 
   const [isModuleModalOpen, setIsModuleModalOpen] = useState(false);
+  const [isSavingVisibility, setIsSavingVisibility] = useState(false);
 
-  // Sync to localStorage and Supabase Cloud
-  const handleToggleModule = (key: keyof ModuleVisibilityConfig) => {
-    setModuleVisibility((prev) => {
-      const next = { ...prev, [key]: !prev[key] };
-      localStorage.setItem('myteams_module_visibility', JSON.stringify(next));
-      companySettingsService.updateModuleVisibility(next, dashboardCards);
-      return next;
-    });
+  // Sync to localStorage and Supabase Cloud — with loading + toast feedback
+  const handleToggleModule = async (key: keyof ModuleVisibilityConfig) => {
+    if (isSavingVisibility) return;
+    const next: ModuleVisibilityConfig = { ...moduleVisibility, [key]: !moduleVisibility[key] };
+    setModuleVisibility(next);
+    localStorage.setItem('myteams_module_visibility', JSON.stringify(next));
+    setIsSavingVisibility(true);
+    try {
+      await companySettingsService.updateModuleVisibility(next, dashboardCards);
+      addToast('success', `Module "${key}" ${next[key] ? 'enabled' : 'hidden'} successfully.`);
+    } catch {
+      addToast('error', 'Failed to save module visibility. Please try again.');
+    } finally {
+      setIsSavingVisibility(false);
+    }
   };
 
-  const handleSetAllModules = (visible: boolean) => {
+  const handleSetAllModules = async (visible: boolean) => {
+    if (isSavingVisibility) return;
     const next: ModuleVisibilityConfig = {
       leads: visible,
       customers: visible,
@@ -125,19 +134,35 @@ export function App() {
     };
     setModuleVisibility(next);
     localStorage.setItem('myteams_module_visibility', JSON.stringify(next));
-    companySettingsService.updateModuleVisibility(next, dashboardCards);
+    setIsSavingVisibility(true);
+    try {
+      await companySettingsService.updateModuleVisibility(next, dashboardCards);
+      addToast('success', visible ? 'All modules are now visible.' : 'All modules hidden.');
+    } catch {
+      addToast('error', 'Failed to save module visibility. Please try again.');
+    } finally {
+      setIsSavingVisibility(false);
+    }
   };
 
-  const handleToggleCard = (key: keyof DashboardCardsConfig) => {
-    setDashboardCards((prev) => {
-      const next = { ...prev, [key]: !prev[key] };
-      localStorage.setItem('myteams_dashboard_cards', JSON.stringify(next));
-      companySettingsService.updateModuleVisibility(moduleVisibility, next);
-      return next;
-    });
+  const handleToggleCard = async (key: keyof DashboardCardsConfig) => {
+    if (isSavingVisibility) return;
+    const next: DashboardCardsConfig = { ...dashboardCards, [key]: !dashboardCards[key] };
+    setDashboardCards(next);
+    localStorage.setItem('myteams_dashboard_cards', JSON.stringify(next));
+    setIsSavingVisibility(true);
+    try {
+      await companySettingsService.updateModuleVisibility(moduleVisibility, next);
+      addToast('success', `Card "${key}" ${next[key] ? 'shown' : 'hidden'} successfully.`);
+    } catch {
+      addToast('error', 'Failed to save card visibility. Please try again.');
+    } finally {
+      setIsSavingVisibility(false);
+    }
   };
 
-  const handleSetAllCards = (visible: boolean) => {
+  const handleSetAllCards = async (visible: boolean) => {
+    if (isSavingVisibility) return;
     const next: DashboardCardsConfig = {
       quickStats: visible,
       leadsChart: visible,
@@ -152,16 +177,32 @@ export function App() {
     };
     setDashboardCards(next);
     localStorage.setItem('myteams_dashboard_cards', JSON.stringify(next));
-    companySettingsService.updateModuleVisibility(moduleVisibility, next);
+    setIsSavingVisibility(true);
+    try {
+      await companySettingsService.updateModuleVisibility(moduleVisibility, next);
+      addToast('success', visible ? 'All dashboard cards are now visible.' : 'All dashboard cards hidden.');
+    } catch {
+      addToast('error', 'Failed to save card visibility. Please try again.');
+    } finally {
+      setIsSavingVisibility(false);
+    }
   };
 
-  const handleResetDefaults = () => {
+  const handleResetDefaults = async () => {
+    if (isSavingVisibility) return;
     setModuleVisibility(DEFAULT_MODULES);
     setDashboardCards(DEFAULT_DASHBOARD_CARDS);
     localStorage.removeItem('myteams_module_visibility');
     localStorage.removeItem('myteams_dashboard_cards');
-    companySettingsService.updateModuleVisibility(DEFAULT_MODULES, DEFAULT_DASHBOARD_CARDS);
-    addToast('info', 'Visibility preferences reset to default');
+    setIsSavingVisibility(true);
+    try {
+      await companySettingsService.updateModuleVisibility(DEFAULT_MODULES, DEFAULT_DASHBOARD_CARDS);
+      addToast('info', 'Visibility preferences reset to default.');
+    } catch {
+      addToast('error', 'Failed to reset visibility defaults.');
+    } finally {
+      setIsSavingVisibility(false);
+    }
   };
 
   // Redirect if current tab becomes hidden
@@ -623,6 +664,7 @@ export function App() {
                   onToggleCard={handleToggleCard}
                   onResetCards={handleResetDefaults}
                   onSetAllCards={handleSetAllCards}
+                  isSaving={isSavingVisibility}
                 />
               )}
 
@@ -713,6 +755,7 @@ export function App() {
                   dashboardCards={dashboardCards}
                   onToggleCard={handleToggleCard}
                   onResetDefaults={handleResetDefaults}
+                  isSaving={isSavingVisibility}
                 />
               )}
             </>
@@ -835,6 +878,7 @@ export function App() {
         onToggleCard={handleToggleCard}
         onSetAllCards={handleSetAllCards}
         onResetDefaults={handleResetDefaults}
+        isSaving={isSavingVisibility}
       />
 
       {/* Toast Alerts */}
