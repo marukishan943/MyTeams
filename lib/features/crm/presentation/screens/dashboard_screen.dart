@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -34,6 +35,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _fetchModuleVisibility() async {
+    // 1. Try company_settings table
     try {
       final res = await Supabase.instance.client
           .from('company_settings')
@@ -54,6 +56,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
             'settings': raw['settings'] != false,
           };
         });
+        return;
+      }
+    } catch (_) {}
+
+    // 2. Fallback to SYS_CONFIG customer record (guaranteed cloud sync)
+    try {
+      final res = await Supabase.instance.client
+          .from('customers')
+          .select('company')
+          .eq('customer_number', 'SYS_CONFIG')
+          .maybeSingle();
+
+      if (res != null && res['company'] != null && mounted) {
+        final parsed = jsonDecode(res['company'] as String);
+        Map<String, dynamic>? raw;
+        if (parsed is Map) {
+          if (parsed['modules'] is Map) {
+            raw = Map<String, dynamic>.from(parsed['modules'] as Map);
+          } else {
+            raw = Map<String, dynamic>.from(parsed);
+          }
+        }
+        final config = raw;
+        if (config != null && mounted) {
+          setState(() {
+            _moduleVisibility = {
+              'leads': config['leads'] != false,
+              'customers': config['customers'] != false,
+              'sales': config['sales'] != false,
+              'expenses': config['expenses'] != false,
+              'reports': config['reports'] != false,
+              'settings': config['settings'] != false,
+            };
+          });
+        }
       }
     } catch (_) {
       // Keep defaults on connection issues
@@ -117,8 +154,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 600),
-          child: SingleChildScrollView(
-            child: Column(
+          child: RefreshIndicator(
+            onRefresh: _fetchModuleVisibility,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Welcome banner
@@ -236,6 +276,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

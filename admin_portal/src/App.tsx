@@ -602,6 +602,7 @@ export function App() {
                   leads={displayedLeads}
                   customers={displayedCustomers}
                   orders={displayedOrders}
+                  moduleVisibility={moduleVisibility}
                   onNavigateTab={(tab) => setCurrentTab(tab)}
                   onOpenAddLead={() => {
                     setEditingLead(null);

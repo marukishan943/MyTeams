@@ -203,7 +203,7 @@ class CustomerRemoteDataSourceImpl implements CustomerRemoteDataSource {
   @override
   Future<List<CustomerModel>> getCustomers({String? searchQuery, String? category, String? staffName}) async {
     try {
-      var query = supabaseClient.from('customers').select('*');
+      var query = supabaseClient.from('customers').select('*').neq('customer_number', 'SYS_CONFIG');
 
       if (category != null && category.isNotEmpty && category != 'All') {
         query = query.eq('category', category);
@@ -215,6 +215,7 @@ class CustomerRemoteDataSourceImpl implements CustomerRemoteDataSource {
 
       final response = await query.order('created_at', ascending: false);
       final list = (response as List<dynamic>)
+          .where((json) => json['customer_number'] != 'SYS_CONFIG')
           .map((json) => CustomerModel.fromJson(json as Map<String, dynamic>))
           .toList();
 

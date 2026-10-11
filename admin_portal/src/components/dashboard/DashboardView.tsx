@@ -17,7 +17,7 @@ import {
   RotateCcw,
   Bell,
 } from 'lucide-react';
-import type { Lead, Customer, SalesOrder, DashboardCardsConfig } from '../../types/crm';
+import type { Lead, Customer, SalesOrder, DashboardCardsConfig, ModuleVisibilityConfig } from '../../types/crm';
 
 interface DashboardViewProps {
   leads: Lead[];
@@ -33,6 +33,7 @@ interface DashboardViewProps {
   onToggleCard: (key: keyof DashboardCardsConfig) => void;
   onResetCards: () => void;
   onSetAllCards: (visible: boolean) => void;
+  moduleVisibility?: ModuleVisibilityConfig;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -49,6 +50,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onToggleCard,
   onResetCards,
   onSetAllCards,
+  moduleVisibility = {
+    leads: true,
+    customers: true,
+    sales: true,
+    expenses: true,
+    reports: true,
+    settings: true,
+  },
 }) => {
   const [showCardsDropdown, setShowCardsDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -114,20 +123,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     key: keyof DashboardCardsConfig;
     label: string;
     icon: React.ElementType;
+    moduleKey?: keyof ModuleVisibilityConfig;
   }[] = [
     { key: 'quickStats', label: 'Metric KPI Cards', icon: TrendingUp },
-    { key: 'leadsChart', label: 'Leads Stage Funnel', icon: Target },
+    { key: 'leadsChart', label: 'Leads Stage Funnel', icon: Target, moduleKey: 'leads' },
     { key: 'attendanceChart', label: 'Attendance & Punch Status', icon: Clock },
     { key: 'visitsChart', label: 'Field Client Visits', icon: Calendar },
     { key: 'tasksChart', label: 'Field Tasks Breakdown', icon: ListTodo },
     { key: 'callsSummary', label: 'Calls & Communications', icon: Phone },
-    { key: 'visitsList', label: 'Recent Leads Feed', icon: Target },
-    { key: 'ordersList', label: 'Recent Invoices & Orders', icon: FileText },
-    { key: 'customerReminders', label: 'Customer Reminders', icon: Bell },
+    { key: 'visitsList', label: 'Recent Leads Feed', icon: Target, moduleKey: 'leads' },
+    { key: 'ordersList', label: 'Recent Invoices & Orders', icon: FileText, moduleKey: 'sales' },
+    { key: 'customerReminders', label: 'Customer Reminders', icon: Bell, moduleKey: 'customers' },
   ];
 
-  const visibleCardsCount = Object.values(cardsConfig).filter(Boolean).length;
-  const totalCardsCount = cardDefinitions.length;
+  const availableCardDefinitions = cardDefinitions.filter(
+    (card) => !card.moduleKey || moduleVisibility[card.moduleKey] !== false
+  );
+
+  const visibleCardsCount = availableCardDefinitions.filter((card) => cardsConfig[card.key]).length;
+  const totalCardsCount = availableCardDefinitions.length;
 
   return (
     <div className="space-y-6">
@@ -184,7 +198,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
 
                 <div className="space-y-1 max-h-64 overflow-y-auto pr-1">
-                  {cardDefinitions.map((card) => {
+                  {availableCardDefinitions.map((card) => {
                     const isVisible = cardsConfig[card.key];
                     const Icon = card.icon;
                     return (
@@ -217,149 +231,187 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             )}
           </div>
 
-          <button
-            onClick={onOpenAddLead}
-            className="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-[#3949ab] hover:bg-[#303f9f] text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Lead</span>
-          </button>
-          <button
-            onClick={onOpenAddCustomer}
-            className="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Customer</span>
-          </button>
-          <button
-            onClick={onOpenAddOrder}
-            className="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Create Invoice</span>
-          </button>
+          {moduleVisibility.leads !== false && (
+            <button
+              onClick={onOpenAddLead}
+              className="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-[#3949ab] hover:bg-[#303f9f] text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Lead</span>
+            </button>
+          )}
+          {moduleVisibility.customers !== false && (
+            <button
+              onClick={onOpenAddCustomer}
+              className="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Customer</span>
+            </button>
+          )}
+          {moduleVisibility.sales !== false && (
+            <button
+              onClick={onOpenAddOrder}
+              className="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Create Invoice</span>
+            </button>
+          )}
         </div>
       </div>
 
       {/* 1. UpTeams-Style Metric KPI Cards (quickStats) */}
-      {cardsConfig.quickStats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Metric 1: Leads */}
-          <div
-            onClick={() => onNavigateTab('leads')}
-            className="bg-white p-5 rounded-xl border border-gray-200 shadow-2xs hover:border-[#3949ab]/40 transition-all cursor-pointer group"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Total Leads
-              </span>
-              <div className="w-9 h-9 rounded-lg bg-blue-50 text-[#3949ab] flex items-center justify-center group-hover:bg-[#3949ab] group-hover:text-white transition-colors">
-                <Target className="w-5 h-5" />
-              </div>
-            </div>
-            <div className="mt-3 flex items-baseline justify-between">
-              <span className="text-2xl font-bold text-gray-900">{totalLeads}</span>
-              <span className="text-xs font-semibold text-emerald-600 flex items-center gap-0.5">
-                <CheckCircle className="w-3.5 h-3.5" />
-                {convertedLeads} Converted
-              </span>
-            </div>
-            <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-500">
-              <span>New: <b>{newLeads}</b></span>
-              <span>Contacted: <b>{contactedLeads}</b></span>
-              <span>Proposal: <b>{proposalLeads}</b></span>
-            </div>
-          </div>
+      {(() => {
+        const showLeadsMetric = moduleVisibility.leads !== false;
+        const showCustomersMetric = moduleVisibility.customers !== false;
+        const showInvoicesMetric = moduleVisibility.sales !== false;
+        const showOrdersMetric = moduleVisibility.sales !== false;
+        const visibleKpiCount =
+          (showLeadsMetric ? 1 : 0) +
+          (showCustomersMetric ? 1 : 0) +
+          (showInvoicesMetric ? 1 : 0) +
+          (showOrdersMetric ? 1 : 0);
 
-          {/* Metric 2: Customers */}
-          <div
-            onClick={() => onNavigateTab('customers')}
-            className="bg-white p-5 rounded-xl border border-gray-200 shadow-2xs hover:border-emerald-500/40 transition-all cursor-pointer group"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Customers
-              </span>
-              <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-                <Users className="w-5 h-5" />
-              </div>
-            </div>
-            <div className="mt-3 flex items-baseline justify-between">
-              <span className="text-2xl font-bold text-gray-900">{totalCustomers}</span>
-              <span className="text-xs font-medium text-gray-500">
-                {activeCustomers} Active Accounts
-              </span>
-            </div>
-            <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-500">
-              <span>Retailers & Distributors</span>
-              <span className="text-emerald-600 font-semibold flex items-center">
-                View List <ArrowRight className="w-3 h-3 ml-0.5" />
-              </span>
-            </div>
-          </div>
+        if (!cardsConfig.quickStats || visibleKpiCount === 0) return null;
 
-          {/* Metric 3: Invoices Revenue */}
+        return (
           <div
-            onClick={() => onNavigateTab('sales')}
-            className="bg-white p-5 rounded-xl border border-gray-200 shadow-2xs hover:border-purple-500/40 transition-all cursor-pointer group"
+            className={`grid grid-cols-1 ${
+              visibleKpiCount >= 2 ? 'sm:grid-cols-2' : ''
+            } ${
+              visibleKpiCount >= 4
+                ? 'lg:grid-cols-4'
+                : visibleKpiCount === 3
+                ? 'lg:grid-cols-3'
+                : ''
+            } gap-4`}
           >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Total Invoiced
-              </span>
-              <div className="w-9 h-9 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-colors">
-                <TrendingUp className="w-5 h-5" />
+            {/* Metric 1: Leads */}
+            {showLeadsMetric && (
+              <div
+                onClick={() => onNavigateTab('leads')}
+                className="bg-white p-5 rounded-xl border border-gray-200 shadow-2xs hover:border-[#3949ab]/40 transition-all cursor-pointer group"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Total Leads
+                  </span>
+                  <div className="w-9 h-9 rounded-lg bg-blue-50 text-[#3949ab] flex items-center justify-center group-hover:bg-[#3949ab] group-hover:text-white transition-colors">
+                    <Target className="w-5 h-5" />
+                  </div>
+                </div>
+                <div className="mt-3 flex items-baseline justify-between">
+                  <span className="text-2xl font-bold text-gray-900">{totalLeads}</span>
+                  <span className="text-xs font-semibold text-emerald-600 flex items-center gap-0.5">
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    {convertedLeads} Converted
+                  </span>
+                </div>
+                <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-500">
+                  <span>New: <b>{newLeads}</b></span>
+                  <span>Contacted: <b>{contactedLeads}</b></span>
+                  <span>Proposal: <b>{proposalLeads}</b></span>
+                </div>
               </div>
-            </div>
-            <div className="mt-3 flex items-baseline justify-between">
-              <span className="text-2xl font-bold text-gray-900">
-                {formatCurrency(totalInvoiceRevenue)}
-              </span>
-              <span className="text-xs text-gray-500">
-                {invoices.length} Invoices
-              </span>
-            </div>
-            <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-500">
-              <span>Proforma: <b>{proformaInvoices.length}</b></span>
-              <span>Orders: <b>{regularOrders.length}</b></span>
-            </div>
-          </div>
+            )}
 
-          {/* Metric 4: Orders Value */}
-          <div
-            onClick={() => onNavigateTab('sales')}
-            className="bg-white p-5 rounded-xl border border-gray-200 shadow-2xs hover:border-amber-500/40 transition-all cursor-pointer group"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Orders Pipeline
-              </span>
-              <div className="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center group-hover:bg-amber-600 group-hover:text-white transition-colors">
-                <FileText className="w-5 h-5" />
+            {/* Metric 2: Customers */}
+            {showCustomersMetric && (
+              <div
+                onClick={() => onNavigateTab('customers')}
+                className="bg-white p-5 rounded-xl border border-gray-200 shadow-2xs hover:border-emerald-500/40 transition-all cursor-pointer group"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Customers
+                  </span>
+                  <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                    <Users className="w-5 h-5" />
+                  </div>
+                </div>
+                <div className="mt-3 flex items-baseline justify-between">
+                  <span className="text-2xl font-bold text-gray-900">{totalCustomers}</span>
+                  <span className="text-xs font-medium text-gray-500">
+                    {activeCustomers} Active Accounts
+                  </span>
+                </div>
+                <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-500">
+                  <span>Retailers & Distributors</span>
+                  <span className="text-emerald-600 font-semibold flex items-center">
+                    View List <ArrowRight className="w-3 h-3 ml-0.5" />
+                  </span>
+                </div>
               </div>
-            </div>
-            <div className="mt-3 flex items-baseline justify-between">
-              <span className="text-2xl font-bold text-gray-900">
-                {formatCurrency(totalOrdersValue)}
-              </span>
-              <span className="text-xs font-semibold text-amber-600">
-                Active Orders
-              </span>
-            </div>
-            <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-500">
-              <span>Live Field Bookings</span>
-              <span className="text-amber-600 font-semibold flex items-center">
-                Inspect <ArrowRight className="w-3 h-3 ml-0.5" />
-              </span>
-            </div>
+            )}
+
+            {/* Metric 3: Invoices Revenue */}
+            {showInvoicesMetric && (
+              <div
+                onClick={() => onNavigateTab('sales')}
+                className="bg-white p-5 rounded-xl border border-gray-200 shadow-2xs hover:border-purple-500/40 transition-all cursor-pointer group"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Total Invoiced
+                  </span>
+                  <div className="w-9 h-9 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                    <TrendingUp className="w-5 h-5" />
+                  </div>
+                </div>
+                <div className="mt-3 flex items-baseline justify-between">
+                  <span className="text-2xl font-bold text-gray-900">
+                    {formatCurrency(totalInvoiceRevenue)}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    {invoices.length} Invoices
+                  </span>
+                </div>
+                <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-500">
+                  <span>Proforma: <b>{proformaInvoices.length}</b></span>
+                  <span>Orders: <b>{regularOrders.length}</b></span>
+                </div>
+              </div>
+            )}
+
+            {/* Metric 4: Orders Value */}
+            {showOrdersMetric && (
+              <div
+                onClick={() => onNavigateTab('sales')}
+                className="bg-white p-5 rounded-xl border border-gray-200 shadow-2xs hover:border-amber-500/40 transition-all cursor-pointer group"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Orders Pipeline
+                  </span>
+                  <div className="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center group-hover:bg-amber-600 group-hover:text-white transition-colors">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                </div>
+                <div className="mt-3 flex items-baseline justify-between">
+                  <span className="text-2xl font-bold text-gray-900">
+                    {formatCurrency(totalOrdersValue)}
+                  </span>
+                  <span className="text-xs font-semibold text-amber-600">
+                    Active Orders
+                  </span>
+                </div>
+                <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-500">
+                  <span>Live Field Bookings</span>
+                  <span className="text-amber-600 font-semibold flex items-center">
+                    Inspect <ArrowRight className="w-3 h-3 ml-0.5" />
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* 2. UpTeams Funnel & Operations Blocks (leadsChart, attendanceChart, visitsChart, tasksChart, callsSummary) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Leads Pipeline Funnel */}
-        {cardsConfig.leadsChart && (
+        {cardsConfig.leadsChart && moduleVisibility.leads !== false && (
           <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-2xs space-y-4">
             <div className="flex items-center justify-between border-b border-gray-100 pb-3">
               <div className="flex items-center space-x-2">
@@ -542,131 +594,143 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </div>
 
       {/* 3. Two Column Section: Recent Leads & Recent Sales (visitsList & ordersList) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Leads Widget (visitsList) */}
-        {cardsConfig.visitsList && (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-2xs overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Target className="w-4 h-4 text-[#3949ab]" />
-                <h3 className="font-bold text-sm text-gray-900">Recent Leads</h3>
-              </div>
-              <button
-                onClick={() => onNavigateTab('leads')}
-                className="text-xs font-semibold text-[#3949ab] hover:underline flex items-center cursor-pointer"
-              >
-                View All ({leads.length}) <ArrowRight className="w-3 h-3 ml-1" />
-              </button>
-            </div>
-            <div className="divide-y divide-gray-100 max-h-96 overflow-y-auto">
-              {leads.slice(0, 6).map((lead) => (
-                <div
-                  key={lead.id}
-                  onClick={() => onSelectLead(lead)}
-                  className="p-4 hover:bg-gray-50/80 transition-colors cursor-pointer flex items-center justify-between"
+      {((cardsConfig.visitsList && moduleVisibility.leads !== false) ||
+        (cardsConfig.ordersList && moduleVisibility.sales !== false)) && (
+        <div
+          className={`grid grid-cols-1 ${
+            cardsConfig.visitsList &&
+            moduleVisibility.leads !== false &&
+            cardsConfig.ordersList &&
+            moduleVisibility.sales !== false
+              ? 'lg:grid-cols-2'
+              : ''
+          } gap-6`}
+        >
+          {/* Recent Leads Widget (visitsList) */}
+          {cardsConfig.visitsList && moduleVisibility.leads !== false && (
+            <div className="bg-white rounded-xl border border-gray-200 shadow-2xs overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Target className="w-4 h-4 text-[#3949ab]" />
+                  <h3 className="font-bold text-sm text-gray-900">Recent Leads</h3>
+                </div>
+                <button
+                  onClick={() => onNavigateTab('leads')}
+                  className="text-xs font-semibold text-[#3949ab] hover:underline flex items-center cursor-pointer"
                 >
-                  <div className="min-w-0 pr-3">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-xs font-bold text-gray-900 truncate">
-                        {lead.name}
-                      </span>
-                      <span className="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-sm font-mono">
-                        #{lead.lead_number}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                      {lead.company && (
-                        <span className="flex items-center gap-1 truncate">
-                          <Building className="w-3 h-3 text-gray-400 shrink-0" />
-                          {lead.company}
+                  View All ({leads.length}) <ArrowRight className="w-3 h-3 ml-1" />
+                </button>
+              </div>
+              <div className="divide-y divide-gray-100 max-h-96 overflow-y-auto">
+                {leads.slice(0, 6).map((lead) => (
+                  <div
+                    key={lead.id}
+                    onClick={() => onSelectLead(lead)}
+                    className="p-4 hover:bg-gray-50/80 transition-colors cursor-pointer flex items-center justify-between"
+                  >
+                    <div className="min-w-0 pr-3">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs font-bold text-gray-900 truncate">
+                          {lead.name}
                         </span>
-                      )}
-                      <span className="flex items-center gap-1">
-                        <Phone className="w-3 h-3 text-gray-400 shrink-0" />
-                        {lead.phone}
-                      </span>
+                        <span className="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-sm font-mono">
+                          #{lead.lead_number}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                        {lead.company && (
+                          <span className="flex items-center gap-1 truncate">
+                            <Building className="w-3 h-3 text-gray-400 shrink-0" />
+                            {lead.company}
+                          </span>
+                        )}
+                        <span className="flex items-center gap-1">
+                          <Phone className="w-3 h-3 text-gray-400 shrink-0" />
+                          {lead.phone}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      {getStageBadge(lead.stage)}
+                      <div className="text-[10px] text-gray-400 mt-1">
+                        {lead.staff_name || 'Unassigned'}
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    {getStageBadge(lead.stage)}
-                    <div className="text-[10px] text-gray-400 mt-1">
-                      {lead.staff_name || 'Unassigned'}
-                    </div>
+                ))}
+                {leads.length === 0 && (
+                  <div className="p-8 text-center text-sm text-gray-400">
+                    No leads recorded yet.
                   </div>
-                </div>
-              ))}
-              {leads.length === 0 && (
-                <div className="p-8 text-center text-sm text-gray-400">
-                  No leads recorded yet.
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Recent Invoices & Orders Widget (ordersList) */}
-        {cardsConfig.ordersList && (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-2xs overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <FileText className="w-4 h-4 text-purple-600" />
-                <h3 className="font-bold text-sm text-gray-900">
-                  Recent Invoices & Orders
-                </h3>
+                )}
               </div>
-              <button
-                onClick={() => onNavigateTab('sales')}
-                className="text-xs font-semibold text-purple-600 hover:underline flex items-center cursor-pointer"
-              >
-                View All ({orders.length}) <ArrowRight className="w-3 h-3 ml-1" />
-              </button>
             </div>
-            <div className="divide-y divide-gray-100 max-h-96 overflow-y-auto">
-              {orders.slice(0, 6).map((order) => (
-                <div
-                  key={order.id}
-                  onClick={() => onSelectOrder(order)}
-                  className="p-4 hover:bg-gray-50/80 transition-colors cursor-pointer flex items-center justify-between"
+          )}
+
+          {/* Recent Invoices & Orders Widget (ordersList) */}
+          {cardsConfig.ordersList && moduleVisibility.sales !== false && (
+            <div className="bg-white rounded-xl border border-gray-200 shadow-2xs overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <FileText className="w-4 h-4 text-purple-600" />
+                  <h3 className="font-bold text-sm text-gray-900">
+                    Recent Invoices & Orders
+                  </h3>
+                </div>
+                <button
+                  onClick={() => onNavigateTab('sales')}
+                  className="text-xs font-semibold text-purple-600 hover:underline flex items-center cursor-pointer"
                 >
-                  <div className="min-w-0 pr-3">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-xs font-bold text-gray-900 truncate">
-                        {order.reference_name || `Doc #${order.order_number}`}
-                      </span>
-                      <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded-sm bg-purple-50 text-purple-700 font-semibold">
-                        {order.type.replace('_', ' ')}
-                      </span>
+                  View All ({orders.length}) <ArrowRight className="w-3 h-3 ml-1" />
+                </button>
+              </div>
+              <div className="divide-y divide-gray-100 max-h-96 overflow-y-auto">
+                {orders.slice(0, 6).map((order) => (
+                  <div
+                    key={order.id}
+                    onClick={() => onSelectOrder(order)}
+                    className="p-4 hover:bg-gray-50/80 transition-colors cursor-pointer flex items-center justify-between"
+                  >
+                    <div className="min-w-0 pr-3">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs font-bold text-gray-900 truncate">
+                          {order.reference_name || `Doc #${order.order_number}`}
+                        </span>
+                        <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded-sm bg-purple-50 text-purple-700 font-semibold">
+                          {order.type.replace('_', ' ')}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                        <span>Date: {order.date}</span>
+                        <span>Staff: {order.staff_name || 'Office'}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                      <span>Date: {order.date}</span>
-                      <span>Staff: {order.staff_name || 'Office'}</span>
+                    <div className="text-right shrink-0">
+                      <div className="text-sm font-bold text-gray-900">
+                        {formatCurrency(order.total_amount)}
+                      </div>
+                      <span
+                        className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize mt-1 ${
+                          order.status === 'converted'
+                            ? 'bg-emerald-50 text-emerald-700'
+                            : 'bg-amber-50 text-amber-700'
+                        }`}
+                      >
+                        {order.status}
+                      </span>
                     </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <div className="text-sm font-bold text-gray-900">
-                      {formatCurrency(order.total_amount)}
-                    </div>
-                    <span
-                      className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize mt-1 ${
-                        order.status === 'converted'
-                          ? 'bg-emerald-50 text-emerald-700'
-                          : 'bg-amber-50 text-amber-700'
-                      }`}
-                    >
-                      {order.status}
-                    </span>
+                ))}
+                {orders.length === 0 && (
+                  <div className="p-8 text-center text-sm text-gray-400">
+                    No orders or invoices recorded yet.
                   </div>
-                </div>
-              ))}
-              {orders.length === 0 && (
-                <div className="p-8 text-center text-sm text-gray-400">
-                  No orders or invoices recorded yet.
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

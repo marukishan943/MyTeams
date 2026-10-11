@@ -6,6 +6,7 @@ export const customersService = {
     const { data, error } = await supabase
       .from('customers')
       .select('*')
+      .neq('customer_number', 'SYS_CONFIG')
       .order('created_at', { ascending: false });
 
     if (error) {
