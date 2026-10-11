@@ -97,6 +97,302 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  Future<void> _updateModuleVisibility(String moduleKey, bool isVisible) async {
+    final updated = Map<String, bool>.from(_moduleVisibility);
+    updated[moduleKey] = isVisible;
+
+    setState(() {
+      _moduleVisibility = updated;
+    });
+
+    try {
+      final res = await Supabase.instance.client
+          .from('customers')
+          .select('id, company')
+          .eq('customer_number', 'SYS_CONFIG')
+          .maybeSingle();
+
+      Map<String, dynamic> currentPayload = {};
+      if (res != null && res['company'] != null) {
+        try {
+          final parsed = jsonDecode(res['company'] as String);
+          if (parsed is Map) {
+            currentPayload = Map<String, dynamic>.from(parsed);
+          }
+        } catch (_) {}
+      }
+
+      currentPayload['modules'] = updated;
+      final jsonStr = jsonEncode(currentPayload);
+
+      if (res != null && res['id'] != null) {
+        await Supabase.instance.client
+            .from('customers')
+            .update({
+              'company': jsonStr,
+              'updated_at': DateTime.now().toIso8601String(),
+            })
+            .eq('id', res['id']);
+      } else {
+        await Supabase.instance.client.from('customers').insert({
+          'customer_number': 'SYS_CONFIG',
+          'name': '__SYSTEM_SETTINGS__',
+          'company': jsonStr,
+          'phone': '0000000000',
+          'category': 'Other',
+          'status': 'Active',
+          'country': 'India',
+          'created_by': 'ISUN BEVERAGES',
+          'created_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _setAllModules(bool visible) async {
+    final updated = {
+      'leads': visible,
+      'customers': visible,
+      'sales': visible,
+      'expenses': visible,
+      'reports': visible,
+      'settings': visible,
+    };
+
+    setState(() {
+      _moduleVisibility = updated;
+    });
+
+    try {
+      final res = await Supabase.instance.client
+          .from('customers')
+          .select('id, company')
+          .eq('customer_number', 'SYS_CONFIG')
+          .maybeSingle();
+
+      Map<String, dynamic> currentPayload = {};
+      if (res != null && res['company'] != null) {
+        try {
+          final parsed = jsonDecode(res['company'] as String);
+          if (parsed is Map) {
+            currentPayload = Map<String, dynamic>.from(parsed);
+          }
+        } catch (_) {}
+      }
+
+      currentPayload['modules'] = updated;
+      final jsonStr = jsonEncode(currentPayload);
+
+      if (res != null && res['id'] != null) {
+        await Supabase.instance.client
+            .from('customers')
+            .update({
+              'company': jsonStr,
+              'updated_at': DateTime.now().toIso8601String(),
+            })
+            .eq('id', res['id']);
+      }
+    } catch (_) {}
+  }
+
+  void _showCustomizeModulesBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (bottomSheetContext) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final modulesList = [
+              {
+                'key': 'leads',
+                'name': 'Leads',
+                'desc': 'Pipelines, stages & inquiries',
+                'icon': Icons.monetization_on_outlined,
+                'color': const Color(0xFF3949AB),
+              },
+              {
+                'key': 'customers',
+                'name': 'Customers',
+                'desc': 'Client accounts, retailers & distributors',
+                'icon': Icons.person_pin_outlined,
+                'color': const Color(0xFF00897B),
+              },
+              {
+                'key': 'sales',
+                'name': 'Sales & Invoices',
+                'desc': 'Proforma, invoices, orders & payments',
+                'icon': Icons.attach_money_outlined,
+                'color': const Color(0xFF7B1FA2),
+              },
+              {
+                'key': 'expenses',
+                'name': 'Expenses',
+                'desc': 'Field expense claims & reimbursements',
+                'icon': Icons.receipt_long_outlined,
+                'color': const Color(0xFFF57C00),
+              },
+            ];
+
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+              child: SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Customize Modules',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF212121),
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Show or hide modules on your dashboard',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF757575),
+                              ),
+                            ),
+                          ],
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Colors.grey),
+                          onPressed: () => Navigator.pop(bottomSheetContext),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    const Divider(height: 1),
+                    const SizedBox(height: 8),
+                    ...modulesList.map((m) {
+                      final key = m['key'] as String;
+                      final isVisible = _moduleVisibility[key] != false;
+
+                      return Container(
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isVisible ? const Color(0xFFF8F9FA) : Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isVisible ? Colors.grey.shade200 : Colors.grey.shade100,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: (m['color'] as Color).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                m['icon'] as IconData,
+                                color: m['color'] as Color,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    m['name'] as String,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                      color: isVisible ? const Color(0xFF212121) : Colors.grey,
+                                    ),
+                                  ),
+                                  Text(
+                                    m['desc'] as String,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Switch.adaptive(
+                              value: isVisible,
+                              activeColor: _kPrimaryBlue,
+                              onChanged: (val) {
+                                setModalState(() {});
+                                _updateModuleVisibility(key, val);
+                              },
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        TextButton.icon(
+                          onPressed: () {
+                            setModalState(() {});
+                            _setAllModules(true);
+                          },
+                          icon: const Icon(Icons.visibility_outlined, size: 16),
+                          label: const Text('Show All'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: _kPrimaryBlue,
+                            textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        TextButton.icon(
+                          onPressed: () {
+                            setModalState(() {});
+                            _setAllModules(false);
+                          },
+                          icon: const Icon(Icons.visibility_off_outlined, size: 16),
+                          label: const Text('Hide All'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.grey.shade700,
+                            textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -121,6 +417,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.tune_outlined, color: Colors.white),
+            tooltip: 'Customize Modules',
+            onPressed: _showCustomizeModulesBottomSheet,
+          ),
           Stack(
             children: [
               IconButton(
@@ -687,6 +988,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   icon: Icons.calendar_today_outlined,
                   title: 'Attendance',
                   onTap: () => Navigator.pop(context),
+                ),
+                _buildDrawerTile(
+                  icon: Icons.tune_outlined,
+                  title: 'Customize Modules',
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showCustomizeModulesBottomSheet();
+                  },
                 ),
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
