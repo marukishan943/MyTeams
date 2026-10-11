@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../theme/app_colors.dart';
 import '../../../auth/domain/repositories/auth_repository.dart';
@@ -9,8 +10,55 @@ import '../../../auth/presentation/bloc/auth_event.dart';
 
 const Color _kPrimaryBlue = Color(0xFF3949AB);
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  Map<String, bool> _moduleVisibility = {
+    'leads': true,
+    'customers': true,
+    'sales': true,
+    'expenses': true,
+    'reports': true,
+    'settings': true,
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchModuleVisibility();
+  }
+
+  Future<void> _fetchModuleVisibility() async {
+    try {
+      final res = await Supabase.instance.client
+          .from('company_settings')
+          .select('enabled_modules')
+          .limit(1)
+          .maybeSingle();
+
+      if (res != null && res['enabled_modules'] != null && mounted) {
+        final Map<String, dynamic> raw =
+            res['enabled_modules'] as Map<String, dynamic>;
+        setState(() {
+          _moduleVisibility = {
+            'leads': raw['leads'] != false,
+            'customers': raw['customers'] != false,
+            'sales': raw['sales'] != false,
+            'expenses': raw['expenses'] != false,
+            'reports': raw['reports'] != false,
+            'settings': raw['settings'] != false,
+          };
+        });
+      }
+    } catch (_) {
+      // Keep defaults on connection issues
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -106,28 +154,35 @@ class DashboardScreen extends StatelessWidget {
                 const SizedBox(height: 12),
 
                 // CRM Section
-                _buildSection(
-                  context,
-                  title: 'CRM',
-                  items: [
-                    _DashboardItem(
-                      icon: Icons.monetization_on_outlined,
-                      label: 'Leads',
-                      onTap: () => context.push('/leads'),
-                    ),
-                    _DashboardItem(
-                      icon: Icons.person_pin_outlined,
-                      label: 'Customers',
-                      onTap: () => context.push('/customers'),
-                    ),
-                    _DashboardItem(
-                      icon: Icons.attach_money_outlined,
-                      label: 'Sales',
-                      onTap: () => context.push('/sales'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
+                if (_moduleVisibility['leads'] != false ||
+                    _moduleVisibility['customers'] != false ||
+                    _moduleVisibility['sales'] != false) ...[
+                  _buildSection(
+                    context,
+                    title: 'CRM',
+                    items: [
+                      if (_moduleVisibility['leads'] != false)
+                        _DashboardItem(
+                          icon: Icons.monetization_on_outlined,
+                          label: 'Leads',
+                          onTap: () => context.push('/leads'),
+                        ),
+                      if (_moduleVisibility['customers'] != false)
+                        _DashboardItem(
+                          icon: Icons.person_pin_outlined,
+                          label: 'Customers',
+                          onTap: () => context.push('/customers'),
+                        ),
+                      if (_moduleVisibility['sales'] != false)
+                        _DashboardItem(
+                          icon: Icons.attach_money_outlined,
+                          label: 'Sales',
+                          onTap: () => context.push('/sales'),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                ],
 
                 // HRM Section
                 _buildSection(
@@ -144,11 +199,12 @@ class DashboardScreen extends StatelessWidget {
                       label: 'Leaves',
                       onTap: () {},
                     ),
-                    _DashboardItem(
-                      icon: Icons.receipt_long_outlined,
-                      label: 'Expenses',
-                      onTap: () {},
-                    ),
+                    if (_moduleVisibility['expenses'] != false)
+                      _DashboardItem(
+                        icon: Icons.receipt_long_outlined,
+                        label: 'Expenses',
+                        onTap: () {},
+                      ),
                     _DashboardItem(
                       icon: Icons.payments_outlined,
                       label: 'Payroll',
@@ -540,22 +596,42 @@ class DashboardScreen extends StatelessWidget {
                   isSelected: true,
                   onTap: () => Navigator.pop(context),
                 ),
-                _buildDrawerTile(
-                  icon: Icons.monetization_on_outlined,
-                  title: 'Leads (CRM)',
-                  onTap: () {
-                    Navigator.pop(context);
-                    context.push('/leads');
-                  },
-                ),
-                _buildDrawerTile(
-                  icon: Icons.person_add_outlined,
-                  title: 'Add Lead',
-                  onTap: () {
-                    Navigator.pop(context);
-                    context.push('/leads/add');
-                  },
-                ),
+                if (_moduleVisibility['leads'] != false) ...[
+                  _buildDrawerTile(
+                    icon: Icons.monetization_on_outlined,
+                    title: 'Leads (CRM)',
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/leads');
+                    },
+                  ),
+                  _buildDrawerTile(
+                    icon: Icons.person_add_outlined,
+                    title: 'Add Lead',
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/leads/add');
+                    },
+                  ),
+                ],
+                if (_moduleVisibility['customers'] != false)
+                  _buildDrawerTile(
+                    icon: Icons.person_pin_outlined,
+                    title: 'Customers',
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/customers');
+                    },
+                  ),
+                if (_moduleVisibility['sales'] != false)
+                  _buildDrawerTile(
+                    icon: Icons.attach_money_outlined,
+                    title: 'Sales',
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/sales');
+                    },
+                  ),
                 _buildDrawerTile(
                   icon: Icons.people_outline,
                   title: 'My Team',

@@ -41,6 +41,7 @@ import { expensesService } from './services/expensesService';
 import { inventoryService } from './services/inventoryService';
 import { paymentsService } from './services/paymentsService';
 import { usersService } from './services/usersService';
+import { companySettingsService } from './services/companySettingsService';
 
 import type {
   Lead,
@@ -103,11 +104,12 @@ export function App() {
 
   const [isModuleModalOpen, setIsModuleModalOpen] = useState(false);
 
-  // Sync to localStorage
+  // Sync to localStorage and Supabase Cloud
   const handleToggleModule = (key: keyof ModuleVisibilityConfig) => {
     setModuleVisibility((prev) => {
       const next = { ...prev, [key]: !prev[key] };
       localStorage.setItem('myteams_module_visibility', JSON.stringify(next));
+      companySettingsService.updateModuleVisibility(next, dashboardCards);
       return next;
     });
   };
@@ -123,12 +125,14 @@ export function App() {
     };
     setModuleVisibility(next);
     localStorage.setItem('myteams_module_visibility', JSON.stringify(next));
+    companySettingsService.updateModuleVisibility(next, dashboardCards);
   };
 
   const handleToggleCard = (key: keyof DashboardCardsConfig) => {
     setDashboardCards((prev) => {
       const next = { ...prev, [key]: !prev[key] };
       localStorage.setItem('myteams_dashboard_cards', JSON.stringify(next));
+      companySettingsService.updateModuleVisibility(moduleVisibility, next);
       return next;
     });
   };
@@ -148,6 +152,7 @@ export function App() {
     };
     setDashboardCards(next);
     localStorage.setItem('myteams_dashboard_cards', JSON.stringify(next));
+    companySettingsService.updateModuleVisibility(moduleVisibility, next);
   };
 
   const handleResetDefaults = () => {
@@ -155,6 +160,7 @@ export function App() {
     setDashboardCards(DEFAULT_DASHBOARD_CARDS);
     localStorage.removeItem('myteams_module_visibility');
     localStorage.removeItem('myteams_dashboard_cards');
+    companySettingsService.updateModuleVisibility(DEFAULT_MODULES, DEFAULT_DASHBOARD_CARDS);
     addToast('info', 'Visibility preferences reset to default');
   };
 
@@ -229,6 +235,7 @@ export function App() {
         inventoryData,
         paymentsData,
         usersData,
+        settingsData,
       ] = await Promise.all([
         leadsService.fetchLeads(),
         customersService.fetchCustomers(),
@@ -237,6 +244,7 @@ export function App() {
         inventoryService.fetchInventory(),
         paymentsService.fetchPayments(),
         usersService.fetchUsers(),
+        companySettingsService.fetchSettings(),
       ]);
 
       setLeads(leadsData);
@@ -246,6 +254,15 @@ export function App() {
       setInventory(inventoryData);
       setPayments(paymentsData);
       setUsers(usersData);
+
+      if (settingsData?.modules) {
+        setModuleVisibility(settingsData.modules);
+        localStorage.setItem('myteams_module_visibility', JSON.stringify(settingsData.modules));
+      }
+      if (settingsData?.cards) {
+        setDashboardCards(settingsData.cards);
+        localStorage.setItem('myteams_dashboard_cards', JSON.stringify(settingsData.cards));
+      }
     } catch (err: unknown) {
       console.error('Failed to load CRM data:', err);
       addToast('error', 'Failed to synchronize latest data.');
