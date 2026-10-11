@@ -15,7 +15,7 @@ export interface Lead {
   country?: string;
   date?: string;
   source: 'call' | 'email' | 'website' | 'others';
-  stage: 'newLead' | 'contacted' | 'proposalSent' | 'disqualified' | 'converted';
+  stage: 'newLead' | 'contacted' | 'proposalSent' | 'sampleSent' | 'disqualified' | 'converted';
   rating?: number;
   title?: string;
   value?: number;
@@ -187,4 +187,26 @@ export interface UserProfile {
   name: string;
   role: 'admin' | 'manager' | 'staff';
   company: string;
+}
+
+export interface ModuleVisibilityConfig {
+  leads: boolean;
+  customers: boolean;
+  sales: boolean;
+  expenses: boolean;
+  reports: boolean;
+  settings: boolean;
+}
+
+export interface DashboardCardsConfig {
+  quickStats: boolean;
+  leadsChart: boolean;
+  attendanceChart: boolean;
+  visitsChart: boolean;
+  tasksChart: boolean;
+  callsSummary: boolean;
+  visitsList: boolean;
+  tasksList: boolean;
+  ordersList: boolean;
+  customerReminders: boolean;
 }

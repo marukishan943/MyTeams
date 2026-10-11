@@ -31,6 +31,7 @@ import { ExpenseApproveModal } from './components/expenses/ExpenseApproveModal';
 // Reports & Settings Components
 import { ReportsView } from './components/reports/ReportsView';
 import { SettingsView } from './components/settings/SettingsView';
+import { ModuleVisibilityModal } from './components/common/ModuleVisibilityModal';
 
 // Services
 import { leadsService } from './services/leadsService';
@@ -49,7 +50,31 @@ import type {
   InventoryItem,
   PaymentRecord,
   TeamUser,
+  ModuleVisibilityConfig,
+  DashboardCardsConfig,
 } from './types/crm';
+
+const DEFAULT_MODULES: ModuleVisibilityConfig = {
+  leads: true,
+  customers: true,
+  sales: true,
+  expenses: true,
+  reports: true,
+  settings: true,
+};
+
+const DEFAULT_DASHBOARD_CARDS: DashboardCardsConfig = {
+  quickStats: true,
+  leadsChart: true,
+  attendanceChart: true,
+  visitsChart: true,
+  tasksChart: true,
+  callsSummary: true,
+  visitsList: true,
+  tasksList: true,
+  ordersList: true,
+  customerReminders: true,
+};
 
 export function App() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -58,6 +83,90 @@ export function App() {
   const [currentTab, setCurrentTab] = useState<string>('dashboard');
   const [isSidebarOpenMobile, setIsSidebarOpenMobile] = useState<boolean>(false);
   const [selectedStaff, setSelectedStaff] = useState<string>('All');
+
+  // Module & Dashboard Card Visibility Customizer
+  const [moduleVisibility, setModuleVisibility] = useState<ModuleVisibilityConfig>(() => {
+    try {
+      const saved = localStorage.getItem('myteams_module_visibility');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return DEFAULT_MODULES;
+  });
+
+  const [dashboardCards, setDashboardCards] = useState<DashboardCardsConfig>(() => {
+    try {
+      const saved = localStorage.getItem('myteams_dashboard_cards');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return DEFAULT_DASHBOARD_CARDS;
+  });
+
+  const [isModuleModalOpen, setIsModuleModalOpen] = useState(false);
+
+  // Sync to localStorage
+  const handleToggleModule = (key: keyof ModuleVisibilityConfig) => {
+    setModuleVisibility((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      localStorage.setItem('myteams_module_visibility', JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const handleSetAllModules = (visible: boolean) => {
+    const next: ModuleVisibilityConfig = {
+      leads: visible,
+      customers: visible,
+      sales: visible,
+      expenses: visible,
+      reports: visible,
+      settings: visible,
+    };
+    setModuleVisibility(next);
+    localStorage.setItem('myteams_module_visibility', JSON.stringify(next));
+  };
+
+  const handleToggleCard = (key: keyof DashboardCardsConfig) => {
+    setDashboardCards((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      localStorage.setItem('myteams_dashboard_cards', JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const handleSetAllCards = (visible: boolean) => {
+    const next: DashboardCardsConfig = {
+      quickStats: visible,
+      leadsChart: visible,
+      attendanceChart: visible,
+      visitsChart: visible,
+      tasksChart: visible,
+      callsSummary: visible,
+      visitsList: visible,
+      tasksList: visible,
+      ordersList: visible,
+      customerReminders: visible,
+    };
+    setDashboardCards(next);
+    localStorage.setItem('myteams_dashboard_cards', JSON.stringify(next));
+  };
+
+  const handleResetDefaults = () => {
+    setModuleVisibility(DEFAULT_MODULES);
+    setDashboardCards(DEFAULT_DASHBOARD_CARDS);
+    localStorage.removeItem('myteams_module_visibility');
+    localStorage.removeItem('myteams_dashboard_cards');
+    addToast('info', 'Visibility preferences reset to default');
+  };
+
+  // Redirect if current tab becomes hidden
+  useEffect(() => {
+    if (
+      currentTab !== 'dashboard' &&
+      moduleVisibility[currentTab as keyof ModuleVisibilityConfig] === false
+    ) {
+      setCurrentTab('dashboard');
+    }
+  }, [currentTab, moduleVisibility]);
 
   // CRM Data State
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -442,6 +551,8 @@ export function App() {
           sales: orders.length,
           expenses: expenses.length,
         }}
+        moduleVisibility={moduleVisibility}
+        onOpenModuleVisibility={() => setIsModuleModalOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -454,6 +565,9 @@ export function App() {
           staffList={staffList}
           onRefresh={loadAllData}
           isRefreshing={isRefreshing}
+          onOpenModuleVisibility={() => setIsModuleModalOpen(true)}
+          visibleModulesCount={Object.values(moduleVisibility).filter(Boolean).length}
+          totalModulesCount={Object.keys(moduleVisibility).length}
         />
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
@@ -487,6 +601,10 @@ export function App() {
                   }}
                   onSelectLead={(lead) => setDetailLead(lead)}
                   onSelectOrder={(order) => setDetailOrder(order)}
+                  cardsConfig={dashboardCards}
+                  onToggleCard={handleToggleCard}
+                  onResetCards={handleResetDefaults}
+                  onSetAllCards={handleSetAllCards}
                 />
               )}
 
@@ -572,6 +690,11 @@ export function App() {
                   onAddUser={handleAddUser}
                   onToggleTracking={handleToggleTracking}
                   onToggleActive={handleToggleActive}
+                  moduleVisibility={moduleVisibility}
+                  onToggleModule={handleToggleModule}
+                  dashboardCards={dashboardCards}
+                  onToggleCard={handleToggleCard}
+                  onResetDefaults={handleResetDefaults}
                 />
               )}
             </>
@@ -681,6 +804,19 @@ export function App() {
         isOpen={!!reviewExpense}
         onClose={() => setReviewExpense(null)}
         onDecide={handleDecideExpense}
+      />
+
+      {/* Module & Dashboard Cards Visibility Customizer Modal */}
+      <ModuleVisibilityModal
+        isOpen={isModuleModalOpen}
+        onClose={() => setIsModuleModalOpen(false)}
+        modules={moduleVisibility}
+        onToggleModule={handleToggleModule}
+        onSetAllModules={handleSetAllModules}
+        cards={dashboardCards}
+        onToggleCard={handleToggleCard}
+        onSetAllCards={handleSetAllCards}
+        onResetDefaults={handleResetDefaults}
       />
 
       {/* Toast Alerts */}

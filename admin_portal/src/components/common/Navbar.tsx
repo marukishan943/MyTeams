@@ -4,6 +4,7 @@ import {
   Calendar,
   RotateCw,
   UserCheck,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -15,6 +16,9 @@ interface NavbarProps {
   staffList: string[];
   onRefresh: () => void;
   isRefreshing: boolean;
+  onOpenModuleVisibility: () => void;
+  visibleModulesCount: number;
+  totalModulesCount: number;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -25,6 +29,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   staffList,
   onRefresh,
   isRefreshing,
+  onOpenModuleVisibility,
+  visibleModulesCount,
+  totalModulesCount,
 }) => {
   const { user } = useAuth();
 
@@ -101,6 +108,19 @@ export const Navbar: React.FC<NavbarProps> = ({
             </select>
           </div>
         </div>
+
+        {/* Module Customizer Button */}
+        <button
+          onClick={onOpenModuleVisibility}
+          title="Show / Hide Modules & Dashboard Cards"
+          className="inline-flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-700 text-xs font-semibold transition-colors cursor-pointer"
+        >
+          <SlidersHorizontal className="w-3.5 h-3.5 text-[#3949ab]" />
+          <span className="hidden sm:inline">Modules</span>
+          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[#3949ab]/10 text-[#3949ab] font-bold">
+            {visibleModulesCount}/{totalModulesCount}
+          </span>
+        </button>
 
         {/* Refresh Action */}
         <button

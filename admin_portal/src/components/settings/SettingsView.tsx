@@ -9,14 +9,23 @@ import {
   ToggleLeft,
   ToggleRight,
   Save,
+  SlidersHorizontal,
+  LayoutDashboard,
+  Layers,
+  RotateCcw,
 } from 'lucide-react';
-import type { TeamUser, CompanyConfig } from '../../types/crm';
+import type { TeamUser, CompanyConfig, ModuleVisibilityConfig, DashboardCardsConfig } from '../../types/crm';
 
 interface SettingsViewProps {
   users: TeamUser[];
   onAddUser: (user: Partial<TeamUser>) => Promise<void>;
   onToggleTracking: (id: string) => void;
   onToggleActive: (id: string) => void;
+  moduleVisibility?: ModuleVisibilityConfig;
+  onToggleModule?: (key: keyof ModuleVisibilityConfig) => void;
+  dashboardCards?: DashboardCardsConfig;
+  onToggleCard?: (key: keyof DashboardCardsConfig) => void;
+  onResetDefaults?: () => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -24,9 +33,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onAddUser,
   onToggleTracking,
   onToggleActive,
+  moduleVisibility,
+  onToggleModule,
+  dashboardCards,
+  onToggleCard,
+  onResetDefaults,
 }) => {
   const [activeTab, setActiveTab] = useState<
-    'company' | 'users' | 'sales_settings' | 'templates'
+    'company' | 'users' | 'sales_settings' | 'templates' | 'modules'
   >('company');
 
   // Company Profile state
@@ -99,6 +113,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           { id: 'users', label: 'Users & Team Hierarchy', icon: Users },
           { id: 'sales_settings', label: 'Sales & Invoicing Rules', icon: SettingsIcon },
           { id: 'templates', label: 'Message Templates', icon: MessageSquare },
+          { id: 'modules', label: 'Modules & Cards Visibility', icon: SlidersHorizontal },
         ].map((tab) => {
           const Icon = tab.icon;
           return (
@@ -473,6 +488,122 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <p className="text-gray-600 font-mono text-[11px]">{tmpl.content}</p>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 5: MODULES & CARDS VISIBILITY */}
+      {activeTab === 'modules' && (
+        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-2xs space-y-6 text-xs">
+          <div className="flex items-center justify-between border-b border-gray-100 pb-3 flex-wrap gap-2">
+            <div>
+              <h3 className="font-bold text-sm text-gray-900 flex items-center gap-2">
+                <span>Modules & Dashboard Cards Visibility Control</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#3949ab]/10 text-[#3949ab] font-bold">
+                  UpTeams Customizer
+                </span>
+              </h3>
+              <p className="text-gray-500 text-[11px]">
+                Enable or disable system modules and dashboard widgets for your workspace.
+              </p>
+            </div>
+            {onResetDefaults && (
+              <button
+                type="button"
+                onClick={onResetDefaults}
+                className="inline-flex items-center space-x-1.5 px-3 py-1.5 border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Reset All Defaults</span>
+              </button>
+            )}
+          </div>
+
+          {/* 1. Main Navigation Modules */}
+          <div className="space-y-3">
+            <h4 className="font-bold text-xs text-gray-800 uppercase tracking-wider flex items-center gap-2">
+              <LayoutDashboard className="w-4 h-4 text-[#3949ab]" />
+              <span>Main Navigation Modules</span>
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {[
+                { key: 'leads' as const, label: 'Leads Management', desc: 'Inquiries, stages, scoring, WhatsApp chat, and conversion to customer' },
+                { key: 'customers' as const, label: 'Customers Directory', desc: 'Customer accounts, tiers (Gold/Silver), and purchase history' },
+                { key: 'sales' as const, label: 'Sales & Invoices Suite', desc: 'Proforma Invoices, Tax Invoices, Orders, Payments, and Stock Inventory' },
+                { key: 'expenses' as const, label: 'Field Expenses Claims', desc: 'Staff reimbursement claims, travel distance, receipt audit, and approvals' },
+                { key: 'reports' as const, label: 'Reports & DSR Analytics', desc: 'Daily Status Reports, staff scorecards, and conversion funnel' },
+                { key: 'settings' as const, label: 'Workspace Settings', desc: 'Company profile, team hierarchy, GPS tracking toggles, and templates' },
+              ].map((m) => {
+                const isVisible = moduleVisibility ? moduleVisibility[m.key] : true;
+                return (
+                  <div
+                    key={m.key}
+                    onClick={() => onToggleModule && onToggleModule(m.key)}
+                    className="p-3.5 rounded-xl border border-gray-200 bg-gray-50/50 hover:bg-white hover:border-[#3949ab]/40 transition-all flex items-center justify-between cursor-pointer"
+                  >
+                    <div className="min-w-0 pr-3">
+                      <div className="flex items-center space-x-2">
+                        <span className="font-bold text-gray-900">{m.label}</span>
+                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${
+                          isVisible ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-gray-200 text-gray-600'
+                        }`}>
+                          {isVisible ? 'Active' : 'Hidden'}
+                        </span>
+                      </div>
+                      <p className="text-gray-500 text-[11px] mt-0.5">{m.desc}</p>
+                    </div>
+                    <div className="shrink-0">
+                      {isVisible ? (
+                        <ToggleRight className="w-6 h-6 text-[#3949ab]" />
+                      ) : (
+                        <ToggleLeft className="w-6 h-6 text-gray-300" />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 2. Dashboard Cards */}
+          <div className="space-y-3 pt-3 border-t border-gray-100">
+            <h4 className="font-bold text-xs text-gray-800 uppercase tracking-wider flex items-center gap-2">
+              <Layers className="w-4 h-4 text-[#3949ab]" />
+              <span>Dashboard Cards & Widgets</span>
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {[
+                { key: 'quickStats' as const, label: 'Metric KPI Counters' },
+                { key: 'leadsChart' as const, label: 'Leads Pipeline Funnel' },
+                { key: 'attendanceChart' as const, label: 'Attendance & Punch Status' },
+                { key: 'visitsChart' as const, label: 'Field Client Visits' },
+                { key: 'tasksChart' as const, label: 'Field Tasks Breakdown' },
+                { key: 'callsSummary' as const, label: 'Calls Summary Log' },
+                { key: 'visitsList' as const, label: 'Recent Leads Feed' },
+                { key: 'ordersList' as const, label: 'Recent Invoices & Orders' },
+                { key: 'customerReminders' as const, label: 'Customer Reminders' },
+              ].map((c) => {
+                const isVisible = dashboardCards ? dashboardCards[c.key] : true;
+                return (
+                  <div
+                    key={c.key}
+                    onClick={() => onToggleCard && onToggleCard(c.key)}
+                    className="p-3 rounded-lg border border-gray-200 bg-gray-50/50 hover:bg-white hover:border-[#3949ab]/40 transition-all flex items-center justify-between cursor-pointer"
+                  >
+                    <span className={`font-semibold ${isVisible ? 'text-gray-900' : 'text-gray-400'}`}>
+                      {c.label}
+                    </span>
+                    <div className="shrink-0">
+                      {isVisible ? (
+                        <ToggleRight className="w-5 h-5 text-[#3949ab]" />
+                      ) : (
+                        <ToggleLeft className="w-5 h-5 text-gray-300" />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
