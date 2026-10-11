@@ -44,6 +44,12 @@ export const Navbar: React.FC<NavbarProps> = ({
         return 'Customer Directory';
       case 'sales':
         return 'Sales & Invoices Management';
+      case 'expenses':
+        return 'Field Expenses Claims';
+      case 'reports':
+        return 'Reports & DSR Analytics';
+      case 'settings':
+        return 'Workspace Settings & Team Access';
       default:
         return 'MyTeams Administration';
     }

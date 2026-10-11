@@ -5,21 +5,51 @@ import { Sidebar } from './components/common/Sidebar';
 import { Navbar } from './components/common/Navbar';
 import { ToastContainer, type ToastMessage } from './components/common/Toast';
 import { DashboardView } from './components/dashboard/DashboardView';
+
+// Leads Components
 import { LeadsList } from './components/leads/LeadsList';
 import { LeadFormModal } from './components/leads/LeadFormModal';
 import { LeadDetailModal } from './components/leads/LeadDetailModal';
+
+// Customers Components
 import { CustomersList } from './components/customers/CustomersList';
 import { CustomerFormModal } from './components/customers/CustomerFormModal';
 import { CustomerDetailModal } from './components/customers/CustomerDetailModal';
+
+// Sales Components
 import { SalesList } from './components/sales/SalesList';
 import { OrderFormModal } from './components/sales/OrderFormModal';
 import { OrderDetailModal } from './components/sales/OrderDetailModal';
+import { PaymentModal } from './components/sales/PaymentModal';
+import { InventoryModal } from './components/sales/InventoryModal';
 
+// Expenses Components
+import { ExpensesList } from './components/expenses/ExpensesList';
+import { ExpenseFormModal } from './components/expenses/ExpenseFormModal';
+import { ExpenseApproveModal } from './components/expenses/ExpenseApproveModal';
+
+// Reports & Settings Components
+import { ReportsView } from './components/reports/ReportsView';
+import { SettingsView } from './components/settings/SettingsView';
+
+// Services
 import { leadsService } from './services/leadsService';
 import { customersService } from './services/customersService';
 import { salesService } from './services/salesService';
+import { expensesService } from './services/expensesService';
+import { inventoryService } from './services/inventoryService';
+import { paymentsService } from './services/paymentsService';
+import { usersService } from './services/usersService';
 
-import type { Lead, Customer, SalesOrder } from './types/crm';
+import type {
+  Lead,
+  Customer,
+  SalesOrder,
+  Expense,
+  InventoryItem,
+  PaymentRecord,
+  TeamUser,
+} from './types/crm';
 
 export function App() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -33,6 +63,11 @@ export function App() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [orders, setOrders] = useState<SalesOrder[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [payments, setPayments] = useState<PaymentRecord[]>([]);
+  const [users, setUsers] = useState<TeamUser[]>([]);
+
   const [isLoadingData, setIsLoadingData] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
@@ -54,6 +89,12 @@ export function App() {
   const [defaultOrderType, setDefaultOrderType] = useState<SalesOrder['type']>('invoice');
   const [editingOrder, setEditingOrder] = useState<SalesOrder | null>(null);
   const [detailOrder, setDetailOrder] = useState<SalesOrder | null>(null);
+  const [isRecordPaymentOpen, setIsRecordPaymentOpen] = useState(false);
+  const [isAddInventoryOpen, setIsAddInventoryOpen] = useState(false);
+
+  // Modals: Expenses
+  const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+  const [reviewExpense, setReviewExpense] = useState<Expense | null>(null);
 
   const addToast = (type: 'success' | 'error' | 'info', message: string) => {
     const id = Date.now().toString();
@@ -71,17 +112,34 @@ export function App() {
   const loadAllData = useCallback(async () => {
     try {
       setIsRefreshing(true);
-      const [leadsData, customersData, ordersData] = await Promise.all([
+      const [
+        leadsData,
+        customersData,
+        ordersData,
+        expensesData,
+        inventoryData,
+        paymentsData,
+        usersData,
+      ] = await Promise.all([
         leadsService.fetchLeads(),
         customersService.fetchCustomers(),
         salesService.fetchOrders(),
+        expensesService.fetchExpenses(),
+        inventoryService.fetchInventory(),
+        paymentsService.fetchPayments(),
+        usersService.fetchUsers(),
       ]);
+
       setLeads(leadsData);
       setCustomers(customersData);
       setOrders(ordersData);
+      setExpenses(expensesData);
+      setInventory(inventoryData);
+      setPayments(paymentsData);
+      setUsers(usersData);
     } catch (err: unknown) {
       console.error('Failed to load CRM data:', err);
-      addToast('error', 'Failed to synchronize latest data from Supabase.');
+      addToast('error', 'Failed to synchronize latest data.');
     } finally {
       setIsLoadingData(false);
       setIsRefreshing(false);
@@ -99,6 +157,9 @@ export function App() {
     new Set([
       'Kishan Maru',
       'Mehul Ajagya',
+      'Sachin Chauhan',
+      'Isha Vora',
+      ...users.map((u) => `${u.first_name} ${u.last_name}`).filter(Boolean),
       ...leads.map((l) => l.staff_name).filter(Boolean),
       ...customers.map((c) => c.staff_name).filter(Boolean),
       ...orders.map((o) => o.staff_name).filter(Boolean),
@@ -120,6 +181,11 @@ export function App() {
     selectedStaff === 'All'
       ? orders
       : orders.filter((o) => o.staff_name === selectedStaff);
+
+  const displayedExpenses =
+    selectedStaff === 'All'
+      ? expenses
+      : expenses.filter((e) => e.staff_name === selectedStaff);
 
   // ==========================================
   // LEADS CRUD HANDLERS
@@ -246,6 +312,105 @@ export function App() {
     }
   };
 
+  // Payments Handlers
+  const handleRecordPayment = async (data: Partial<PaymentRecord>) => {
+    const created = await paymentsService.recordPayment(data);
+    setPayments((prev) => [created, ...prev]);
+    addToast('success', `Payment receipt ${created.payment_number} recorded.`);
+  };
+
+  const handleDeletePayment = async (id: string) => {
+    await paymentsService.deletePayment(id);
+    setPayments((prev) => prev.filter((p) => p.id !== id));
+    addToast('info', 'Payment record deleted.');
+  };
+
+  // Inventory Handlers
+  const handleAddProduct = async (data: Partial<InventoryItem>) => {
+    const created = await inventoryService.addProduct(data);
+    setInventory((prev) => [created, ...prev]);
+    addToast('success', `Product "${created.name}" added to catalog.`);
+  };
+
+  const handleAdjustStock = async (id: string, delta: number) => {
+    await inventoryService.updateStock(id, delta);
+    setInventory((prev) =>
+      prev.map((i) => (i.id === id ? { ...i, quantity: i.quantity + delta } : i))
+    );
+    addToast('info', `Stock updated by ${delta > 0 ? `+${delta}` : delta} units.`);
+  };
+
+  const handleDeleteInventory = async (id: string) => {
+    await inventoryService.deleteProduct(id);
+    setInventory((prev) => prev.filter((i) => i.id !== id));
+    addToast('info', 'Product removed from catalog.');
+  };
+
+  // ==========================================
+  // EXPENSES CRUD HANDLERS
+  // ==========================================
+  const handleSaveExpense = async (data: Partial<Expense>) => {
+    const created = await expensesService.createExpense(data);
+    setExpenses((prev) => [created, ...prev]);
+    addToast('success', `Expense claim #${created.expense_number} submitted.`);
+  };
+
+  const handleDecideExpense = async (
+    id: string,
+    status: 'Approved' | 'Rejected',
+    approvedAmount: number,
+    comments?: string
+  ) => {
+    await expensesService.updateExpenseStatus(id, status, approvedAmount, comments);
+    setExpenses((prev) =>
+      prev.map((e) =>
+        e.id === id
+          ? {
+              ...e,
+              status,
+              approved_amount: approvedAmount,
+              decision_comments: comments,
+            }
+          : e
+      )
+    );
+    addToast(
+      status === 'Approved' ? 'success' : 'info',
+      `Expense claim #${id} marked as ${status}.`
+    );
+  };
+
+  const handleDeleteExpense = async (id: string) => {
+    await expensesService.deleteExpense(id);
+    setExpenses((prev) => prev.filter((e) => e.id !== id));
+    addToast('info', 'Expense claim deleted.');
+  };
+
+  // ==========================================
+  // USERS & SETTINGS HANDLERS
+  // ==========================================
+  const handleAddUser = async (data: Partial<TeamUser>) => {
+    const created = await usersService.createUser(data);
+    setUsers((prev) => [...prev, created]);
+    addToast('success', `Team member ${created.first_name} added.`);
+  };
+
+  const handleToggleTracking = async (id: string) => {
+    await usersService.toggleTracking(id);
+    setUsers((prev) =>
+      prev.map((u) => (u.id === id ? { ...u, location_tracking: !u.location_tracking } : u))
+    );
+    addToast('info', 'GPS Tracking status toggled.');
+  };
+
+  const handleToggleActive = async (id: string) => {
+    await usersService.toggleActive(id);
+    setUsers((prev) =>
+      prev.map((u) => (u.id === id ? { ...u, is_active: !u.is_active } : u))
+    );
+    addToast('info', 'User active status updated.');
+  };
+
   // If checking authentication
   if (authLoading) {
     return (
@@ -265,7 +430,7 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-[#f4f6f9] flex">
-      {/* Sidebar */}
+      {/* Sidebar with all 7 UpTeams main sections */}
       <Sidebar
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}
@@ -275,6 +440,7 @@ export function App() {
           leads: leads.length,
           customers: customers.length,
           sales: orders.length,
+          expenses: expenses.length,
         }}
       />
 
@@ -360,6 +526,8 @@ export function App() {
               {currentTab === 'sales' && (
                 <SalesList
                   orders={displayedOrders}
+                  payments={payments}
+                  inventory={inventory}
                   onOpenAdd={(type) => {
                     setEditingOrder(null);
                     setDefaultOrderType(type);
@@ -370,7 +538,40 @@ export function App() {
                     setIsAddOrderOpen(true);
                   }}
                   onOpenDetail={(order) => setDetailOrder(order)}
-                  onDelete={handleDeleteOrder}
+                  onDeleteOrder={handleDeleteOrder}
+                  onOpenRecordPayment={() => setIsRecordPaymentOpen(true)}
+                  onDeletePayment={handleDeletePayment}
+                  onOpenAddInventory={() => setIsAddInventoryOpen(true)}
+                  onAdjustStock={handleAdjustStock}
+                  onDeleteInventory={handleDeleteInventory}
+                />
+              )}
+
+              {currentTab === 'expenses' && (
+                <ExpensesList
+                  expenses={displayedExpenses}
+                  onOpenAdd={() => setIsAddExpenseOpen(true)}
+                  onReview={(exp) => setReviewExpense(exp)}
+                  onDelete={handleDeleteExpense}
+                />
+              )}
+
+              {currentTab === 'reports' && (
+                <ReportsView
+                  leads={displayedLeads}
+                  customers={displayedCustomers}
+                  orders={displayedOrders}
+                  expenses={displayedExpenses}
+                  staffList={staffList}
+                />
+              )}
+
+              {currentTab === 'settings' && (
+                <SettingsView
+                  users={users}
+                  onAddUser={handleAddUser}
+                  onToggleTracking={handleToggleTracking}
+                  onToggleActive={handleToggleActive}
                 />
               )}
             </>
@@ -451,6 +652,35 @@ export function App() {
         }}
         onDelete={handleDeleteOrder}
         onUpdateStatus={handleOrderStatusChange}
+      />
+
+      {/* Record Payment & Inventory Modals */}
+      <PaymentModal
+        isOpen={isRecordPaymentOpen}
+        onClose={() => setIsRecordPaymentOpen(false)}
+        onSubmit={handleRecordPayment}
+        staffList={staffList}
+      />
+
+      <InventoryModal
+        isOpen={isAddInventoryOpen}
+        onClose={() => setIsAddInventoryOpen(false)}
+        onSubmit={handleAddProduct}
+      />
+
+      {/* Expenses Modals */}
+      <ExpenseFormModal
+        isOpen={isAddExpenseOpen}
+        onClose={() => setIsAddExpenseOpen(false)}
+        onSubmit={handleSaveExpense}
+        staffList={staffList}
+      />
+
+      <ExpenseApproveModal
+        expense={reviewExpense}
+        isOpen={!!reviewExpense}
+        onClose={() => setReviewExpense(null)}
+        onDecide={handleDecideExpense}
       />
 
       {/* Toast Alerts */}

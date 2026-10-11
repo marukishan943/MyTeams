@@ -4,6 +4,9 @@ import {
   Target,
   Users,
   FileText,
+  Receipt,
+  BarChart3,
+  Settings,
   LogOut,
   Building2,
   ChevronRight,
@@ -19,6 +22,7 @@ interface SidebarProps {
     leads: number;
     customers: number;
     sales: number;
+    expenses: number;
   };
 }
 
@@ -55,6 +59,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Sales & Invoices',
       icon: FileText,
       badge: counts.sales,
+    },
+    {
+      id: 'expenses',
+      label: 'Expenses',
+      icon: Receipt,
+      badge: counts.expenses,
+    },
+    {
+      id: 'reports',
+      label: 'Reports & DSR',
+      icon: BarChart3,
+      badge: null,
+    },
+    {
+      id: 'settings',
+      label: 'Settings',
+      icon: Settings,
+      badge: null,
     },
   ];
 
@@ -125,7 +147,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   setCurrentTab(item.id);
                   onCloseMobile();
                 }}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
                   isActive
                     ? 'bg-[#3949ab] text-white shadow-sm'
                     : 'text-gray-300 hover:bg-[#263346] hover:text-white'
@@ -155,7 +177,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="p-3 border-t border-gray-800/80 bg-[#18202c]">
           <button
             onClick={logout}
-            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-rose-500/10 hover:text-rose-400 transition-colors"
+            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-rose-500/10 hover:text-rose-400 transition-colors cursor-pointer"
           >
             <div className="flex items-center space-x-3">
               <LogOut className="w-4 h-4 text-gray-400" />
