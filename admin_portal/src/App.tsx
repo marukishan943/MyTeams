@@ -659,7 +659,7 @@ export function App() {
 
       {/* Main Content Area */}
       <div className="flex-1 lg:ml-64 flex flex-col min-h-screen">
-        {currentTab !== 'leads' && (
+        {currentTab !== 'leads' && currentTab !== 'customers' && (
           <Navbar
             onToggleSidebar={() => setIsSidebarOpenMobile((prev) => !prev)}
             currentTab={currentTab}
@@ -674,7 +674,7 @@ export function App() {
           />
         )}
 
-        <main className={currentTab === 'leads' ? 'flex-1 w-full p-0' : 'flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto'}>
+        <main className={currentTab === 'leads' || currentTab === 'customers' ? 'flex-1 w-full p-0' : 'flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto'}>
           {isLoadingData ? (
             <div className="flex items-center justify-center py-24">
               <div className="text-center space-y-3">
@@ -745,6 +745,8 @@ export function App() {
                   }}
                   onOpenDetail={(customer) => setDetailCustomer(customer)}
                   onDelete={handleDeleteCustomer}
+                  onToggleStatus={handleCustomerToggleStatus}
+                  staffList={staffList}
                 />
               )}
 
