@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, Mail, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Lock, Mail, ArrowRight, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export const LoginView: React.FC = () => {
@@ -11,7 +11,7 @@ export const LoginView: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
+    if (!email.trim() || !password.trim()) {
       setErrorMessage('Please enter both email and password.');
       return;
     }
@@ -19,20 +19,19 @@ export const LoginView: React.FC = () => {
     setIsLoading(true);
     setErrorMessage('');
 
-    const res = await login(email, password);
-    if (!res.success) {
-      setErrorMessage(res.error || 'Authentication failed. Please check credentials.');
+    try {
+      const res = await login(email, password);
+      if (!res.success) {
+        setErrorMessage(
+          res.error || 'Invalid email or password. Please enter correct credentials.'
+        );
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Login failed.';
+      setErrorMessage(msg);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
-  };
-
-  const handleQuickDemoLogin = async () => {
-    setEmail('admin@myteams.com');
-    setPassword('admin123');
-    setIsLoading(true);
-    setErrorMessage('');
-    await login('admin@myteams.com', 'admin123');
-    setIsLoading(false);
   };
 
   return (
@@ -60,9 +59,9 @@ export const LoginView: React.FC = () => {
           </div>
 
           {errorMessage && (
-            <div className="mb-5 p-3.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center space-x-2">
+            <div className="mb-5 p-3.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center space-x-2 animate-in fade-in duration-200">
               <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
-              <span>{errorMessage}</span>
+              <span className="font-semibold">{errorMessage}</span>
             </div>
           )}
 
@@ -118,26 +117,6 @@ export const LoginView: React.FC = () => {
               )}
             </button>
           </form>
-
-          {/* Quick Demo Access Button */}
-          <div className="mt-6 pt-5 border-t border-gray-100">
-            <div className="bg-indigo-50/70 border border-indigo-100 rounded-xl p-3.5 text-center">
-              <div className="flex items-center justify-center space-x-1.5 text-indigo-900 font-semibold text-xs mb-1">
-                <ShieldCheck className="w-4 h-4 text-[#3949ab]" />
-                <span>Instant Admin Test Access</span>
-              </div>
-              <p className="text-[11px] text-gray-600 mb-2.5">
-                Click below to auto-authenticate with pre-configured Admin credentials:
-              </p>
-              <button
-                type="button"
-                onClick={handleQuickDemoLogin}
-                className="w-full py-1.5 px-3 bg-white border border-[#3949ab] text-[#3949ab] hover:bg-[#3949ab] hover:text-white rounded-lg text-xs font-semibold shadow-2xs transition-all cursor-pointer"
-              >
-                1-Click Admin Login (admin@myteams.com)
-              </button>
-            </div>
-          </div>
         </div>
 
         <p className="mt-6 text-center text-xs text-gray-400">

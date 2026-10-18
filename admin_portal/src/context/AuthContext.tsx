@@ -44,12 +44,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (email: string, pass: string) => {
-    setIsLoading(true);
     const cleanEmail = email.trim().toLowerCase();
     const cleanPass = pass.trim();
 
     if (!cleanEmail || !cleanPass) {
-      setIsLoading(false);
       return { success: false, error: 'Please enter both email and password.' };
     }
 
@@ -70,7 +68,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         setUser(authUser);
         localStorage.setItem('myteams_admin_user', JSON.stringify(authUser));
-        setIsLoading(false);
         return { success: true };
       }
 
@@ -89,18 +86,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         setUser(adminUser);
         localStorage.setItem('myteams_admin_user', JSON.stringify(adminUser));
-        setIsLoading(false);
         return { success: true };
       }
 
       // If credentials do not match, REJECT with error
-      setIsLoading(false);
       return {
         success: false,
         error: 'Invalid email or password. Please enter correct credentials.',
       };
     } catch (err: unknown) {
-      setIsLoading(false);
       const message = err instanceof Error ? err.message : 'Login failed';
       return { success: false, error: message };
     }
