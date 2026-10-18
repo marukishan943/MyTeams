@@ -153,4 +153,52 @@ export const usersService = {
       console.warn(e);
     }
   },
+
+  async updateUser(id: string, updates: Partial<TeamUser>): Promise<TeamUser> {
+    const current = await this.fetchUsers();
+    let updatedUser: TeamUser | null = null;
+    const updated = current.map((u) => {
+      if (u.id === id) {
+        updatedUser = { ...u, ...updates };
+        return updatedUser;
+      }
+      return u;
+    });
+
+    localStorage.setItem('myteams_users', JSON.stringify(updated));
+
+    try {
+      if (updatedUser) {
+        await supabase
+          .from('team_users')
+          .update({
+            first_name: (updatedUser as TeamUser).first_name,
+            last_name: (updatedUser as TeamUser).last_name,
+            mobile: (updatedUser as TeamUser).mobile,
+            email: (updatedUser as TeamUser).email,
+            role: (updatedUser as TeamUser).role,
+            reporting_head: (updatedUser as TeamUser).reporting_head,
+            location_tracking: (updatedUser as TeamUser).location_tracking,
+            is_active: (updatedUser as TeamUser).is_active,
+          })
+          .eq('id', id);
+      }
+    } catch (e) {
+      console.warn('Supabase updateUser error:', e);
+    }
+
+    return updatedUser || current.find((u) => u.id === id)!;
+  },
+
+  async deleteUser(id: string): Promise<void> {
+    const current = await this.fetchUsers();
+    const updated = current.filter((u) => u.id !== id);
+    localStorage.setItem('myteams_users', JSON.stringify(updated));
+
+    try {
+      await supabase.from('team_users').delete().eq('id', id);
+    } catch (e) {
+      console.warn('Supabase deleteUser error:', e);
+    }
+  },
 };

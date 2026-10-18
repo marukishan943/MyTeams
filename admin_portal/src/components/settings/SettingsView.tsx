@@ -14,12 +14,17 @@ import {
   Layers,
   RotateCcw,
   Loader2,
+  Pencil,
+  Trash2,
+  X,
 } from 'lucide-react';
 import type { TeamUser, CompanyConfig, ModuleVisibilityConfig, DashboardCardsConfig } from '../../types/crm';
 
 interface SettingsViewProps {
   users: TeamUser[];
   onAddUser: (user: Partial<TeamUser>) => Promise<void>;
+  onUpdateUser?: (id: string, user: Partial<TeamUser>) => Promise<void>;
+  onDeleteUser?: (id: string) => Promise<void>;
   onToggleTracking: (id: string) => void;
   onToggleActive: (id: string) => void;
   moduleVisibility?: ModuleVisibilityConfig;
@@ -33,6 +38,8 @@ interface SettingsViewProps {
 export const SettingsView: React.FC<SettingsViewProps> = ({
   users,
   onAddUser,
+  onUpdateUser,
+  onDeleteUser,
   onToggleTracking,
   onToggleActive,
   moduleVisibility,
@@ -69,14 +76,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   const [savedSuccess, setSavedSuccess] = useState(false);
 
-  // New User Modal state
+  // User Modal state (Add & Edit)
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<TeamUser | null>(null);
+  const [isSubmittingUser, setIsSubmittingUser] = useState(false);
   const [newFirstName, setNewFirstName] = useState('');
   const [newLastName, setNewLastName] = useState('');
   const [newMobile, setNewMobile] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newRole, setNewRole] = useState<'Admin' | 'Manager' | 'Staff'>('Staff');
   const [newReportingHead, setNewReportingHead] = useState('ADMIN ADMIN');
+  const [newLocationTracking, setNewLocationTracking] = useState(true);
+  const [newIsActive, setNewIsActive] = useState(true);
 
   const handleSaveCompany = (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,27 +96,91 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     setTimeout(() => setSavedSuccess(false), 3000);
   };
 
-  const handleCreateUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newFirstName.trim() || !newMobile.trim()) return;
-
-    await onAddUser({
-      first_name: newFirstName,
-      last_name: newLastName,
-      mobile: newMobile,
-      email: newEmail,
-      role: newRole,
-      reporting_head: newReportingHead,
-      location_tracking: true,
-      is_active: true,
-    });
-
-    setIsUserModalOpen(false);
+  const handleOpenAddUser = () => {
+    setEditingUser(null);
     setNewFirstName('');
     setNewLastName('');
     setNewMobile('');
     setNewEmail('');
+    setNewRole('Staff');
+    setNewReportingHead('ADMIN ADMIN');
+    setNewLocationTracking(true);
+    setNewIsActive(true);
+    setIsUserModalOpen(true);
   };
+
+  const handleOpenEditUser = (u: TeamUser) => {
+    setEditingUser(u);
+    setNewFirstName(u.first_name);
+    setNewLastName(u.last_name);
+    setNewMobile(u.mobile);
+    setNewEmail(u.email);
+    setNewRole(u.role);
+    setNewReportingHead(u.reporting_head || 'ADMIN ADMIN');
+    setNewLocationTracking(u.location_tracking ?? true);
+    setNewIsActive(u.is_active ?? true);
+    setIsUserModalOpen(true);
+  };
+
+  const handleDeleteUser = async (u: TeamUser) => {
+    if (!onDeleteUser) return;
+    const confirmDelete = window.confirm(
+      `Are you sure you want to remove team member ${u.first_name} ${u.last_name}?`
+    );
+    if (confirmDelete) {
+      await onDeleteUser(u.id);
+    }
+  };
+
+  const handleSaveUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newFirstName.trim() || !newMobile.trim()) return;
+
+    setIsSubmittingUser(true);
+    try {
+      if (editingUser) {
+        if (onUpdateUser) {
+          await onUpdateUser(editingUser.id, {
+            first_name: newFirstName.trim(),
+            last_name: newLastName.trim(),
+            mobile: newMobile.trim(),
+            email: newEmail.trim(),
+            role: newRole,
+            reporting_head: newReportingHead,
+            location_tracking: newLocationTracking,
+            is_active: newIsActive,
+          });
+        }
+      } else {
+        await onAddUser({
+          first_name: newFirstName.trim(),
+          last_name: newLastName.trim(),
+          mobile: newMobile.trim(),
+          email: newEmail.trim(),
+          role: newRole,
+          reporting_head: newReportingHead,
+          location_tracking: newLocationTracking,
+          is_active: newIsActive,
+        });
+      }
+      setIsUserModalOpen(false);
+      setEditingUser(null);
+    } finally {
+      setIsSubmittingUser(false);
+    }
+  };
+
+  const reportingHeadOptions = Array.from(
+    new Set([
+      'ADMIN ADMIN',
+      'JITESHBHAI VASANIYA',
+      '-',
+      ...users
+        .filter((u) => !editingUser || u.id !== editingUser.id)
+        .map((u) => `${u.first_name} ${u.last_name}`.trim())
+        .filter(Boolean),
+    ])
+  );
 
   return (
     <div className="space-y-4">
@@ -265,7 +340,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <p className="text-gray-500 text-[11px]">Configured team members, reporting structure, and GPS location tracking</p>
             </div>
             <button
-              onClick={() => setIsUserModalOpen(true)}
+              onClick={handleOpenAddUser}
               className="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-[#3949ab] hover:bg-[#303f9f] text-white rounded-lg text-xs font-semibold shadow-xs cursor-pointer"
             >
               <Plus className="w-4 h-4" />
@@ -285,6 +360,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <th className="px-4 py-3">Reporting Head</th>
                   <th className="px-4 py-3 text-center">GPS Tracking</th>
                   <th className="px-4 py-3 text-center">Status</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -296,7 +372,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         <div className="w-7 h-7 rounded-full bg-[#3949ab] text-white font-bold flex items-center justify-center text-[10px]">
                           {u.first_name[0]}{u.last_name[0]}
                         </div>
-                        <span className="font-bold text-gray-900">{u.first_name} {u.last_name}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditUser(u)}
+                          className="font-bold text-gray-900 hover:text-[#3949ab] hover:underline text-left cursor-pointer"
+                          title="Click to edit member"
+                        >
+                          {u.first_name} {u.last_name}
+                        </button>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-gray-800">{u.mobile}</td>
@@ -342,6 +425,28 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       >
                         {u.is_active ? 'Active' : 'Inactive'}
                       </button>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end space-x-1">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditUser(u)}
+                          className="p-1.5 text-gray-500 hover:text-[#3949ab] hover:bg-[#3949ab]/10 rounded-lg transition-colors cursor-pointer"
+                          title="Edit User"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        {onDeleteUser && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteUser(u)}
+                            className="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                            title="Delete User"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -634,12 +739,34 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       )}
 
-      {/* ADD USER MODAL */}
+      {/* ADD / EDIT USER MODAL */}
       {isUserModalOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 border border-gray-100 space-y-4 text-xs animate-in fade-in zoom-in-95">
-            <h3 className="text-base font-bold text-gray-900">Add Field Staff / User</h3>
-            <form onSubmit={handleCreateUser} className="space-y-3">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+              <div>
+                <h3 className="text-base font-bold text-gray-900">
+                  {editingUser ? 'Edit Field Staff / User' : 'Add Field Staff / User'}
+                </h3>
+                <p className="text-gray-500 text-[11px] mt-0.5">
+                  {editingUser
+                    ? `Updating member #${editingUser.user_code} (${editingUser.first_name} ${editingUser.last_name})`
+                    : 'Add a new member to the team and assign reporting hierarchy'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsUserModalOpen(false);
+                  setEditingUser(null);
+                }}
+                className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveUser} className="space-y-3">
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block font-semibold text-gray-700 mb-1">First Name *</label>
@@ -648,7 +775,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     required
                     value={newFirstName}
                     onChange={(e) => setNewFirstName(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg p-2"
+                    className="w-full border border-gray-300 rounded-lg p-2 focus:ring-[#3949ab] focus:border-[#3949ab]"
                   />
                 </div>
                 <div>
@@ -657,10 +784,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     type="text"
                     value={newLastName}
                     onChange={(e) => setNewLastName(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg p-2"
+                    className="w-full border border-gray-300 rounded-lg p-2 focus:ring-[#3949ab] focus:border-[#3949ab]"
                   />
                 </div>
               </div>
+
               <div>
                 <label className="block font-semibold text-gray-700 mb-1">Mobile Number *</label>
                 <input
@@ -668,25 +796,27 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   required
                   value={newMobile}
                   onChange={(e) => setNewMobile(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg p-2"
+                  className="w-full border border-gray-300 rounded-lg p-2 focus:ring-[#3949ab] focus:border-[#3949ab]"
                 />
               </div>
+
               <div>
                 <label className="block font-semibold text-gray-700 mb-1">Email Address</label>
                 <input
                   type="email"
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg p-2"
+                  className="w-full border border-gray-300 rounded-lg p-2 focus:ring-[#3949ab] focus:border-[#3949ab]"
                 />
               </div>
+
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block font-semibold text-gray-700 mb-1">Role</label>
                   <select
                     value={newRole}
                     onChange={(e) => setNewRole(e.target.value as 'Admin' | 'Manager' | 'Staff')}
-                    className="w-full border border-gray-300 rounded-lg p-2"
+                    className="w-full border border-gray-300 rounded-lg p-2 bg-white"
                   >
                     <option value="Staff">Staff</option>
                     <option value="Manager">Manager</option>
@@ -698,26 +828,60 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <select
                     value={newReportingHead}
                     onChange={(e) => setNewReportingHead(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg p-2"
+                    className="w-full border border-gray-300 rounded-lg p-2 bg-white"
                   >
-                    <option value="ADMIN ADMIN">ADMIN ADMIN</option>
-                    <option value="JITESHBHAI VASANIYA">JITESHBHAI VASANIYA</option>
+                    {reportingHeadOptions.map((head) => (
+                      <option key={head} value={head}>
+                        {head}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
-              <div className="pt-3 flex justify-end space-x-2">
+
+              <div className="pt-2 border-t border-gray-100 space-y-2">
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newLocationTracking}
+                    onChange={(e) => setNewLocationTracking(e.target.checked)}
+                    className="rounded-sm text-[#3949ab] focus:ring-[#3949ab]"
+                  />
+                  <span className="font-semibold text-gray-700">
+                    Enable Real-time GPS Location Tracking
+                  </span>
+                </label>
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newIsActive}
+                    onChange={(e) => setNewIsActive(e.target.checked)}
+                    className="rounded-sm text-[#3949ab] focus:ring-[#3949ab]"
+                  />
+                  <span className="font-semibold text-gray-700">
+                    Active Account Status
+                  </span>
+                </label>
+              </div>
+
+              <div className="pt-3 border-t border-gray-100 flex justify-end space-x-2">
                 <button
                   type="button"
-                  onClick={() => setIsUserModalOpen(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg font-semibold text-gray-700"
+                  onClick={() => {
+                    setIsUserModalOpen(false);
+                    setEditingUser(null);
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-[#3949ab] text-white rounded-lg font-semibold"
+                  disabled={isSubmittingUser}
+                  className="px-5 py-2 bg-[#3949ab] hover:bg-[#303f9f] text-white rounded-lg font-semibold flex items-center space-x-1.5 cursor-pointer disabled:opacity-50"
                 >
-                  Create Member
+                  {isSubmittingUser && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>{editingUser ? 'Save Changes' : 'Create Member'}</span>
                 </button>
               </div>
             </form>

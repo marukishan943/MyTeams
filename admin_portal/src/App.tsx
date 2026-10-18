@@ -562,6 +562,19 @@ export function App() {
     addToast('success', `Team member ${created.first_name} added.`);
   };
 
+  const handleUpdateUser = async (id: string, data: Partial<TeamUser>) => {
+    const updated = await usersService.updateUser(id, data);
+    setUsers((prev) => prev.map((u) => (u.id === id ? updated : u)));
+    addToast('success', `Team member ${updated.first_name} ${updated.last_name} updated successfully.`);
+  };
+
+  const handleDeleteUser = async (id: string) => {
+    const target = users.find((u) => u.id === id);
+    await usersService.deleteUser(id);
+    setUsers((prev) => prev.filter((u) => u.id !== id));
+    addToast('info', `Team member ${target ? target.first_name : ''} removed.`);
+  };
+
   const handleToggleTracking = async (id: string) => {
     await usersService.toggleTracking(id);
     setUsers((prev) =>
@@ -748,6 +761,8 @@ export function App() {
                 <SettingsView
                   users={users}
                   onAddUser={handleAddUser}
+                  onUpdateUser={handleUpdateUser}
+                  onDeleteUser={handleDeleteUser}
                   onToggleTracking={handleToggleTracking}
                   onToggleActive={handleToggleActive}
                   moduleVisibility={moduleVisibility}
