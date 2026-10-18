@@ -270,44 +270,44 @@ export const LeadsList: React.FC<LeadsListProps> = ({
     switch (stage) {
       case 'disqualified':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-600 border border-rose-200">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-600 border border-rose-200">
+            <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
             <span>Disqualified</span>
           </span>
         );
       case 'contacted':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-600 border border-amber-200">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-600 border border-amber-200">
+            <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
             <span>Contacted</span>
           </span>
         );
       case 'converted':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
             <span>Converted</span>
           </span>
         );
       case 'proposalSent':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-cyan-50 text-cyan-600 border border-cyan-200">
-            <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 shrink-0" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-cyan-50 text-cyan-600 border border-cyan-200">
+            <span className="w-2 h-2 rounded-full bg-cyan-500 shrink-0" />
             <span>Proposal Sent</span>
           </span>
         );
       case 'sampleSent':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-teal-50 text-teal-600 border border-teal-200">
-            <span className="w-1.5 h-1.5 rounded-full bg-teal-500 shrink-0" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-teal-50 text-teal-600 border border-teal-200">
+            <span className="w-2 h-2 rounded-full bg-teal-500 shrink-0" />
             <span>Sample Sent</span>
           </span>
         );
       case 'newLead':
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-600 border border-blue-200">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-600 border border-blue-200">
+            <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
             <span>New Lead</span>
           </span>
         );
@@ -451,7 +451,7 @@ export const LeadsList: React.FC<LeadsListProps> = ({
       </div>
 
       {/* ── STAGE TABS BAR (Full-width, exact UpTeams styling) ── */}
-      <div className="w-full bg-white px-4 py-2 border-b border-gray-200 flex items-center gap-1.5 overflow-x-auto">
+      <div className="w-full bg-white px-4 py-2.5 border-b border-gray-200 flex items-center gap-2 overflow-x-auto">
         {STAGE_TABS.map((tab) => {
           const isActive = stageFilter === tab.id;
           const count = stageCounts[tab.id] ?? 0;
@@ -462,7 +462,7 @@ export const LeadsList: React.FC<LeadsListProps> = ({
                 setStageFilter(tab.id);
                 setCurrentPage(1);
               }}
-              className={`px-2.5 py-0.5 rounded text-[11px] font-bold whitespace-nowrap transition-all cursor-pointer border ${
+              className={`px-3 py-1 rounded text-xs font-bold whitespace-nowrap transition-all cursor-pointer border ${
                 isActive
                   ? `${tab.bgActive} border-transparent shadow-2xs`
                   : `bg-white ${tab.textInactive} ${tab.borderInactive} hover:opacity-85`
@@ -478,75 +478,75 @@ export const LeadsList: React.FC<LeadsListProps> = ({
       {/* ── LEADS TABLE (Full-width edge-to-edge) ── */}
       <div className="w-full flex-1 overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
-          <thead className="bg-[#f8fafc] border-b border-gray-200 text-gray-500 font-semibold text-[11px]">
+          <thead className="bg-[#f8fafc] border-b border-gray-200 text-gray-600 font-semibold text-xs">
             <tr>
-              <th className="px-3.5 py-3 whitespace-nowrap">
-                <div className="flex items-center gap-1 text-gray-600">
+              <th className="px-3.5 py-3.5 whitespace-nowrap">
+                <div className="flex items-center gap-1.5 text-gray-700">
                   <span>Date</span>
-                  <span className="text-gray-400 text-[10px]">⇅</span>
+                  <span className="text-gray-400 text-xs">⇅</span>
                 </div>
               </th>
-              <th className="px-3.5 py-3 whitespace-nowrap">
-                <div className="flex items-center gap-1 text-gray-600">
+              <th className="px-3.5 py-3.5 whitespace-nowrap">
+                <div className="flex items-center gap-1.5 text-gray-700">
                   <span>ID</span>
-                  <span className="text-gray-400 text-[10px]">⇅</span>
+                  <span className="text-gray-400 text-xs">⇅</span>
                 </div>
               </th>
-              <th className="px-3.5 py-3 whitespace-nowrap">
-                <div className="flex items-center gap-1 text-gray-600">
+              <th className="px-3.5 py-3.5 whitespace-nowrap">
+                <div className="flex items-center gap-1.5 text-gray-700">
                   <span>Name</span>
-                  <span className="text-gray-400 text-[10px]">⇅</span>
+                  <span className="text-gray-400 text-xs">⇅</span>
                 </div>
               </th>
-              <th className="px-3.5 py-3 whitespace-nowrap">
-                <div className="flex items-center gap-1 text-gray-600">
+              <th className="px-3.5 py-3.5 whitespace-nowrap">
+                <div className="flex items-center gap-1.5 text-gray-700">
                   <span>Company</span>
-                  <span className="text-gray-400 text-[10px]">⇅</span>
+                  <span className="text-gray-400 text-xs">⇅</span>
                 </div>
               </th>
-              <th className="px-3.5 py-3 whitespace-nowrap">
-                <div className="flex items-center gap-1 text-gray-600">
+              <th className="px-3.5 py-3.5 whitespace-nowrap">
+                <div className="flex items-center gap-1.5 text-gray-700">
                   <span>Phone</span>
-                  <span className="text-gray-400 text-[10px]">⇅</span>
+                  <span className="text-gray-400 text-xs">⇅</span>
                 </div>
               </th>
-              <th className="px-3.5 py-3 whitespace-nowrap">
-                <div className="flex items-center gap-1 text-gray-600">
+              <th className="px-3.5 py-3.5 whitespace-nowrap">
+                <div className="flex items-center gap-1.5 text-gray-700">
                   <span>Email</span>
-                  <span className="text-gray-400 text-[10px]">⇅</span>
+                  <span className="text-gray-400 text-xs">⇅</span>
                 </div>
               </th>
-              <th className="px-3.5 py-3 whitespace-nowrap">
-                <div className="flex items-center gap-1 text-gray-600">
+              <th className="px-3.5 py-3.5 whitespace-nowrap">
+                <div className="flex items-center gap-1.5 text-gray-700">
                   <span>Title</span>
-                  <span className="text-gray-400 text-[10px]">⇅</span>
+                  <span className="text-gray-400 text-xs">⇅</span>
                 </div>
               </th>
-              <th className="px-3.5 py-3 whitespace-nowrap">
-                <div className="flex items-center gap-1 text-gray-600">
+              <th className="px-3.5 py-3.5 whitespace-nowrap">
+                <div className="flex items-center gap-1.5 text-gray-700">
                   <span>Note</span>
-                  <span className="text-gray-400 text-[10px]">⇅</span>
+                  <span className="text-gray-400 text-xs">⇅</span>
                 </div>
               </th>
-              <th className="px-3.5 py-3 whitespace-nowrap">
-                <div className="flex items-center gap-1 text-gray-600">
+              <th className="px-3.5 py-3.5 whitespace-nowrap">
+                <div className="flex items-center gap-1.5 text-gray-700">
                   <span>City</span>
-                  <span className="text-gray-400 text-[10px]">⇅</span>
+                  <span className="text-gray-400 text-xs">⇅</span>
                 </div>
               </th>
-              <th className="px-3.5 py-3 whitespace-nowrap">
-                <div className="flex items-center gap-1 text-gray-600">
+              <th className="px-3.5 py-3.5 whitespace-nowrap">
+                <div className="flex items-center gap-1.5 text-gray-700">
                   <span>Stage</span>
-                  <span className="text-gray-400 text-[10px]">⇅</span>
+                  <span className="text-gray-400 text-xs">⇅</span>
                 </div>
               </th>
-              <th className="px-3.5 py-3 whitespace-nowrap">
-                <div className="flex items-center gap-1 text-gray-600">
+              <th className="px-3.5 py-3.5 whitespace-nowrap">
+                <div className="flex items-center gap-1.5 text-gray-700">
                   <span>Staff</span>
-                  <span className="text-gray-400 text-[10px]">⇅</span>
+                  <span className="text-gray-400 text-xs">⇅</span>
                 </div>
               </th>
-              <th className="px-3.5 py-3 text-right whitespace-nowrap"></th>
+              <th className="px-3.5 py-3.5 text-right whitespace-nowrap"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 bg-white">
@@ -557,65 +557,65 @@ export const LeadsList: React.FC<LeadsListProps> = ({
                 onClick={() => onOpenDetail(lead)}
               >
                 {/* Date */}
-                <td className="px-3.5 py-3 whitespace-nowrap text-gray-600 font-medium text-[11px] uppercase">
+                <td className="px-3.5 py-3.5 whitespace-nowrap text-gray-700 font-medium text-xs uppercase">
                   {formatDate(lead.created_at)}
                 </td>
 
                 {/* ID */}
-                <td className="px-3.5 py-3 whitespace-nowrap">
-                  <span className="text-[#1a237e] font-bold font-mono text-[12px]">
+                <td className="px-3.5 py-3.5 whitespace-nowrap">
+                  <span className="text-[#1a237e] font-bold font-mono text-sm">
                     {lead.lead_number}
                   </span>
                 </td>
 
                 {/* Name */}
-                <td className="px-3.5 py-3">
-                  <span className="font-semibold text-gray-800 text-[11px] uppercase tracking-tight block max-w-44 truncate">
+                <td className="px-3.5 py-3.5">
+                  <span className="font-semibold text-gray-800 text-xs uppercase tracking-tight block max-w-48 truncate">
                     {lead.name}
                   </span>
                 </td>
 
                 {/* Company */}
-                <td className="px-3.5 py-3">
-                  <span className="text-gray-700 text-[11px] block max-w-44 truncate">
+                <td className="px-3.5 py-3.5">
+                  <span className="text-gray-700 text-xs block max-w-48 truncate">
                     {lead.company || lead.name || '—'}
                   </span>
                 </td>
 
                 {/* Phone */}
-                <td className="px-3.5 py-3 whitespace-nowrap text-gray-700 text-[11px]">
+                <td className="px-3.5 py-3.5 whitespace-nowrap text-gray-700 text-xs font-medium">
                   {lead.phone}
                 </td>
 
                 {/* Email */}
-                <td className="px-3.5 py-3 text-gray-500 text-[11px] max-w-32">
-                  <span className="truncate block max-w-32">
+                <td className="px-3.5 py-3.5 text-gray-500 text-xs max-w-36">
+                  <span className="truncate block max-w-36">
                     {lead.email || ''}
                   </span>
                 </td>
 
                 {/* Title */}
-                <td className="px-3.5 py-3 text-gray-700 text-[11px]">
-                  <span className="truncate block max-w-36 font-normal uppercase">
+                <td className="px-3.5 py-3.5 text-gray-700 text-xs">
+                  <span className="truncate block max-w-40 font-normal uppercase">
                     {lead.title || ''}
                   </span>
                 </td>
 
                 {/* Note */}
-                <td className="px-3.5 py-3 text-gray-600 text-[11px]">
-                  <span className="truncate block max-w-36">
+                <td className="px-3.5 py-3.5 text-gray-600 text-xs">
+                  <span className="truncate block max-w-40">
                     {lead.note || ''}
                   </span>
                 </td>
 
                 {/* City (2 lines: City top, State bottom) */}
-                <td className="px-3.5 py-3 text-[11px]">
+                <td className="px-3.5 py-3.5 text-xs">
                   {lead.city ? (
                     <div>
-                      <div className="font-semibold text-gray-800 uppercase text-[11px]">
+                      <div className="font-semibold text-gray-800 uppercase text-xs">
                         {lead.city}
                       </div>
-                      <div className="text-gray-400 uppercase text-[10px] tracking-wide">
+                      <div className="text-gray-400 uppercase text-[11px] tracking-wide mt-0.5">
                         {lead.state || 'INDIA'}
                       </div>
                     </div>
@@ -625,15 +625,15 @@ export const LeadsList: React.FC<LeadsListProps> = ({
                 </td>
 
                 {/* Stage */}
-                <td className="px-3.5 py-3 whitespace-nowrap">
+                <td className="px-3.5 py-3.5 whitespace-nowrap">
                   {getStagePill(lead.stage)}
                 </td>
 
                 {/* Staff Avatar (Soft Lavender / Blue background, dark blue letters) */}
-                <td className="px-3.5 py-3 whitespace-nowrap">
+                <td className="px-3.5 py-3.5 whitespace-nowrap">
                   <div
                     title={lead.staff_name || 'Unassigned'}
-                    className="w-7 h-7 rounded-full bg-[#e8eaf6] text-[#3949ab] text-[11px] font-bold flex items-center justify-center uppercase shrink-0"
+                    className="w-8 h-8 rounded-full bg-[#e8eaf6] text-[#3949ab] text-xs font-bold flex items-center justify-center uppercase shrink-0"
                   >
                     {getInitials(lead.staff_name)}
                   </div>
@@ -641,7 +641,7 @@ export const LeadsList: React.FC<LeadsListProps> = ({
 
                 {/* Actions */}
                 <td
-                  className="px-3.5 py-3 whitespace-nowrap text-right"
+                  className="px-3.5 py-3.5 whitespace-nowrap text-right"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="flex items-center justify-end gap-1.5">
@@ -654,7 +654,7 @@ export const LeadsList: React.FC<LeadsListProps> = ({
                       title="View Details"
                       className="p-1 rounded hover:bg-blue-50 text-[#1a237e] transition-colors cursor-pointer"
                     >
-                      <Send className="w-3.5 h-3.5 text-[#1a237e]" />
+                      <Send className="w-4 h-4 text-[#1a237e]" />
                     </button>
                     {/* Three dots dropdown menu */}
                     <RowActionsMenu
