@@ -17,6 +17,7 @@ import {
   Contact,
 } from 'lucide-react';
 import type { Customer } from '../../types/crm';
+import { ToggleCustomerStatusModal } from './ToggleCustomerStatusModal';
 
 interface CustomersListProps {
   customers: Customer[];
@@ -24,7 +25,7 @@ interface CustomersListProps {
   onOpenEdit: (customer: Customer) => void;
   onOpenDetail: (customer: Customer) => void;
   onDelete: (id: string) => void;
-  onToggleStatus?: (customerId: string, currentStatus: 'Active' | 'Inactive') => void;
+  onToggleStatus?: (customerId: string, newStatus: 'Active' | 'Inactive') => Promise<void> | void;
   staffList?: string[];
 }
 
@@ -98,11 +99,11 @@ function formatCustomerNumber(num?: string): string {
 function CustomerRowActions({
   customer,
   onOpenEdit,
-  onToggleStatus,
+  onStartToggleStatus,
 }: {
   customer: Customer;
   onOpenEdit: (customer: Customer) => void;
-  onToggleStatus?: (customerId: string, currentStatus: 'Active' | 'Inactive') => void;
+  onStartToggleStatus: (customer: Customer) => void;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -143,28 +144,26 @@ function CustomerRowActions({
             <Edit2 className="w-4 h-4 text-[#1a237e]" />
             <span>Edit</span>
           </button>
-          {onToggleStatus && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setOpen(false);
-                onToggleStatus(customer.id, customer.status);
-              }}
-              className="w-full flex items-center gap-2.5 px-3.5 py-2 text-gray-700 hover:bg-gray-50 cursor-pointer"
-            >
-              {customer.status === 'Active' ? (
-                <>
-                  <XCircle className="w-4 h-4 text-[#1a237e]" />
-                  <span>Inactive</span>
-                </>
-              ) : (
-                <>
-                  <Check className="w-4 h-4 text-emerald-600" />
-                  <span>Active</span>
-                </>
-              )}
-            </button>
-          )}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpen(false);
+              onStartToggleStatus(customer);
+            }}
+            className="w-full flex items-center gap-2.5 px-3.5 py-2 text-gray-700 hover:bg-gray-50 cursor-pointer"
+          >
+            {customer.status === 'Active' ? (
+              <>
+                <XCircle className="w-4 h-4 text-[#1a237e]" />
+                <span>Inactive</span>
+              </>
+            ) : (
+              <>
+                <Check className="w-4 h-4 text-emerald-600" />
+                <span>Active</span>
+              </>
+            )}
+          </button>
         </div>
       )}
     </div>
@@ -186,6 +185,21 @@ export const CustomersList: React.FC<CustomersListProps> = ({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
+
+  // Confirmation alert dialogue state
+  const [customerToToggle, setCustomerToToggle] = useState<Customer | null>(null);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  const handleConfirmToggle = async (customerId: string, targetStatus: 'Active' | 'Inactive') => {
+    if (!onToggleStatus) return;
+    setIsUpdatingStatus(true);
+    try {
+      await onToggleStatus(customerId, targetStatus);
+    } finally {
+      setIsUpdatingStatus(false);
+      setCustomerToToggle(null);
+    }
+  };
 
   // Tab counts
   const tabCounts = CUSTOMER_TABS.reduce<Record<string, number>>((acc, tab) => {
@@ -559,7 +573,7 @@ export const CustomersList: React.FC<CustomersListProps> = ({
                       <CustomerRowActions
                         customer={cust}
                         onOpenEdit={onOpenEdit}
-                        onToggleStatus={onToggleStatus}
+                        onStartToggleStatus={(c) => setCustomerToToggle(c)}
                       />
                     </div>
                   </td>
@@ -612,6 +626,15 @@ export const CustomersList: React.FC<CustomersListProps> = ({
           </div>
         </div>
       )}
+
+      {/* ── CONFIRMATION ALERT DIALOGUE FOR STATUS TOGGLE ── */}
+      <ToggleCustomerStatusModal
+        customer={customerToToggle}
+        isOpen={!!customerToToggle}
+        onClose={() => setCustomerToToggle(null)}
+        onConfirm={handleConfirmToggle}
+        isUpdating={isUpdatingStatus}
+      />
     </div>
   );
 };
