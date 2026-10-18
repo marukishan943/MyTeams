@@ -505,7 +505,7 @@ export const LeadsList: React.FC<LeadsListProps> = ({
               {paginatedLeads.map((lead) => (
                 <tr
                   key={lead.id}
-                  className="hover:bg-blue-50/30 transition-colors cursor-pointer group"
+                  className="hover:bg-blue-50/30 transition-colors cursor-pointer"
                   onClick={() => onOpenDetail(lead)}
                 >
                   {/* Date */}
@@ -604,7 +604,7 @@ export const LeadsList: React.FC<LeadsListProps> = ({
                     className="px-3 py-3 whitespace-nowrap"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-1">
                       {/* Quick send/detail icon */}
                       <button
                         onClick={(e) => {
