@@ -12,10 +12,12 @@ import {
   Filter,
   Calendar,
   Tag,
-  User,
+  User as UserIcon,
   Download,
+  ShieldAlert,
 } from 'lucide-react';
 import type { Lead } from '../../types/crm';
+import { ConvertLeadModal } from './ConvertLeadModal';
 
 interface LeadsListProps {
   leads: Lead[];
@@ -23,102 +25,68 @@ interface LeadsListProps {
   onOpenEdit: (lead: Lead) => void;
   onOpenDetail: (lead: Lead) => void;
   onDelete: (id: string) => void;
-  onConvertToCustomer?: (lead: Lead) => void;
+  onConvertToCustomer?: (lead: Lead) => Promise<void> | void;
   staffList: string[];
 }
 
-interface StageMeta {
+interface StageTabConfig {
   id: string;
   label: string;
-  dotColor: string;
-  pillBg: string;
-  pillText: string;
-  pillBorder: string;
-  countBg: string;
-  countText: string;
+  borderInactive: string;
+  textInactive: string;
+  bgActive: string;
 }
 
-const STAGE_META: Record<string, StageMeta> = {
-  all: {
+const STAGE_TABS: StageTabConfig[] = [
+  {
     id: 'all',
     label: 'All',
-    dotColor: '',
-    pillBg: 'bg-gray-100',
-    pillText: 'text-gray-700',
-    pillBorder: 'border-gray-300',
-    countBg: 'bg-gray-200',
-    countText: 'text-gray-700',
+    borderInactive: 'border-blue-500',
+    textInactive: 'text-blue-600',
+    bgActive: 'bg-[#2979ff] text-white',
   },
-  newLead: {
+  {
     id: 'newLead',
     label: 'New',
-    dotColor: 'bg-blue-500',
-    pillBg: 'bg-blue-50',
-    pillText: 'text-blue-700',
-    pillBorder: 'border-blue-400',
-    countBg: 'bg-blue-500',
-    countText: 'text-white',
+    borderInactive: 'border-[#2196f3]',
+    textInactive: 'text-[#2196f3]',
+    bgActive: 'bg-[#2196f3] text-white',
   },
-  contacted: {
+  {
     id: 'contacted',
     label: 'Contacted',
-    dotColor: 'bg-amber-500',
-    pillBg: 'bg-amber-50',
-    pillText: 'text-amber-700',
-    pillBorder: 'border-amber-400',
-    countBg: 'bg-amber-500',
-    countText: 'text-white',
+    borderInactive: 'border-[#ff9800]',
+    textInactive: 'text-[#ff9800]',
+    bgActive: 'bg-[#1a237e] text-white',
   },
-  proposalSent: {
+  {
     id: 'proposalSent',
     label: 'Proposal Sent',
-    dotColor: 'bg-purple-500',
-    pillBg: 'bg-purple-50',
-    pillText: 'text-purple-700',
-    pillBorder: 'border-purple-400',
-    countBg: 'bg-purple-500',
-    countText: 'text-white',
+    borderInactive: 'border-[#00bcd4]',
+    textInactive: 'text-[#00bcd4]',
+    bgActive: 'bg-[#00bcd4] text-white',
   },
-  sampleSent: {
+  {
     id: 'sampleSent',
-    label: 'Sample Sent',
-    dotColor: 'bg-teal-500',
-    pillBg: 'bg-teal-50',
-    pillText: 'text-teal-700',
-    pillBorder: 'border-teal-400',
-    countBg: 'bg-teal-500',
-    countText: 'text-white',
+    label: 'SAMPLE SENT',
+    borderInactive: 'border-[#4caf50]',
+    textInactive: 'text-[#4caf50]',
+    bgActive: 'bg-[#4caf50] text-white',
   },
-  disqualified: {
+  {
     id: 'disqualified',
     label: 'Disqualified',
-    dotColor: 'bg-rose-500',
-    pillBg: 'bg-rose-50',
-    pillText: 'text-rose-700',
-    pillBorder: 'border-rose-400',
-    countBg: 'bg-rose-500',
-    countText: 'text-white',
+    borderInactive: 'border-[#f44336]',
+    textInactive: 'text-[#f44336]',
+    bgActive: 'bg-[#f44336] text-white',
   },
-  converted: {
+  {
     id: 'converted',
     label: 'Converted',
-    dotColor: 'bg-emerald-500',
-    pillBg: 'bg-emerald-50',
-    pillText: 'text-emerald-700',
-    pillBorder: 'border-emerald-400',
-    countBg: 'bg-emerald-500',
-    countText: 'text-white',
+    borderInactive: 'border-[#4caf50]',
+    textInactive: 'text-[#4caf50]',
+    bgActive: 'bg-[#4caf50] text-white',
   },
-};
-
-const STAGE_ORDER = [
-  'all',
-  'newLead',
-  'contacted',
-  'proposalSent',
-  'sampleSent',
-  'disqualified',
-  'converted',
 ];
 
 function getInitials(name?: string): string {
@@ -128,38 +96,21 @@ function getInitials(name?: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-function getAvatarColor(name?: string): string {
-  const colors = [
-    'bg-indigo-500',
-    'bg-blue-500',
-    'bg-emerald-500',
-    'bg-amber-500',
-    'bg-purple-500',
-    'bg-rose-500',
-    'bg-teal-500',
-    'bg-cyan-500',
-    'bg-orange-500',
-  ];
-  if (!name) return colors[0];
-  const idx =
-    name.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0) %
-    colors.length;
-  return colors[idx];
-}
-
 function formatDate(dateStr?: string): string {
   if (!dateStr) return '—';
   const d = new Date(dateStr);
   const now = new Date();
   const diff = now.setHours(0, 0, 0, 0) - d.setHours(0, 0, 0, 0);
   const daysDiff = Math.round(diff / 86400000);
-  if (daysDiff === 0) return 'Today';
-  if (daysDiff === 1) return 'Yesterday';
-  if (daysDiff < 7) return `${daysDiff} days ago`;
-  return new Date(dateStr).toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-  });
+  if (daysDiff === 0) return 'TODAY';
+  if (daysDiff === 1) return 'YESTERDAY';
+  if (daysDiff < 7) return `${daysDiff} DAYS AGO`;
+  return new Date(dateStr)
+    .toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+    })
+    .toUpperCase();
 }
 
 // Dropdown menu for each row's "..." button
@@ -167,12 +118,12 @@ function RowActionsMenu({
   lead,
   onOpenEdit,
   onDelete,
-  onConvertToCustomer,
+  onStartConvert,
 }: {
   lead: Lead;
   onOpenEdit: (lead: Lead) => void;
   onDelete: (id: string) => void;
-  onConvertToCustomer?: (lead: Lead) => void;
+  onStartConvert: (lead: Lead) => void;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -194,13 +145,13 @@ function RowActionsMenu({
           e.stopPropagation();
           setOpen((v) => !v);
         }}
-        className="p-1.5 rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors cursor-pointer"
+        className="p-1.5 rounded hover:bg-gray-100 text-[#1976d2] transition-colors cursor-pointer"
         title="More actions"
       >
-        <MoreHorizontal className="w-4 h-4" />
+        <MoreHorizontal className="w-4 h-4 text-[#1976d2]" />
       </button>
       {open && (
-        <div className="absolute right-0 top-8 z-50 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1.5 text-xs">
+        <div className="absolute right-0 top-8 z-50 w-48 bg-white rounded-md shadow-xl border border-gray-200 py-1.5 text-xs">
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -209,20 +160,18 @@ function RowActionsMenu({
             }}
             className="w-full flex items-center gap-2.5 px-3.5 py-2 text-gray-700 hover:bg-gray-50 cursor-pointer"
           >
-            <Edit2 className="w-4 h-4 text-[#3949ab]" />
+            <Edit2 className="w-4 h-4 text-[#1976d2]" />
             <span>Edit</span>
           </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
               setOpen(false);
-              if (onConvertToCustomer) {
-                onConvertToCustomer(lead);
-              }
+              onStartConvert(lead);
             }}
             className="w-full flex items-center gap-2.5 px-3.5 py-2 text-gray-700 hover:bg-gray-50 cursor-pointer"
           >
-            <CornerUpRight className="w-4 h-4 text-[#3949ab]" />
+            <CornerUpRight className="w-4 h-4 text-[#1976d2]" />
             <span>Convert to Customer</span>
           </button>
           <button
@@ -237,9 +186,9 @@ function RowActionsMenu({
                 onDelete(lead.id);
               }
             }}
-            className="w-full flex items-center gap-2.5 px-3.5 py-2 text-gray-700 hover:bg-gray-50 cursor-pointer"
+            className="w-full flex items-center gap-2.5 px-3.5 py-2 text-gray-700 hover:bg-rose-50 hover:text-rose-600 cursor-pointer"
           >
-            <Trash2 className="w-4 h-4 text-[#3949ab]" />
+            <Trash2 className="w-4 h-4 text-[#1976d2]" />
             <span>Delete</span>
           </button>
         </div>
@@ -255,19 +204,25 @@ export const LeadsList: React.FC<LeadsListProps> = ({
   onOpenDetail,
   onDelete,
   onConvertToCustomer,
+  staffList,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [stageFilter, setStageFilter] = useState<string>('all');
   const [sourceFilter, setSourceFilter] = useState<string>('all');
+  const [staffFilter, setStaffFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 15;
+  const itemsPerPage = 20;
+
+  // State for Convert to Customer confirmation dialogue
+  const [leadToConvert, setLeadToConvert] = useState<Lead | null>(null);
+  const [isConverting, setIsConverting] = useState(false);
 
   // Stage counts
-  const stageCounts = STAGE_ORDER.reduce<Record<string, number>>((acc, key) => {
-    if (key === 'all') {
+  const stageCounts = STAGE_TABS.reduce<Record<string, number>>((acc, tab) => {
+    if (tab.id === 'all') {
       acc['all'] = leads.length;
     } else {
-      acc[key] = leads.filter((l) => l.stage === key).length;
+      acc[tab.id] = leads.filter((l) => l.stage === tab.id).length;
     }
     return acc;
   }, {});
@@ -281,13 +236,17 @@ export const LeadsList: React.FC<LeadsListProps> = ({
       lead.phone.includes(searchTerm) ||
       lead.lead_number.includes(searchTerm) ||
       (lead.email &&
-        lead.email.toLowerCase().includes(searchTerm.toLowerCase()));
+        lead.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (lead.title &&
+        lead.title.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const matchesStage = stageFilter === 'all' || lead.stage === stageFilter;
     const matchesSource =
       sourceFilter === 'all' || lead.source === sourceFilter;
+    const matchesStaff =
+      staffFilter === 'all' || lead.staff_name === staffFilter;
 
-    return matchesSearch && matchesStage && matchesSource;
+    return matchesSearch && matchesStage && matchesSource && matchesStaff;
   });
 
   const totalPages = Math.ceil(filteredLeads.length / itemsPerPage) || 1;
@@ -296,30 +255,79 @@ export const LeadsList: React.FC<LeadsListProps> = ({
     currentPage * itemsPerPage
   );
 
-  const getStageDot = (stage: Lead['stage']) => {
-    const meta = STAGE_META[stage];
-    if (!meta) return null;
-    return (
-      <span className="flex items-center gap-1.5 whitespace-nowrap">
-        <span
-          className={`w-1.5 h-1.5 rounded-full shrink-0 ${meta.dotColor}`}
-        />
-        <span
-          className={`text-[11px] font-semibold ${meta.pillText}`}
-        >
-          {meta.label}
-        </span>
-      </span>
-    );
+  const handleConfirmConvert = async (lead: Lead) => {
+    if (!onConvertToCustomer) return;
+    setIsConverting(true);
+    try {
+      await onConvertToCustomer(lead);
+    } finally {
+      setIsConverting(false);
+      setLeadToConvert(null);
+    }
+  };
+
+  const getStagePill = (stage: Lead['stage']) => {
+    switch (stage) {
+      case 'disqualified':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-600 border border-rose-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+            <span>Disqualified</span>
+          </span>
+        );
+      case 'contacted':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-600 border border-amber-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+            <span>Contacted</span>
+          </span>
+        );
+      case 'converted':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+            <span>Converted</span>
+          </span>
+        );
+      case 'proposalSent':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-cyan-50 text-cyan-600 border border-cyan-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 shrink-0" />
+            <span>Proposal Sent</span>
+          </span>
+        );
+      case 'sampleSent':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-teal-50 text-teal-600 border border-teal-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-teal-500 shrink-0" />
+            <span>Sample Sent</span>
+          </span>
+        );
+      case 'newLead':
+      default:
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-600 border border-blue-200">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+            <span>New Lead</span>
+          </span>
+        );
+    }
   };
 
   return (
-    <div className="flex flex-col h-full space-y-0">
-      {/* ── Top Toolbar ── */}
-      <div className="bg-white px-4 py-3 border-b border-gray-200 flex flex-wrap items-center gap-2">
+    <div className="w-full bg-white flex flex-col min-h-screen text-gray-800">
+      {/* ── TOP HEADER BAR (Flush edge-to-edge, UpTeams design) ── */}
+      <div className="w-full bg-white px-4 py-2.5 border-b border-gray-200 flex flex-wrap items-center gap-2.5 shadow-2xs">
+        {/* Title & Icon */}
+        <div className="flex items-center gap-2 mr-1">
+          <div className="w-7 h-7 rounded-md bg-[#1976d2] text-white flex items-center justify-center font-bold text-xs shadow-2xs">
+            <ShieldAlert className="w-4 h-4 fill-white" />
+          </div>
+          <span className="text-base font-bold text-gray-900 tracking-tight">Leads</span>
+        </div>
+
         {/* Search */}
-        <div className="relative flex-1 min-w-48">
-          <Search className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-2.5" />
+        <div className="relative min-w-44 flex-1 sm:max-w-xs">
           <input
             type="text"
             placeholder="Search..."
@@ -328,22 +336,22 @@ export const LeadsList: React.FC<LeadsListProps> = ({
               setSearchTerm(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full text-xs pl-8 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#3949ab] focus:outline-none bg-gray-50"
+            className="w-full text-xs pl-3 pr-8 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-[#1976d2] focus:border-[#1976d2] outline-none bg-white"
           />
+          <Search className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-2.5" />
         </div>
 
-        {/* Status filter */}
-        <div className="flex items-center gap-1.5 border border-gray-200 rounded-lg px-2.5 py-2 bg-gray-50 text-xs text-gray-500">
-          <Tag className="w-3.5 h-3.5 text-gray-400" />
-          <span className="font-medium">Status</span>
+        {/* Filter: Status */}
+        <div className="flex items-center border border-gray-300 rounded px-2.5 py-1.5 bg-white text-xs text-gray-700">
           <select
-            className="bg-transparent focus:outline-none text-xs text-gray-700 cursor-pointer"
+            className="bg-transparent outline-none text-xs text-gray-700 cursor-pointer pr-1"
             value={stageFilter}
             onChange={(e) => {
               setStageFilter(e.target.value);
               setCurrentPage(1);
             }}
           >
+            <option value="all">Status</option>
             <option value="all">All</option>
             <option value="newLead">New</option>
             <option value="contacted">Contacted</option>
@@ -352,313 +360,368 @@ export const LeadsList: React.FC<LeadsListProps> = ({
             <option value="disqualified">Disqualified</option>
             <option value="converted">Converted</option>
           </select>
+          <Tag className="w-3.5 h-3.5 text-gray-400 shrink-0" />
         </div>
 
-        {/* Date pill */}
-        <div className="flex items-center gap-1.5 border border-gray-200 rounded-lg px-2.5 py-2 bg-gray-50 text-xs text-gray-500">
-          <Calendar className="w-3.5 h-3.5 text-gray-400" />
-          <span>All</span>
+        {/* Filter: Date */}
+        <div className="flex items-center border border-gray-300 rounded px-2.5 py-1.5 bg-white text-xs text-gray-700">
+          <span className="pr-2 text-xs">All</span>
+          <Calendar className="w-3.5 h-3.5 text-gray-400 shrink-0" />
         </div>
 
-        {/* Source filter */}
-        <div className="flex items-center gap-1.5 border border-gray-200 rounded-lg px-2.5 py-2 bg-gray-50 text-xs text-gray-500">
-          <Tag className="w-3.5 h-3.5 text-gray-400" />
-          <span className="font-medium">Source</span>
+        {/* Filter: Source */}
+        <div className="flex items-center border border-gray-300 rounded px-2.5 py-1.5 bg-white text-xs text-gray-700">
           <select
-            className="bg-transparent focus:outline-none text-xs text-gray-700 cursor-pointer"
+            className="bg-transparent outline-none text-xs text-gray-700 cursor-pointer pr-1"
             value={sourceFilter}
             onChange={(e) => {
               setSourceFilter(e.target.value);
               setCurrentPage(1);
             }}
           >
-            <option value="all">All</option>
+            <option value="all">Source</option>
+            <option value="all">All Sources</option>
             <option value="call">Call</option>
             <option value="email">Email</option>
             <option value="website">Website</option>
             <option value="others">Others</option>
           </select>
+          <Tag className="w-3.5 h-3.5 text-gray-400 shrink-0" />
         </div>
 
-        {/* Staff */}
-        <div className="flex items-center gap-1.5 border border-gray-200 rounded-lg px-2.5 py-2 bg-gray-50 text-xs text-gray-500">
-          <User className="w-3.5 h-3.5 text-gray-400" />
-          <span>All</span>
+        {/* Filter: Staff */}
+        <div className="flex items-center border border-gray-300 rounded px-2.5 py-1.5 bg-white text-xs text-gray-700">
+          <select
+            className="bg-transparent outline-none text-xs text-gray-700 cursor-pointer pr-1"
+            value={staffFilter}
+            onChange={(e) => {
+              setStaffFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+          >
+            <option value="all">All</option>
+            {staffList.map((st) => (
+              <option key={st} value={st}>
+                {st}
+              </option>
+            ))}
+          </select>
+          <UserIcon className="w-3.5 h-3.5 text-gray-400 shrink-0" />
         </div>
 
-        {/* Icon buttons */}
-        <div className="flex items-center gap-1 ml-auto">
+        {/* Action Icon Buttons (Blue solid) */}
+        <div className="flex items-center gap-1.5 ml-auto">
           <button
             title="Filter"
-            className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors cursor-pointer"
+            className="p-1.5 rounded bg-[#1976d2] hover:bg-[#1565c0] text-white transition-colors cursor-pointer shadow-2xs"
           >
-            <Filter className="w-4 h-4" />
+            <Filter className="w-3.5 h-3.5" />
           </button>
           <button
             title="Refresh"
-            className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors cursor-pointer"
+            onClick={() => window.location.reload()}
+            className="p-1.5 rounded bg-[#1976d2] hover:bg-[#1565c0] text-white transition-colors cursor-pointer shadow-2xs"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className="w-3.5 h-3.5" />
           </button>
           <button
-            title="Column visibility"
-            className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors cursor-pointer"
+            title="Column Visibility"
+            className="p-1.5 rounded bg-[#1976d2] hover:bg-[#1565c0] text-white transition-colors cursor-pointer shadow-2xs"
           >
-            <Eye className="w-4 h-4" />
+            <Eye className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Import Button (Blue) */}
+          <button
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1976d2] hover:bg-[#1565c0] text-white rounded text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Import</span>
+          </button>
+
+          {/* + Add Lead Button (Dark Blue/Indigo) */}
+          <button
+            onClick={onOpenAdd}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#1a237e] hover:bg-[#151c65] text-white rounded text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>+ Add Lead</span>
           </button>
         </div>
-
-        {/* Import button */}
-        <button className="flex items-center gap-1.5 px-3 py-2 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">
-          <Download className="w-3.5 h-3.5" />
-          Import
-        </button>
-
-        {/* Add Lead */}
-        <button
-          onClick={onOpenAdd}
-          className="flex items-center gap-1.5 px-3 py-2 bg-[#3949ab] hover:bg-[#303f9f] text-white rounded-lg text-xs font-semibold shadow-sm transition-colors cursor-pointer"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          Add Lead
-        </button>
       </div>
 
-      {/* ── Stage Tab Pills with counts ── */}
-      <div className="bg-white px-4 py-2.5 border-b border-gray-200 flex items-center gap-2 flex-wrap">
-        {STAGE_ORDER.map((key) => {
-          const meta = STAGE_META[key];
-          const count = stageCounts[key] ?? 0;
-          const isActive = stageFilter === key;
+      {/* ── STAGE TABS BAR (Full-width, exact UpTeams styling) ── */}
+      <div className="w-full bg-white px-4 py-2 border-b border-gray-200 flex items-center gap-1.5 overflow-x-auto">
+        {STAGE_TABS.map((tab) => {
+          const isActive = stageFilter === tab.id;
+          const count = stageCounts[tab.id] ?? 0;
           return (
             <button
-              key={key}
+              key={tab.id}
               onClick={() => {
-                setStageFilter(key);
+                setStageFilter(tab.id);
                 setCurrentPage(1);
               }}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-semibold transition-all cursor-pointer whitespace-nowrap ${
+              className={`px-2.5 py-0.5 rounded text-[11px] font-bold whitespace-nowrap transition-all cursor-pointer border ${
                 isActive
-                  ? `${meta.pillBg} ${meta.pillText} ${meta.pillBorder} border`
-                  : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                  ? `${tab.bgActive} border-transparent shadow-2xs`
+                  : `bg-white ${tab.textInactive} ${tab.borderInactive} hover:opacity-85`
               }`}
             >
-              {key !== 'all' && (
-                <span
-                  className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                    isActive ? meta.dotColor : 'bg-gray-300'
-                  }`}
-                />
-              )}
-              <span className="uppercase tracking-wide">{meta.label}</span>
-              <span
-                className={`ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-                  isActive ? `${meta.countBg} ${meta.countText}` : 'bg-gray-100 text-gray-500'
-                }`}
-              >
-                {count}
-              </span>
+              <span>{tab.label}</span>
+              <span className="ml-1.5">{count}</span>
             </button>
           );
         })}
       </div>
 
-      {/* ── Leads Table ── */}
-      <div className="flex-1 bg-white overflow-hidden">
-        <div className="overflow-x-auto h-full">
-          <table className="w-full text-left text-xs text-gray-700 border-collapse">
-            <thead className="bg-gray-50 border-b border-gray-200 text-gray-500 uppercase tracking-wider font-semibold text-[10px] sticky top-0 z-10">
-              <tr>
-                <th className="px-3 py-3 whitespace-nowrap">
-                  <div className="flex items-center gap-1">
-                    Date <span className="text-gray-300">▼</span>
-                  </div>
-                </th>
-                <th className="px-3 py-3 whitespace-nowrap">ID</th>
-                <th className="px-3 py-3 whitespace-nowrap">Name</th>
-                <th className="px-3 py-3 whitespace-nowrap">Company</th>
-                <th className="px-3 py-3 whitespace-nowrap">Phone</th>
-                <th className="px-3 py-3 whitespace-nowrap">Email</th>
-                <th className="px-3 py-3 whitespace-nowrap">Title</th>
-                <th className="px-3 py-3 whitespace-nowrap">Note</th>
-                <th className="px-3 py-3 whitespace-nowrap">City</th>
-                <th className="px-3 py-3 whitespace-nowrap">Stage</th>
-                <th className="px-3 py-3 whitespace-nowrap">Staff</th>
-                <th className="px-3 py-3 text-right whitespace-nowrap"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {paginatedLeads.map((lead) => (
-                <tr
-                  key={lead.id}
-                  className="hover:bg-blue-50/30 transition-colors cursor-pointer"
-                  onClick={() => onOpenDetail(lead)}
-                >
-                  {/* Date */}
-                  <td className="px-3 py-3 text-gray-500 whitespace-nowrap text-[11px] uppercase font-medium tracking-wide">
-                    {formatDate(lead.created_at)}
-                  </td>
+      {/* ── LEADS TABLE (Full-width edge-to-edge) ── */}
+      <div className="w-full flex-1 overflow-x-auto">
+        <table className="w-full text-left text-xs border-collapse">
+          <thead className="bg-[#f8fafc] border-b border-gray-200 text-gray-500 font-semibold text-[11px]">
+            <tr>
+              <th className="px-3.5 py-3 whitespace-nowrap">
+                <div className="flex items-center gap-1 text-gray-600">
+                  <span>Date</span>
+                  <span className="text-gray-400 text-[10px]">⇅</span>
+                </div>
+              </th>
+              <th className="px-3.5 py-3 whitespace-nowrap">
+                <div className="flex items-center gap-1 text-gray-600">
+                  <span>ID</span>
+                  <span className="text-gray-400 text-[10px]">⇅</span>
+                </div>
+              </th>
+              <th className="px-3.5 py-3 whitespace-nowrap">
+                <div className="flex items-center gap-1 text-gray-600">
+                  <span>Name</span>
+                  <span className="text-gray-400 text-[10px]">⇅</span>
+                </div>
+              </th>
+              <th className="px-3.5 py-3 whitespace-nowrap">
+                <div className="flex items-center gap-1 text-gray-600">
+                  <span>Company</span>
+                  <span className="text-gray-400 text-[10px]">⇅</span>
+                </div>
+              </th>
+              <th className="px-3.5 py-3 whitespace-nowrap">
+                <div className="flex items-center gap-1 text-gray-600">
+                  <span>Phone</span>
+                  <span className="text-gray-400 text-[10px]">⇅</span>
+                </div>
+              </th>
+              <th className="px-3.5 py-3 whitespace-nowrap">
+                <div className="flex items-center gap-1 text-gray-600">
+                  <span>Email</span>
+                  <span className="text-gray-400 text-[10px]">⇅</span>
+                </div>
+              </th>
+              <th className="px-3.5 py-3 whitespace-nowrap">
+                <div className="flex items-center gap-1 text-gray-600">
+                  <span>Title</span>
+                  <span className="text-gray-400 text-[10px]">⇅</span>
+                </div>
+              </th>
+              <th className="px-3.5 py-3 whitespace-nowrap">
+                <div className="flex items-center gap-1 text-gray-600">
+                  <span>Note</span>
+                  <span className="text-gray-400 text-[10px]">⇅</span>
+                </div>
+              </th>
+              <th className="px-3.5 py-3 whitespace-nowrap">
+                <div className="flex items-center gap-1 text-gray-600">
+                  <span>City</span>
+                  <span className="text-gray-400 text-[10px]">⇅</span>
+                </div>
+              </th>
+              <th className="px-3.5 py-3 whitespace-nowrap">
+                <div className="flex items-center gap-1 text-gray-600">
+                  <span>Stage</span>
+                  <span className="text-gray-400 text-[10px]">⇅</span>
+                </div>
+              </th>
+              <th className="px-3.5 py-3 whitespace-nowrap">
+                <div className="flex items-center gap-1 text-gray-600">
+                  <span>Staff</span>
+                  <span className="text-gray-400 text-[10px]">⇅</span>
+                </div>
+              </th>
+              <th className="px-3.5 py-3 text-right whitespace-nowrap"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100 bg-white">
+            {paginatedLeads.map((lead) => (
+              <tr
+                key={lead.id}
+                className="hover:bg-blue-50/20 transition-colors cursor-pointer"
+                onClick={() => onOpenDetail(lead)}
+              >
+                {/* Date */}
+                <td className="px-3.5 py-3 whitespace-nowrap text-gray-600 font-medium text-[11px] uppercase">
+                  {formatDate(lead.created_at)}
+                </td>
 
-                  {/* ID */}
-                  <td className="px-3 py-3 whitespace-nowrap">
-                    <span className="text-[#3949ab] font-semibold font-mono">
-                      {lead.lead_number}
-                    </span>
-                  </td>
+                {/* ID */}
+                <td className="px-3.5 py-3 whitespace-nowrap">
+                  <span className="text-[#1976d2] font-bold font-mono text-[12px]">
+                    {lead.lead_number}
+                  </span>
+                </td>
 
-                  {/* Name */}
-                  <td className="px-3 py-3">
-                    <span className="font-semibold text-gray-500 text-[11px] uppercase tracking-wide max-w-36 truncate block">
-                      {lead.name}
-                    </span>
-                  </td>
+                {/* Name */}
+                <td className="px-3.5 py-3">
+                  <span className="font-semibold text-gray-800 text-[11px] uppercase tracking-tight block max-w-44 truncate">
+                    {lead.name}
+                  </span>
+                </td>
 
-                  {/* Company */}
-                  <td className="px-3 py-3">
-                    <span className="text-gray-700 text-[11px] max-w-40 truncate block">
-                      {lead.company || '—'}
-                    </span>
-                  </td>
+                {/* Company */}
+                <td className="px-3.5 py-3">
+                  <span className="text-gray-700 text-[11px] block max-w-44 truncate">
+                    {lead.company || lead.name || '—'}
+                  </span>
+                </td>
 
-                  {/* Phone */}
-                  <td className="px-3 py-3 whitespace-nowrap text-gray-700 text-[11px]">
-                    {lead.phone}
-                  </td>
+                {/* Phone */}
+                <td className="px-3.5 py-3 whitespace-nowrap text-gray-700 text-[11px]">
+                  {lead.phone}
+                </td>
 
-                  {/* Email */}
-                  <td className="px-3 py-3 text-gray-500 text-[11px] max-w-32">
-                    <span className="truncate block max-w-32">
-                      {lead.email || ''}
-                    </span>
-                  </td>
+                {/* Email */}
+                <td className="px-3.5 py-3 text-gray-500 text-[11px] max-w-32">
+                  <span className="truncate block max-w-32">
+                    {lead.email || ''}
+                  </span>
+                </td>
 
-                  {/* Title */}
-                  <td className="px-3 py-3 text-gray-500 text-[11px]">
-                    <span className="truncate block max-w-28">
-                      {lead.title || ''}
-                    </span>
-                  </td>
+                {/* Title */}
+                <td className="px-3.5 py-3 text-gray-700 text-[11px]">
+                  <span className="truncate block max-w-36 font-normal uppercase">
+                    {lead.title || ''}
+                  </span>
+                </td>
 
-                  {/* Note */}
-                  <td className="px-3 py-3 text-gray-500 text-[11px]">
-                    <span className="truncate block max-w-32">
-                      {lead.note || ''}
-                    </span>
-                  </td>
+                {/* Note */}
+                <td className="px-3.5 py-3 text-gray-600 text-[11px]">
+                  <span className="truncate block max-w-36">
+                    {lead.note || ''}
+                  </span>
+                </td>
 
-                  {/* City */}
-                  <td className="px-3 py-3 text-[11px]">
-                    {lead.city ? (
-                      <div>
-                        <div className="font-semibold text-gray-700 uppercase">
-                          {lead.city}
-                        </div>
-                        {lead.state && (
-                          <div className="text-gray-400 uppercase text-[10px]">
-                            {lead.state}
-                          </div>
-                        )}
+                {/* City (2 lines: City top, State bottom) */}
+                <td className="px-3.5 py-3 text-[11px]">
+                  {lead.city ? (
+                    <div>
+                      <div className="font-semibold text-gray-800 uppercase text-[11px]">
+                        {lead.city}
                       </div>
-                    ) : (
-                      <span className="text-gray-300">—</span>
-                    )}
-                  </td>
-
-                  {/* Stage */}
-                  <td className="px-3 py-3 whitespace-nowrap">
-                    {getStageDot(lead.stage)}
-                  </td>
-
-                  {/* Staff Avatar */}
-                  <td className="px-3 py-3 whitespace-nowrap">
-                    {lead.staff_name ? (
-                      <div
-                        title={lead.staff_name}
-                        className={`w-7 h-7 rounded-full ${getAvatarColor(lead.staff_name)} text-white text-[10px] font-bold flex items-center justify-center uppercase`}
-                      >
-                        {getInitials(lead.staff_name)}
+                      <div className="text-gray-400 uppercase text-[10px] tracking-wide">
+                        {lead.state || 'INDIA'}
                       </div>
-                    ) : (
-                      <div className="w-7 h-7 rounded-full bg-gray-200 text-gray-400 text-[10px] font-bold flex items-center justify-center">
-                        —
-                      </div>
-                    )}
-                  </td>
-
-                  {/* Actions */}
-                  <td
-                    className="px-3 py-3 whitespace-nowrap"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="flex items-center gap-1">
-                      {/* Quick send/detail icon */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onOpenDetail(lead);
-                        }}
-                        title="View Details"
-                        className="p-1.5 rounded-md hover:bg-[#3949ab]/10 text-[#3949ab] transition-colors cursor-pointer"
-                      >
-                        <Send className="w-3.5 h-3.5" />
-                      </button>
-                      <RowActionsMenu
-                        lead={lead}
-                        onOpenEdit={onOpenEdit}
-                        onDelete={onDelete}
-                        onConvertToCustomer={onConvertToCustomer}
-                      />
                     </div>
-                  </td>
-                </tr>
-              ))}
+                  ) : (
+                    <span className="text-gray-300">—</span>
+                  )}
+                </td>
 
-              {paginatedLeads.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={12}
-                    className="text-center py-12 text-gray-400 text-xs"
+                {/* Stage */}
+                <td className="px-3.5 py-3 whitespace-nowrap">
+                  {getStagePill(lead.stage)}
+                </td>
+
+                {/* Staff Avatar (Soft Lavender / Blue background, dark blue letters) */}
+                <td className="px-3.5 py-3 whitespace-nowrap">
+                  <div
+                    title={lead.staff_name || 'Unassigned'}
+                    className="w-7 h-7 rounded-full bg-[#e8eaf6] text-[#3949ab] text-[11px] font-bold flex items-center justify-center uppercase shrink-0"
                   >
-                    No leads match your current search or filters.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                    {getInitials(lead.staff_name)}
+                  </div>
+                </td>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500 bg-white">
-            <div>
-              Showing {(currentPage - 1) * itemsPerPage + 1}–
-              {Math.min(currentPage * itemsPerPage, filteredLeads.length)} of{' '}
-              {filteredLeads.length} leads
-            </div>
-            <div className="flex items-center space-x-1">
-              <button
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                className="px-2.5 py-1 border border-gray-200 rounded-md disabled:opacity-40 hover:bg-gray-50 cursor-pointer"
-              >
-                Previous
-              </button>
-              <span className="px-2 font-medium">
-                {currentPage} / {totalPages}
-              </span>
-              <button
-                disabled={currentPage === totalPages}
-                onClick={() =>
-                  setCurrentPage((p) => Math.min(totalPages, p + 1))
-                }
-                className="px-2.5 py-1 border border-gray-200 rounded-md disabled:opacity-40 hover:bg-gray-50 cursor-pointer"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
+                {/* Actions */}
+                <td
+                  className="px-3.5 py-3 whitespace-nowrap text-right"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-end gap-1.5">
+                    {/* Quick send icon (paper-plane) in blue */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenDetail(lead);
+                      }}
+                      title="View Details"
+                      className="p-1 rounded hover:bg-blue-50 text-[#1976d2] transition-colors cursor-pointer"
+                    >
+                      <Send className="w-3.5 h-3.5 text-[#1976d2]" />
+                    </button>
+                    {/* Three dots dropdown menu */}
+                    <RowActionsMenu
+                      lead={lead}
+                      onOpenEdit={onOpenEdit}
+                      onDelete={onDelete}
+                      onStartConvert={(l) => setLeadToConvert(l)}
+                    />
+                  </div>
+                </td>
+              </tr>
+            ))}
+
+            {paginatedLeads.length === 0 && (
+              <tr>
+                <td
+                  colSpan={12}
+                  className="text-center py-16 text-gray-400 text-xs"
+                >
+                  No leads match your current search or filters.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
+
+      {/* ── PAGINATION BAR ── */}
+      {totalPages > 1 && (
+        <div className="w-full px-4 py-2.5 border-t border-gray-200 flex items-center justify-between text-xs text-gray-500 bg-white">
+          <div>
+            Showing {(currentPage - 1) * itemsPerPage + 1}–
+            {Math.min(currentPage * itemsPerPage, filteredLeads.length)} of{' '}
+            {filteredLeads.length} leads
+          </div>
+          <div className="flex items-center space-x-1">
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              className="px-2.5 py-1 border border-gray-200 rounded disabled:opacity-40 hover:bg-gray-50 cursor-pointer"
+            >
+              Previous
+            </button>
+            <span className="px-2 font-medium">
+              {currentPage} / {totalPages}
+            </span>
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() =>
+                setCurrentPage((p) => Math.min(totalPages, p + 1))
+              }
+              className="px-2.5 py-1 border border-gray-200 rounded disabled:opacity-40 hover:bg-gray-50 cursor-pointer"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── PROPER ALERT / CONFIRMATION DIALOGUE FOR CONVERT TO CUSTOMER ── */}
+      <ConvertLeadModal
+        lead={leadToConvert}
+        isOpen={!!leadToConvert}
+        onClose={() => setLeadToConvert(null)}
+        onConfirm={handleConfirmConvert}
+        isConverting={isConverting}
+      />
     </div>
   );
 };
