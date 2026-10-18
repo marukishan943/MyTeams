@@ -166,13 +166,11 @@ function formatDate(dateStr?: string): string {
 function RowActionsMenu({
   lead,
   onOpenEdit,
-  onOpenDetail,
   onDelete,
   onConvertToCustomer,
 }: {
   lead: Lead;
   onOpenEdit: (lead: Lead) => void;
-  onOpenDetail: (lead: Lead) => void;
   onDelete: (id: string) => void;
   onConvertToCustomer?: (lead: Lead) => void;
 }) {
@@ -607,7 +605,6 @@ export const LeadsList: React.FC<LeadsListProps> = ({
                       <RowActionsMenu
                         lead={lead}
                         onOpenEdit={onOpenEdit}
-                        onOpenDetail={onOpenDetail}
                         onDelete={onDelete}
                         onConvertToCustomer={onConvertToCustomer}
                       />
