@@ -145,10 +145,10 @@ function RowActionsMenu({
           e.stopPropagation();
           setOpen((v) => !v);
         }}
-        className="p-1.5 rounded hover:bg-gray-100 text-[#1976d2] transition-colors cursor-pointer"
+        className="p-1.5 rounded hover:bg-gray-100 text-[#1a237e] transition-colors cursor-pointer"
         title="More actions"
       >
-        <MoreHorizontal className="w-4 h-4 text-[#1976d2]" />
+        <MoreHorizontal className="w-4 h-4 text-[#1a237e]" />
       </button>
       {open && (
         <div className="absolute right-0 top-8 z-50 w-48 bg-white rounded-md shadow-xl border border-gray-200 py-1.5 text-xs">
@@ -160,7 +160,7 @@ function RowActionsMenu({
             }}
             className="w-full flex items-center gap-2.5 px-3.5 py-2 text-gray-700 hover:bg-gray-50 cursor-pointer"
           >
-            <Edit2 className="w-4 h-4 text-[#1976d2]" />
+            <Edit2 className="w-4 h-4 text-[#1a237e]" />
             <span>Edit</span>
           </button>
           <button
@@ -171,7 +171,7 @@ function RowActionsMenu({
             }}
             className="w-full flex items-center gap-2.5 px-3.5 py-2 text-gray-700 hover:bg-gray-50 cursor-pointer"
           >
-            <CornerUpRight className="w-4 h-4 text-[#1976d2]" />
+            <CornerUpRight className="w-4 h-4 text-[#1a237e]" />
             <span>Convert to Customer</span>
           </button>
           <button
@@ -188,7 +188,7 @@ function RowActionsMenu({
             }}
             className="w-full flex items-center gap-2.5 px-3.5 py-2 text-gray-700 hover:bg-rose-50 hover:text-rose-600 cursor-pointer"
           >
-            <Trash2 className="w-4 h-4 text-[#1976d2]" />
+            <Trash2 className="w-4 h-4 text-[#1a237e]" />
             <span>Delete</span>
           </button>
         </div>
@@ -320,7 +320,7 @@ export const LeadsList: React.FC<LeadsListProps> = ({
       <div className="w-full bg-white px-4 py-2.5 border-b border-gray-200 flex flex-wrap items-center gap-2.5 shadow-2xs">
         {/* Title & Icon */}
         <div className="flex items-center gap-2 mr-1">
-          <div className="w-7 h-7 rounded-md bg-[#1976d2] text-white flex items-center justify-center font-bold text-xs shadow-2xs">
+          <div className="w-7 h-7 rounded-md bg-[#1a237e] text-white flex items-center justify-center font-bold text-xs shadow-2xs">
             <ShieldAlert className="w-4 h-4 fill-white" />
           </div>
           <span className="text-base font-bold text-gray-900 tracking-tight">Leads</span>
@@ -336,7 +336,7 @@ export const LeadsList: React.FC<LeadsListProps> = ({
               setSearchTerm(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full text-xs pl-3 pr-8 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-[#1976d2] focus:border-[#1976d2] outline-none bg-white"
+            className="w-full text-xs pl-3 pr-8 py-1.5 border border-gray-300 rounded focus:ring-1 focus:ring-[#1a237e] focus:border-[#1a237e] outline-none bg-white"
           />
           <Search className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-2.5" />
         </div>
@@ -409,31 +409,31 @@ export const LeadsList: React.FC<LeadsListProps> = ({
           <UserIcon className="w-3.5 h-3.5 text-gray-400 shrink-0" />
         </div>
 
-        {/* Action Icon Buttons (Blue solid) */}
+        {/* Action Icon Buttons (All in Add Lead button color #1a237e) */}
         <div className="flex items-center gap-1.5 ml-auto">
           <button
             title="Filter"
-            className="p-1.5 rounded bg-[#1976d2] hover:bg-[#1565c0] text-white transition-colors cursor-pointer shadow-2xs"
+            className="p-1.5 rounded bg-[#1a237e] hover:bg-[#151c65] text-white transition-colors cursor-pointer shadow-2xs"
           >
             <Filter className="w-3.5 h-3.5" />
           </button>
           <button
             title="Refresh"
             onClick={() => window.location.reload()}
-            className="p-1.5 rounded bg-[#1976d2] hover:bg-[#1565c0] text-white transition-colors cursor-pointer shadow-2xs"
+            className="p-1.5 rounded bg-[#1a237e] hover:bg-[#151c65] text-white transition-colors cursor-pointer shadow-2xs"
           >
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
           <button
             title="Column Visibility"
-            className="p-1.5 rounded bg-[#1976d2] hover:bg-[#1565c0] text-white transition-colors cursor-pointer shadow-2xs"
+            className="p-1.5 rounded bg-[#1a237e] hover:bg-[#151c65] text-white transition-colors cursor-pointer shadow-2xs"
           >
             <Eye className="w-3.5 h-3.5" />
           </button>
 
-          {/* Import Button (Blue) */}
+          {/* Import Button (Now in Add Lead button color #1a237e) */}
           <button
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1976d2] hover:bg-[#1565c0] text-white rounded text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1a237e] hover:bg-[#151c65] text-white rounded text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Import</span>
@@ -563,7 +563,7 @@ export const LeadsList: React.FC<LeadsListProps> = ({
 
                 {/* ID */}
                 <td className="px-3.5 py-3 whitespace-nowrap">
-                  <span className="text-[#1976d2] font-bold font-mono text-[12px]">
+                  <span className="text-[#1a237e] font-bold font-mono text-[12px]">
                     {lead.lead_number}
                   </span>
                 </td>
@@ -652,9 +652,9 @@ export const LeadsList: React.FC<LeadsListProps> = ({
                         onOpenDetail(lead);
                       }}
                       title="View Details"
-                      className="p-1 rounded hover:bg-blue-50 text-[#1976d2] transition-colors cursor-pointer"
+                      className="p-1 rounded hover:bg-blue-50 text-[#1a237e] transition-colors cursor-pointer"
                     >
-                      <Send className="w-3.5 h-3.5 text-[#1976d2]" />
+                      <Send className="w-3.5 h-3.5 text-[#1a237e]" />
                     </button>
                     {/* Three dots dropdown menu */}
                     <RowActionsMenu

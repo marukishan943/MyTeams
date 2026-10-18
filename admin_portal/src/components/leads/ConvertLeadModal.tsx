@@ -68,7 +68,7 @@ export const ConvertLeadModal: React.FC<ConvertLeadModalProps> = ({
             <span className="font-bold text-gray-900 text-sm truncate max-w-[240px]">
               {lead.name}
             </span>
-            <span className="font-mono font-bold text-[#1976d2] bg-blue-50 px-2 py-0.5 rounded border border-blue-200 shrink-0">
+            <span className="font-mono font-bold text-[#1a237e] bg-blue-50 px-2 py-0.5 rounded border border-blue-200 shrink-0">
               #{lead.lead_number}
             </span>
           </div>
@@ -126,7 +126,7 @@ export const ConvertLeadModal: React.FC<ConvertLeadModalProps> = ({
               onClose();
             }}
             disabled={isConverting}
-            className="w-1/2 py-2.5 px-4 bg-[#1976d2] hover:bg-[#1565c0] text-white rounded-lg text-xs font-semibold shadow-md flex items-center justify-center gap-1.5 disabled:opacity-50 transition-colors cursor-pointer"
+            className="w-1/2 py-2.5 px-4 bg-[#1a237e] hover:bg-[#151c65] text-white rounded-lg text-xs font-semibold shadow-md flex items-center justify-center gap-1.5 disabled:opacity-50 transition-colors cursor-pointer"
           >
             {isConverting ? (
               <>
