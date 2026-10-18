@@ -771,6 +771,7 @@ export function App() {
                   onOpenAddInventory={() => setIsAddInventoryOpen(true)}
                   onAdjustStock={handleAdjustStock}
                   onDeleteInventory={handleDeleteInventory}
+                  onUpdateStatus={handleOrderStatusChange}
                   staffList={staffList}
                 />
               )}

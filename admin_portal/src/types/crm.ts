@@ -78,7 +78,7 @@ export interface SalesOrder {
   reference_name?: string | null;
   notes?: string | null;
   type: 'order' | 'invoice' | 'proforma_invoice';
-  status: 'open' | 'pending' | 'delivered' | 'converted';
+  status: 'open' | 'pending' | 'delivered' | 'converted' | 'cancelled';
   date: string;
   due_date?: string | null;
   staff_name?: string;

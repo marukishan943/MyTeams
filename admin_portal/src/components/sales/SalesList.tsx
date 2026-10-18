@@ -5,7 +5,6 @@ import {
   Send,
   MoreHorizontal,
   Edit2,
-  Trash2,
   RefreshCw,
   Eye,
   Filter,
@@ -18,10 +17,12 @@ import {
   Info,
   ArrowLeftRight,
   User,
-  PlusCircle,
-  MinusCircle,
+  Download,
+  Ban,
 } from 'lucide-react';
 import type { SalesOrder, PaymentRecord, InventoryItem } from '../../types/crm';
+import { CancelOrderModal } from './CancelOrderModal';
+import { InventoryDetailModal } from './InventoryDetailModal';
 
 interface SalesListProps {
   orders: SalesOrder[];
@@ -32,10 +33,11 @@ interface SalesListProps {
   onOpenDetail: (order: SalesOrder) => void;
   onDeleteOrder: (id: string) => void;
   onOpenRecordPayment: () => void;
-  onDeletePayment: (id: string) => void;
+  onDeletePayment?: (id: string) => void;
   onOpenAddInventory: () => void;
-  onAdjustStock: (id: string, delta: number) => void;
-  onDeleteInventory: (id: string) => void;
+  onAdjustStock?: (id: string, delta: number) => void;
+  onDeleteInventory?: (id: string) => void;
+  onUpdateStatus?: (id: string, newStatus: SalesOrder['status']) => Promise<void>;
   staffList?: string[];
 }
 
@@ -65,17 +67,254 @@ function formatCurrencyINR(val?: number): string {
   return Number(val).toLocaleString('en-IN');
 }
 
+// Download printable formatted document helper
+function downloadOrderDocument(order: SalesOrder) {
+  const isPFI = order.type === 'proforma_invoice';
+  const prefix = isPFI ? 'PFI-' : 'INV-';
+  const formattedId =
+    order.order_number.startsWith('PFI-') || order.order_number.startsWith('INV-')
+      ? order.order_number
+      : `${prefix}${order.order_number}`;
+
+  const docTitle = isPFI ? 'PROFORMA INVOICE' : 'TAX INVOICE';
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    window.print();
+    return;
+  }
+
+  const itemsHtml =
+    order.items && order.items.length > 0
+      ? order.items
+          .map(
+            (it, idx) => `
+        <tr>
+          <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: center;">${idx + 1}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">
+            <strong>${it.product}</strong>
+            ${it.description ? `<div style="font-size: 11px; color: #64748b;">${it.description}</div>` : ''}
+          </td>
+          <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: center;">${it.quantity}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: right;">₹${Number(it.rate || 0).toLocaleString('en-IN')}</td>
+          <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 600;">₹${(Number(it.quantity || 0) * Number(it.rate || 0)).toLocaleString('en-IN')}</td>
+        </tr>
+      `
+          )
+          .join('')
+      : `<tr><td colspan="5" style="padding: 20px; text-align: center; color: #94a3b8;">General Sales Document Items</td></tr>`;
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>${docTitle} - ${formattedId}</title>
+        <style>
+          @page { size: A4; margin: 15mm; }
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #1e293b;
+            padding: 25px;
+            margin: 0;
+            background: #fff;
+          }
+          .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #1a237e;
+            padding-bottom: 18px;
+            margin-bottom: 24px;
+          }
+          .company-name {
+            font-size: 20px;
+            font-weight: 800;
+            color: #1a237e;
+            letter-spacing: -0.5px;
+          }
+          .company-sub {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 4px;
+          }
+          .doc-badge {
+            text-align: right;
+          }
+          .doc-type {
+            font-size: 22px;
+            font-weight: 800;
+            color: #1a237e;
+            letter-spacing: 0.5px;
+          }
+          .doc-number {
+            font-size: 15px;
+            font-weight: 700;
+            color: #475569;
+            margin-top: 2px;
+          }
+          .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 28px;
+            font-size: 13px;
+          }
+          .info-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px 16px;
+          }
+          .info-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #64748b;
+            margin-bottom: 6px;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 24px;
+            font-size: 13px;
+          }
+          thead th {
+            background: #f1f5f9;
+            color: #334155;
+            font-weight: 700;
+            padding: 10px;
+            border-bottom: 2px solid #cbd5e1;
+            text-align: left;
+          }
+          .totals-box {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+          }
+          .totals-table {
+            width: 280px;
+            font-size: 13px;
+          }
+          .totals-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid #e2e8f0;
+          }
+          .totals-row.grand {
+            font-size: 16px;
+            font-weight: 800;
+            color: #1a237e;
+            border-bottom: 2px solid #1a237e;
+            padding-top: 10px;
+          }
+          .footer-note {
+            margin-top: 40px;
+            padding-top: 15px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 11px;
+            color: #94a3b8;
+            text-align: center;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <div class="company-name">IV SQUARE STRUCTURE INDIA PVT LTD</div>
+            <div class="company-sub">Corporate Office • Rajkot, Gujarat, India</div>
+          </div>
+          <div class="doc-badge">
+            <div class="doc-type">${docTitle}</div>
+            <div class="doc-number">${formattedId}</div>
+          </div>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-box">
+            <div class="info-title">Bill To / Customer</div>
+            <div style="font-size: 15px; font-weight: 700; color: #0f172a;">${order.reference_name || 'Customer'}</div>
+            ${order.notes ? `<div style="margin-top: 6px; color: #475569;">${order.notes}</div>` : ''}
+          </div>
+          <div class="info-box">
+            <div class="info-title">Document Details</div>
+            <div><strong>Date:</strong> ${new Date(order.date).toLocaleDateString('en-GB')}</div>
+            ${order.due_date ? `<div><strong>Due Date:</strong> ${new Date(order.due_date).toLocaleDateString('en-GB')}</div>` : ''}
+            <div><strong>Staff:</strong> ${order.staff_name || '—'}</div>
+            <div><strong>Status:</strong> ${order.status.toUpperCase()}</div>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 40px; text-align: center;">#</th>
+              <th>Item & Description</th>
+              <th style="width: 70px; text-align: center;">Qty</th>
+              <th style="width: 110px; text-align: right;">Rate (₹)</th>
+              <th style="width: 120px; text-align: right;">Amount (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsHtml}
+          </tbody>
+        </table>
+
+        <div class="totals-box">
+          <div class="totals-table">
+            <div class="totals-row">
+              <span style="color: #64748b;">Taxable Amount:</span>
+              <span>₹${Number(order.taxable_amount || order.total_amount || 0).toLocaleString('en-IN')}</span>
+            </div>
+            ${
+              order.total_discount
+                ? `
+              <div class="totals-row">
+                <span style="color: #64748b;">Discount:</span>
+                <span style="color: #10b981;">-₹${Number(order.total_discount).toLocaleString('en-IN')}</span>
+              </div>
+            `
+                : ''
+            }
+            <div class="totals-row grand">
+              <span>Total Amount:</span>
+              <span>₹${Number(order.total_amount || 0).toLocaleString('en-IN')}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer-note">
+          This is a computer generated document. Generated from MY TEAMS CRM.
+        </div>
+
+        <script>
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+            }, 300);
+          };
+        <\/script>
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+}
+
 // Dropdown menu for each order's "..." button
+// Proforma Invoices: View, Download, Cancel
+// Invoices: View, Download, Edit
 function OrderRowActions({
   order,
+  onOpenView,
+  onDownload,
   onOpenEdit,
-  onOpenDetail,
-  onDeleteOrder,
+  onRequestCancel,
 }: {
   order: SalesOrder;
+  onOpenView: (order: SalesOrder) => void;
+  onDownload: (order: SalesOrder) => void;
   onOpenEdit: (order: SalesOrder) => void;
-  onOpenDetail: (order: SalesOrder) => void;
-  onDeleteOrder: (id: string) => void;
+  onRequestCancel: (order: SalesOrder) => void;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -89,6 +328,8 @@ function OrderRowActions({
     if (open) document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
+
+  const isProforma = order.type === 'proforma_invoice';
 
   return (
     <div className="relative" ref={ref}>
@@ -105,45 +346,58 @@ function OrderRowActions({
 
       {open && (
         <div className="absolute right-0 top-8 z-50 w-36 bg-white rounded-md shadow-xl border border-gray-200 py-1.5 text-xs">
+          {/* Option 1: View */}
           <button
             onClick={(e) => {
               e.stopPropagation();
               setOpen(false);
-              onOpenDetail(order);
+              onOpenView(order);
             }}
             className="w-full flex items-center gap-2.5 px-3.5 py-2 text-gray-700 hover:bg-gray-50 cursor-pointer"
           >
-            <Info className="w-4 h-4 text-[#1a237e]" />
-            <span>View Details</span>
+            <Eye className="w-4 h-4 text-[#1a237e]" />
+            <span>View</span>
           </button>
+
+          {/* Option 2: Download */}
           <button
             onClick={(e) => {
               e.stopPropagation();
               setOpen(false);
-              onOpenEdit(order);
+              onDownload(order);
             }}
             className="w-full flex items-center gap-2.5 px-3.5 py-2 text-gray-700 hover:bg-gray-50 cursor-pointer"
           >
-            <Edit2 className="w-4 h-4 text-[#1a237e]" />
-            <span>Edit</span>
+            <Download className="w-4 h-4 text-[#1a237e]" />
+            <span>Download</span>
           </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setOpen(false);
-              if (
-                window.confirm(
-                  `Delete ${order.type.replace('_', ' ')} #${order.order_number}?`
-                )
-              ) {
-                onDeleteOrder(order.id);
-              }
-            }}
-            className="w-full flex items-center gap-2.5 px-3.5 py-2 text-rose-600 hover:bg-rose-50 cursor-pointer"
-          >
-            <Trash2 className="w-4 h-4 text-rose-500" />
-            <span>Delete</span>
-          </button>
+
+          {/* Option 3: Proforma -> Cancel | Invoice -> Edit */}
+          {isProforma ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpen(false);
+                onRequestCancel(order);
+              }}
+              className="w-full flex items-center gap-2.5 px-3.5 py-2 text-rose-600 hover:bg-rose-50 cursor-pointer"
+            >
+              <Ban className="w-4 h-4 text-rose-500" />
+              <span>Cancel</span>
+            </button>
+          ) : (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpen(false);
+                onOpenEdit(order);
+              }}
+              className="w-full flex items-center gap-2.5 px-3.5 py-2 text-gray-700 hover:bg-gray-50 cursor-pointer"
+            >
+              <Edit2 className="w-4 h-4 text-[#1a237e]" />
+              <span>Edit</span>
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -157,12 +411,13 @@ export const SalesList: React.FC<SalesListProps> = ({
   onOpenAdd,
   onOpenEdit,
   onOpenDetail,
-  onDeleteOrder,
+  onDeleteOrder: _onDeleteOrder,
   onOpenRecordPayment,
-  onDeletePayment,
+  onDeletePayment: _onDeletePayment,
   onOpenAddInventory,
-  onAdjustStock,
-  onDeleteInventory,
+  onAdjustStock: _onAdjustStock,
+  onDeleteInventory: _onDeleteInventory,
+  onUpdateStatus,
   staffList = [],
 }) => {
   // Inner Sub-navigation (Proforma Invoices, Invoices, Payments, Inventory)
@@ -175,6 +430,24 @@ export const SalesList: React.FC<SalesListProps> = ({
   const [staffFilter, setStaffFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
+
+  // Confirmation alert dialogue state for Cancel Proforma Invoice
+  const [cancelModalOrder, setCancelModalOrder] = useState<SalesOrder | null>(null);
+  const [isCancellingOrder, setIsCancellingOrder] = useState(false);
+
+  // Detail modal state for Inventory item info
+  const [detailInventoryItem, setDetailInventoryItem] = useState<InventoryItem | null>(null);
+
+  const handleConfirmCancelOrder = async (orderId: string) => {
+    if (!onUpdateStatus) return;
+    setIsCancellingOrder(true);
+    try {
+      await onUpdateStatus(orderId, 'cancelled');
+    } finally {
+      setIsCancellingOrder(false);
+      setCancelModalOrder(null);
+    }
+  };
 
   // Filter orders by subTab ('proforma_invoice' or 'invoice')
   const isOrderView = subTab === 'proforma_invoice' || subTab === 'invoice';
@@ -747,9 +1020,10 @@ export const SalesList: React.FC<SalesListProps> = ({
                           {/* Three dots dropdown menu */}
                           <OrderRowActions
                             order={order}
+                            onOpenView={onOpenDetail}
+                            onDownload={downloadOrderDocument}
                             onOpenEdit={onOpenEdit}
-                            onOpenDetail={onOpenDetail}
-                            onDeleteOrder={onDeleteOrder}
+                            onRequestCancel={(ord) => setCancelModalOrder(ord)}
                           />
                         </div>
                       </td>
@@ -785,7 +1059,6 @@ export const SalesList: React.FC<SalesListProps> = ({
                   <th className="px-3.5 py-3.5 text-right">Amount (₹)</th>
                   <th className="px-3.5 py-3.5">Date</th>
                   <th className="px-3.5 py-3.5">Staff</th>
-                  <th className="px-3.5 py-3.5 text-right"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 bg-white">
@@ -819,23 +1092,11 @@ export const SalesList: React.FC<SalesListProps> = ({
                         {getInitials(p.staff_name)}
                       </div>
                     </td>
-                    <td className="px-3.5 py-3.5 text-right">
-                      <button
-                        onClick={() => {
-                          if (window.confirm(`Delete payment #${p.payment_number}?`)) {
-                            onDeletePayment(p.id);
-                          }
-                        }}
-                        className="p-1 rounded text-gray-400 hover:text-rose-600 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
                   </tr>
                 ))}
                 {filteredPayments.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="text-center py-16 text-gray-400 text-xs">
+                    <td colSpan={7} className="text-center py-16 text-gray-400 text-xs">
                       No payment records found.
                     </td>
                   </tr>
@@ -857,7 +1118,7 @@ export const SalesList: React.FC<SalesListProps> = ({
                   <th className="px-3.5 py-3.5 text-center">In Stock</th>
                   <th className="px-3.5 py-3.5 text-right">Rate (₹)</th>
                   <th className="px-3.5 py-3.5">Status</th>
-                  <th className="px-3.5 py-3.5 text-right">Stock Action</th>
+                  <th className="px-3.5 py-3.5 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 bg-white">
@@ -890,32 +1151,13 @@ export const SalesList: React.FC<SalesListProps> = ({
                       </span>
                     </td>
                     <td className="px-3.5 py-3.5 text-right whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => onAdjustStock(item.id, -1)}
-                          title="Reduce stock"
-                          className="p-1 text-gray-500 hover:text-rose-600 cursor-pointer"
-                        >
-                          <MinusCircle className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => onAdjustStock(item.id, 1)}
-                          title="Add stock"
-                          className="p-1 text-gray-500 hover:text-emerald-600 cursor-pointer"
-                        >
-                          <PlusCircle className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (window.confirm(`Delete product ${item.name}?`)) {
-                              onDeleteInventory(item.id);
-                            }
-                          }}
-                          className="p-1 text-gray-400 hover:text-rose-600 cursor-pointer ml-1"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => setDetailInventoryItem(item)}
+                        title="View Product Details"
+                        className="p-1.5 rounded hover:bg-blue-50 text-[#1a237e] transition-colors cursor-pointer"
+                      >
+                        <Info className="w-4 h-4 text-[#1a237e]" />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -977,6 +1219,22 @@ export const SalesList: React.FC<SalesListProps> = ({
           </div>
         )}
       </div>
+
+      {/* ── CONFIRMATION ALERT DIALOGUE FOR CANCEL PROFORMA INVOICE ── */}
+      <CancelOrderModal
+        order={cancelModalOrder}
+        isOpen={!!cancelModalOrder}
+        onClose={() => setCancelModalOrder(null)}
+        onConfirm={handleConfirmCancelOrder}
+        isCancelling={isCancellingOrder}
+      />
+
+      {/* ── INVENTORY PRODUCT DETAILS MODAL ── */}
+      <InventoryDetailModal
+        item={detailInventoryItem}
+        isOpen={!!detailInventoryItem}
+        onClose={() => setDetailInventoryItem(null)}
+      />
     </div>
   );
 };

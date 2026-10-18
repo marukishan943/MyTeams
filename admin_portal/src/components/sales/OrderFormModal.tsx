@@ -34,7 +34,7 @@ export const OrderFormModal: React.FC<OrderFormModalProps> = ({
   const [staffName, setStaffName] = useState('');
   const [date, setDate] = useState('');
   const [dueDate, setDueDate] = useState('');
-  const [status, setStatus] = useState<'open' | 'pending' | 'delivered' | 'converted'>('open');
+  const [status, setStatus] = useState<SalesOrder['status']>('open');
   const [items, setItems] = useState<OrderItem[]>([]);
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -216,6 +216,7 @@ export const OrderFormModal: React.FC<OrderFormModalProps> = ({
               <option value="pending">Pending</option>
               <option value="delivered">Delivered</option>
               <option value="converted">Converted / Paid</option>
+              <option value="cancelled">Cancelled</option>
             </select>
           </div>
         </div>
