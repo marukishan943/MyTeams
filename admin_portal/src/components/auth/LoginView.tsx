@@ -76,7 +76,7 @@ export const LoginView: React.FC = () => {
                   <Mail className="h-4 w-4" />
                 </div>
                 <input
-                  type="email"
+                  type="text"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="admin@myteams.com"

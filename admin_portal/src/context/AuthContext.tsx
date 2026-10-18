@@ -45,17 +45,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, pass: string) => {
     setIsLoading(true);
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPass = pass.trim();
+
+    if (!cleanEmail || !cleanPass) {
+      setIsLoading(false);
+      return { success: false, error: 'Please enter both email and password.' };
+    }
+
     try {
       // 1. Try Supabase Auth first
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password: pass,
+        email: cleanEmail,
+        password: cleanPass,
       });
 
       if (!error && data?.user) {
         const authUser: UserProfile = {
           id: data.user.id,
-          email: data.user.email || email,
+          email: data.user.email || cleanEmail,
           name: data.user.user_metadata?.full_name || 'Admin User',
           role: 'admin',
           company: 'IV SQUARE STRUCTURE INDIA PVT LTD',
@@ -66,22 +74,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: true };
       }
 
-      // 2. Fallback check for admin portal access
-      if (
-        (email.toLowerCase() === 'admin@myteams.com' && pass === 'admin123') ||
-        (email.toLowerCase() === 'admin' && pass === 'admin') ||
-        email.includes('admin')
-      ) {
-        setUser(DEFAULT_ADMIN);
-        localStorage.setItem('myteams_admin_user', JSON.stringify(DEFAULT_ADMIN));
+      // 2. Strict check for pre-configured Admin credentials
+      // ONLY allow authorized admin emails with the exact correct password 'admin123'
+      const authorizedAdminEmails = [
+        'admin@myteams.com',
+        'ivsquarestructure@gmail.com',
+        'admin',
+      ];
+
+      if (authorizedAdminEmails.includes(cleanEmail) && cleanPass === 'admin123') {
+        const adminUser: UserProfile = {
+          ...DEFAULT_ADMIN,
+          email: cleanEmail === 'admin' ? 'admin@myteams.com' : cleanEmail,
+        };
+        setUser(adminUser);
+        localStorage.setItem('myteams_admin_user', JSON.stringify(adminUser));
         setIsLoading(false);
         return { success: true };
       }
 
+      // If credentials do not match, REJECT with error
       setIsLoading(false);
       return {
         success: false,
-        error: error?.message || 'Invalid email or password. Use admin@myteams.com / admin123',
+        error: 'Invalid email or password. Please enter correct credentials.',
       };
     } catch (err: unknown) {
       setIsLoading(false);
