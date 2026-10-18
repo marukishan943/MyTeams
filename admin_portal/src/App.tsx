@@ -393,6 +393,40 @@ export function App() {
     }
   };
 
+  const handleConvertToCustomer = async (lead: Lead) => {
+    if (!window.confirm(`Convert lead #${lead.lead_number} (${lead.name}) to customer?`)) {
+      return;
+    }
+    try {
+      const newCustomer = await customersService.createCustomer({
+        name: lead.name,
+        company: lead.company || lead.name,
+        phone: lead.phone,
+        email: lead.email || '',
+        website: lead.website || '',
+        gst: lead.gst || '',
+        territory: lead.territory || 'RAJKOT',
+        city: lead.city || 'RAJKOT',
+        state: lead.state || '',
+        pincode: lead.pincode || '',
+        address: lead.address || '',
+        staff_name: lead.staff_name || '',
+        category: 'Retailer',
+        status: 'Active',
+      });
+      setCustomers((prev) => [newCustomer, ...prev]);
+
+      const updatedLead = await leadsService.updateLead(lead.id, { stage: 'converted' });
+      setLeads((prev) => prev.map((l) => (l.id === updatedLead.id ? updatedLead : l)));
+      if (detailLead?.id === updatedLead.id) setDetailLead(updatedLead);
+
+      addToast('success', `Lead #${lead.lead_number} converted to customer #${newCustomer.customer_number}.`);
+    } catch (err) {
+      console.error('Error converting lead to customer:', err);
+      addToast('error', 'Failed to convert lead to customer.');
+    }
+  };
+
   // ==========================================
   // CUSTOMERS CRUD HANDLERS
   // ==========================================
@@ -694,6 +728,7 @@ export function App() {
                   }}
                   onOpenDetail={(lead) => setDetailLead(lead)}
                   onDelete={handleDeleteLead}
+                  onConvertToCustomer={handleConvertToCustomer}
                   staffList={staffList}
                 />
               )}

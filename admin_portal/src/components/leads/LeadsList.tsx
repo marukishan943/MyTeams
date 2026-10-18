@@ -6,7 +6,7 @@ import {
   MoreHorizontal,
   Edit2,
   Trash2,
-  UserCheck,
+  CornerUpRight,
   RefreshCw,
   Eye,
   Filter,
@@ -202,18 +202,7 @@ function RowActionsMenu({
         <MoreHorizontal className="w-4 h-4" />
       </button>
       {open && (
-        <div className="absolute right-0 top-8 z-50 w-44 bg-white rounded-xl shadow-lg border border-gray-200 py-1 text-xs">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setOpen(false);
-              onOpenDetail(lead);
-            }}
-            className="w-full flex items-center gap-2.5 px-3.5 py-2 text-gray-700 hover:bg-gray-50 cursor-pointer"
-          >
-            <Eye className="w-3.5 h-3.5 text-gray-400" />
-            View Details
-          </button>
+        <div className="absolute right-0 top-8 z-50 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1.5 text-xs">
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -222,23 +211,22 @@ function RowActionsMenu({
             }}
             className="w-full flex items-center gap-2.5 px-3.5 py-2 text-gray-700 hover:bg-gray-50 cursor-pointer"
           >
-            <Edit2 className="w-3.5 h-3.5 text-gray-400" />
-            Edit
+            <Edit2 className="w-4 h-4 text-[#3949ab]" />
+            <span>Edit</span>
           </button>
-          {onConvertToCustomer && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setOpen(false);
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpen(false);
+              if (onConvertToCustomer) {
                 onConvertToCustomer(lead);
-              }}
-              className="w-full flex items-center gap-2.5 px-3.5 py-2 text-indigo-700 hover:bg-indigo-50 cursor-pointer"
-            >
-              <UserCheck className="w-3.5 h-3.5 text-indigo-400" />
-              Convert to Customer
-            </button>
-          )}
-          <div className="my-1 border-t border-gray-100" />
+              }
+            }}
+            className="w-full flex items-center gap-2.5 px-3.5 py-2 text-gray-700 hover:bg-gray-50 cursor-pointer"
+          >
+            <CornerUpRight className="w-4 h-4 text-[#3949ab]" />
+            <span>Convert to Customer</span>
+          </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -251,10 +239,10 @@ function RowActionsMenu({
                 onDelete(lead.id);
               }
             }}
-            className="w-full flex items-center gap-2.5 px-3.5 py-2 text-rose-600 hover:bg-rose-50 cursor-pointer"
+            className="w-full flex items-center gap-2.5 px-3.5 py-2 text-gray-700 hover:bg-gray-50 cursor-pointer"
           >
-            <Trash2 className="w-3.5 h-3.5 text-rose-400" />
-            Delete
+            <Trash2 className="w-4 h-4 text-[#3949ab]" />
+            <span>Delete</span>
           </button>
         </div>
       )}
