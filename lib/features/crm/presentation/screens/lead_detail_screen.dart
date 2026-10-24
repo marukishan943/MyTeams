@@ -1,10 +1,9 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/entities/lead.dart';
 import '../../domain/entities/lead_enums.dart';
 import '../../domain/entities/lead_note.dart';
@@ -539,25 +538,27 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
                   ],
                 ),
                 const SizedBox(height: 16),
-                // Action buttons
+                // Action buttons: Call, WhatsApp, Mail
                 Row(
                   children: [
                     _buildCircleActionButton(
-                      icon: Icons.phone_outlined,
+                      child: const Icon(Icons.phone, color: _kPrimaryBlue, size: 22),
+                      tooltip: 'Call',
                       onTap: () => _makeCall(lead.phone),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 14),
                     _buildCircleActionButton(
-                      icon: Icons.chat_outlined,
+                      child: _buildWhatsAppIcon(),
+                      tooltip: 'WhatsApp',
+                      borderColor: const Color(0xFF25D366),
                       onTap: () => _openWhatsApp(lead.phone),
                     ),
-                    if (lead.email.isNotEmpty) ...[
-                      const SizedBox(width: 12),
-                      _buildCircleActionButton(
-                        icon: Icons.email_outlined,
-                        onTap: () => _sendEmail(lead.email),
-                      ),
-                    ],
+                    const SizedBox(width: 14),
+                    _buildCircleActionButton(
+                      child: const Icon(Icons.email_outlined, color: _kPrimaryBlue, size: 22),
+                      tooltip: 'Mail',
+                      onTap: () => _sendEmail(lead.email, lead.name),
+                    ),
                   ],
                 ),
               ],
@@ -630,19 +631,59 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
   }
 
   Widget _buildCircleActionButton({
-    required IconData icon,
+    required Widget child,
     required VoidCallback onTap,
+    Color? borderColor,
+    String? tooltip,
   }) {
-    return GestureDetector(
+    Widget btn = GestureDetector(
       onTap: onTap,
       child: Container(
         width: 46,
         height: 46,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(color: _kPrimaryBlue, width: 1.5),
+          color: Colors.white,
+          border: Border.all(
+            color: borderColor ?? _kPrimaryBlue,
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-        child: Icon(icon, color: _kPrimaryBlue, size: 22),
+        child: Center(child: child),
+      ),
+    );
+
+    if (tooltip != null) {
+      return Tooltip(message: tooltip, child: btn);
+    }
+    return btn;
+  }
+
+  Widget _buildWhatsAppIcon({double size = 22}) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Icon(
+            Icons.chat_bubble,
+            size: size,
+            color: const Color(0xFF25D366),
+          ),
+          Icon(
+            Icons.phone,
+            size: size * 0.52,
+            color: Colors.white,
+          ),
+        ],
       ),
     );
   }
@@ -1674,24 +1715,133 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
 
   // ── URL Launchers ─────────────────────────────────────────────────
   Future<void> _makeCall(String phone) async {
-    final uri = Uri.parse('tel:$phone');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
+    final cleanPhone = phone.replaceAll(RegExp(r'[^0-9+]'), '');
+    if (cleanPhone.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No phone number provided for this lead'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return;
+    }
+
+    final uri = Uri(scheme: 'tel', path: cleanPhone);
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+      } else {
+        await launchUrl(uri);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not open phone dialer: $e'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 
   Future<void> _openWhatsApp(String phone) async {
-    final cleanPhone = phone.replaceAll(RegExp(r'[^0-9+]'), '');
-    final uri = Uri.parse('https://wa.me/$cleanPhone');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    var cleanPhone = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cleanPhone.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No phone number provided for WhatsApp'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return;
+    }
+
+    // Default to country code 91 if 10 digits
+    if (cleanPhone.length == 10) {
+      cleanPhone = '91$cleanPhone';
+    }
+
+    final nativeUri = Uri.parse('whatsapp://send?phone=$cleanPhone');
+    final webUri = Uri.parse('https://wa.me/$cleanPhone');
+
+    try {
+      if (await canLaunchUrl(nativeUri)) {
+        await launchUrl(nativeUri, mode: LaunchMode.externalApplication);
+      } else {
+        await launchUrl(webUri, mode: LaunchMode.externalApplication);
+      }
+    } catch (_) {
+      try {
+        await launchUrl(webUri, mode: LaunchMode.externalApplication);
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not open WhatsApp on this device'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
     }
   }
 
-  Future<void> _sendEmail(String email) async {
-    final uri = Uri.parse('mailto:$email');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
+  Future<void> _sendEmail(String email, [String? leadName]) async {
+    final cleanEmail = email.trim();
+    if (cleanEmail.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No email address provided for this lead'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return;
+    }
+
+    String? currentUserEmail;
+    try {
+      currentUserEmail = Supabase.instance.client.auth.currentUser?.email;
+    } catch (_) {}
+
+    final queryParameters = <String, String>{};
+    if (currentUserEmail != null && currentUserEmail.isNotEmpty) {
+      queryParameters['from'] = currentUserEmail;
+    }
+    queryParameters['subject'] = (leadName != null && leadName.trim().isNotEmpty)
+        ? 'Inquiry Follow-up - ${leadName.trim()}'
+        : 'Inquiry Follow-up';
+
+    final uri = Uri(
+      scheme: 'mailto',
+      path: cleanEmail,
+      query: queryParameters.entries
+          .map((e) =>
+              '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+          .join('&'),
+    );
+
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+      } else {
+        await launchUrl(uri);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not open email client: $e'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 
