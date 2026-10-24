@@ -26,6 +26,7 @@ class LeadsLoaded extends LeadState {
   final LeadStats stats;
   final String searchQuery;
   final String selectedSource;
+  final String selectedStage;
   final DateTime? filterStartDate;
   final DateTime? filterEndDate;
 
@@ -38,6 +39,7 @@ class LeadsLoaded extends LeadState {
     required this.stats,
     this.searchQuery = '',
     this.selectedSource = 'All',
+    this.selectedStage = 'All',
     this.filterStartDate,
     this.filterEndDate,
   });
@@ -51,6 +53,7 @@ class LeadsLoaded extends LeadState {
     LeadStats? stats,
     String? searchQuery,
     String? selectedSource,
+    String? selectedStage,
     DateTime? filterStartDate,
     DateTime? filterEndDate,
   }) {
@@ -63,6 +66,7 @@ class LeadsLoaded extends LeadState {
       stats: stats ?? this.stats,
       searchQuery: searchQuery ?? this.searchQuery,
       selectedSource: selectedSource ?? this.selectedSource,
+      selectedStage: selectedStage ?? this.selectedStage,
       filterStartDate: filterStartDate ?? this.filterStartDate,
       filterEndDate: filterEndDate ?? this.filterEndDate,
     );
@@ -78,6 +82,7 @@ class LeadsLoaded extends LeadState {
         stats,
         searchQuery,
         selectedSource,
+        selectedStage,
         filterStartDate,
         filterEndDate,
       ];

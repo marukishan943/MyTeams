@@ -137,6 +137,7 @@ class LeadBloc extends Bloc<LeadEvent, LeadState> {
     Lead lead,
     String query,
     String source,
+    String stage,
     DateTime? startDate,
     DateTime? endDate,
   ) {
@@ -159,7 +160,14 @@ class LeadBloc extends Bloc<LeadEvent, LeadState> {
       }
     }
 
-    // 3. Date Range
+    // 3. Stage Filter ('All', 'New', 'Contacted', 'Proposal Sent', 'Disqualified', 'Converted')
+    if (stage.isNotEmpty && stage.toLowerCase() != 'all') {
+      if (lead.stage.displayName.toLowerCase() != stage.toLowerCase()) {
+        return false;
+      }
+    }
+
+    // 4. Date Range
     if (startDate != null) {
       final start =
           DateTime(startDate.year, startDate.month, startDate.day, 0, 0, 0);
@@ -177,19 +185,20 @@ class LeadBloc extends Bloc<LeadEvent, LeadState> {
     if (state is LeadsLoaded) {
       final current = state as LeadsLoaded;
       final source = event.source ?? current.selectedSource;
+      final stage = event.stage ?? current.selectedStage;
       final start = event.startDate ?? current.filterStartDate;
       final end = event.endDate ?? current.filterEndDate;
       final query = current.searchQuery;
 
       final filteredOpen = current.openLeads
-          .where((l) => _matchesCriteria(l, query, source, start, end))
+          .where((l) => _matchesCriteria(l, query, source, stage, start, end))
           .toList();
       final filteredClosed = current.closedLeads
-          .where((l) => _matchesCriteria(l, query, source, start, end))
+          .where((l) => _matchesCriteria(l, query, source, stage, start, end))
           .toList();
 
       final filteredAll = current.allLeads
-          .where((l) => _matchesCriteria(l, query, source, start, end))
+          .where((l) => _matchesCriteria(l, query, source, stage, start, end))
           .toList();
       final updatedStats = LeadStats(
         newCount: filteredAll.where((l) => l.stage == LeadStage.newLead).length,
@@ -207,6 +216,7 @@ class LeadBloc extends Bloc<LeadEvent, LeadState> {
         filteredOpenLeads: filteredOpen,
         filteredClosedLeads: filteredClosed,
         selectedSource: source,
+        selectedStage: stage,
         filterStartDate: start,
         filterEndDate: end,
         stats: updatedStats,
@@ -219,18 +229,19 @@ class LeadBloc extends Bloc<LeadEvent, LeadState> {
       final current = state as LeadsLoaded;
       final query = event.query.toLowerCase().trim();
       final source = current.selectedSource;
+      final stage = current.selectedStage;
       final start = current.filterStartDate;
       final end = current.filterEndDate;
 
       final filteredOpen = current.openLeads
-          .where((l) => _matchesCriteria(l, query, source, start, end))
+          .where((l) => _matchesCriteria(l, query, source, stage, start, end))
           .toList();
       final filteredClosed = current.closedLeads
-          .where((l) => _matchesCriteria(l, query, source, start, end))
+          .where((l) => _matchesCriteria(l, query, source, stage, start, end))
           .toList();
 
       final filteredAll = current.allLeads
-          .where((l) => _matchesCriteria(l, query, source, start, end))
+          .where((l) => _matchesCriteria(l, query, source, stage, start, end))
           .toList();
       final updatedStats = LeadStats(
         newCount: filteredAll.where((l) => l.stage == LeadStage.newLead).length,

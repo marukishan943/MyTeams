@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../domain/entities/lead.dart';
+import '../../domain/entities/lead_enums.dart';
 import '../bloc/lead_bloc.dart';
 import '../bloc/lead_event.dart';
 import '../bloc/lead_state.dart';
@@ -498,13 +499,16 @@ class _LeadsScreenState extends State<LeadsScreen>
     final now = DateTime.now();
     final leadBloc = context.read<LeadBloc>();
     final currentState = leadBloc.state;
+    final bool showStage = _tabController.index != 0;
 
     String selectedSource = 'All';
+    String selectedStage = 'All';
     DateTime startDate = DateTime(now.year, now.month, 1);
     DateTime endDate = now;
 
     if (currentState is LeadsLoaded) {
       selectedSource = currentState.selectedSource;
+      selectedStage = currentState.selectedStage;
       startDate =
           currentState.filterStartDate ?? DateTime(now.year, now.month, 1);
       endDate = currentState.filterEndDate ?? now;
@@ -604,6 +608,68 @@ class _LeadsScreenState extends State<LeadsScreen>
                             ),
                           ],
                         ),
+                        if (showStage) ...[
+                          const SizedBox(height: 16),
+                          // Stage Dropdown Section (LeadStage)
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Stage',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF757575),
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Container(
+                                height: 44,
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 12),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: const Color(0xFFBDBDBD),
+                                    width: 1.0,
+                                  ),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    value: selectedStage,
+                                    isExpanded: true,
+                                    icon: const Icon(
+                                      Icons.keyboard_arrow_down,
+                                      color: Color(0xFF616161),
+                                      size: 24,
+                                    ),
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      color: Color(0xFF212121),
+                                    ),
+                                    items: [
+                                      const DropdownMenuItem(
+                                          value: 'All', child: Text('All')),
+                                      ...LeadStage.values.map(
+                                        (stage) => DropdownMenuItem(
+                                          value: stage.displayName,
+                                          child: Text(stage.displayName),
+                                        ),
+                                      ),
+                                    ],
+                                    onChanged: (val) {
+                                      if (val != null) {
+                                        setDialogState(() {
+                                          selectedStage = val;
+                                        });
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                         const SizedBox(height: 20),
                         // Dates Section (Start Date and End Date)
                         Row(
@@ -681,6 +747,7 @@ class _LeadsScreenState extends State<LeadsScreen>
                                 leadBloc.add(
                                   FilterLeads(
                                     source: selectedSource,
+                                    stage: showStage ? selectedStage : 'All',
                                     startDate: startDate,
                                     endDate: endDate,
                                   ),

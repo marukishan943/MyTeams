@@ -60,17 +60,19 @@ class FilterLeadsByStage extends LeadEvent {
 
 class FilterLeads extends LeadEvent {
   final String? source;
+  final String? stage;
   final DateTime? startDate;
   final DateTime? endDate;
 
   const FilterLeads({
     this.source,
+    this.stage,
     this.startDate,
     this.endDate,
   });
 
   @override
-  List<Object?> get props => [source, startDate, endDate];
+  List<Object?> get props => [source, stage, startDate, endDate];
 }
 
 class SearchLeads extends LeadEvent {
