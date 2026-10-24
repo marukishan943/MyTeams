@@ -25,6 +25,9 @@ class LeadsLoaded extends LeadState {
   final List<Lead> filteredClosedLeads;
   final LeadStats stats;
   final String searchQuery;
+  final String selectedSource;
+  final DateTime? filterStartDate;
+  final DateTime? filterEndDate;
 
   const LeadsLoaded({
     required this.allLeads,
@@ -34,6 +37,9 @@ class LeadsLoaded extends LeadState {
     required this.filteredClosedLeads,
     required this.stats,
     this.searchQuery = '',
+    this.selectedSource = 'All',
+    this.filterStartDate,
+    this.filterEndDate,
   });
 
   LeadsLoaded copyWith({
@@ -44,6 +50,9 @@ class LeadsLoaded extends LeadState {
     List<Lead>? filteredClosedLeads,
     LeadStats? stats,
     String? searchQuery,
+    String? selectedSource,
+    DateTime? filterStartDate,
+    DateTime? filterEndDate,
   }) {
     return LeadsLoaded(
       allLeads: allLeads ?? this.allLeads,
@@ -53,6 +62,9 @@ class LeadsLoaded extends LeadState {
       filteredClosedLeads: filteredClosedLeads ?? this.filteredClosedLeads,
       stats: stats ?? this.stats,
       searchQuery: searchQuery ?? this.searchQuery,
+      selectedSource: selectedSource ?? this.selectedSource,
+      filterStartDate: filterStartDate ?? this.filterStartDate,
+      filterEndDate: filterEndDate ?? this.filterEndDate,
     );
   }
 
@@ -65,6 +77,9 @@ class LeadsLoaded extends LeadState {
         filteredClosedLeads,
         stats,
         searchQuery,
+        selectedSource,
+        filterStartDate,
+        filterEndDate,
       ];
 }
 

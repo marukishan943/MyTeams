@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../domain/entities/lead.dart';
-import '../../domain/entities/lead_enums.dart';
 import '../bloc/lead_bloc.dart';
 import '../bloc/lead_event.dart';
 import '../bloc/lead_state.dart';
@@ -68,7 +67,7 @@ class _LeadsScreenState extends State<LeadsScreen>
             },
           ),
           IconButton(
-            icon: const Icon(Icons.filter_list, color: Colors.white),
+            icon: const Icon(Icons.filter_alt, color: Colors.white),
             onPressed: () => _showFilterDialog(context),
           ),
         ],
@@ -496,64 +495,300 @@ class _LeadsScreenState extends State<LeadsScreen>
   }
 
   void _showFilterDialog(BuildContext context) {
-    showModalBottomSheet(
+    final now = DateTime.now();
+    final leadBloc = context.read<LeadBloc>();
+    final currentState = leadBloc.state;
+
+    String selectedSource = 'All';
+    DateTime startDate = DateTime(now.year, now.month, 1);
+    DateTime endDate = now;
+
+    if (currentState is LeadsLoaded) {
+      selectedSource = currentState.selectedSource;
+      startDate =
+          currentState.filterStartDate ?? DateTime(now.year, now.month, 1);
+      endDate = currentState.filterEndDate ?? now;
+    }
+
+    showDialog(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) {
-        return Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Filter by Stage',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF212121),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Stack(
+                clipBehavior: Clip.none,
                 children: [
-                  _buildFilterChip('All', null),
-                  ...LeadStage.values.map(
-                    (stage) => _buildFilterChip(stage.displayName, stage),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.fromLTRB(20, 28, 20, 28),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Text(
+                          'Filter',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E1E1E),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        // Source Dropdown Section
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Source',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF757575),
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              height: 44,
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: const Color(0xFFBDBDBD),
+                                  width: 1.0,
+                                ),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  value: selectedSource,
+                                  isExpanded: true,
+                                  icon: const Icon(
+                                    Icons.keyboard_arrow_down,
+                                    color: Color(0xFF616161),
+                                    size: 24,
+                                  ),
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    color: Color(0xFF212121),
+                                  ),
+                                  items: const [
+                                    DropdownMenuItem(
+                                        value: 'All', child: Text('All')),
+                                    DropdownMenuItem(
+                                        value: 'Call', child: Text('Call')),
+                                    DropdownMenuItem(
+                                        value: 'Email', child: Text('Email')),
+                                    DropdownMenuItem(
+                                        value: 'Website',
+                                        child: Text('Website')),
+                                    DropdownMenuItem(
+                                        value: 'Others', child: Text('Others')),
+                                  ],
+                                  onChanged: (val) {
+                                    if (val != null) {
+                                      setDialogState(() {
+                                        selectedSource = val;
+                                      });
+                                    }
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        // Dates Section (Start Date and End Date)
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildDateFilterField(
+                                label: 'Start Date',
+                                date: startDate,
+                                onTap: () async {
+                                  final picked = await showDatePicker(
+                                    context: context,
+                                    initialDate: startDate,
+                                    firstDate: DateTime(2020),
+                                    lastDate: DateTime(2035),
+                                    builder: (ctx, child) {
+                                      return Theme(
+                                        data: Theme.of(ctx).copyWith(
+                                          colorScheme: const ColorScheme.light(
+                                            primary: Color(0xFF2E3EAF),
+                                          ),
+                                        ),
+                                        child: child!,
+                                      );
+                                    },
+                                  );
+                                  if (picked != null) {
+                                    setDialogState(() {
+                                      startDate = picked;
+                                    });
+                                  }
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _buildDateFilterField(
+                                label: 'End Date',
+                                date: endDate,
+                                onTap: () async {
+                                  final picked = await showDatePicker(
+                                    context: context,
+                                    initialDate: endDate,
+                                    firstDate: DateTime(2020),
+                                    lastDate: DateTime(2035),
+                                    builder: (ctx, child) {
+                                      return Theme(
+                                        data: Theme.of(ctx).copyWith(
+                                          colorScheme: const ColorScheme.light(
+                                            primary: Color(0xFF2E3EAF),
+                                          ),
+                                        ),
+                                        child: child!,
+                                      );
+                                    },
+                                  );
+                                  if (picked != null) {
+                                    setDialogState(() {
+                                      endDate = picked;
+                                    });
+                                  }
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 28),
+                        // Apply Button
+                        Center(
+                          child: SizedBox(
+                            width: 170,
+                            height: 44,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.of(dialogContext).pop();
+                                leadBloc.add(
+                                  FilterLeads(
+                                    source: selectedSource,
+                                    startDate: startDate,
+                                    endDate: endDate,
+                                  ),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF2E3EAF),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: const Text(
+                                'Apply',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Circular close button at top-right
+                  Positioned(
+                    top: -12,
+                    right: -8,
+                    child: GestureDetector(
+                      onTap: () => Navigator.of(dialogContext).pop(),
+                      child: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2C2C2C),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 4,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.close,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-            ],
-          ),
+            );
+          },
         );
       },
     );
   }
 
-  Widget _buildFilterChip(String label, LeadStage? stage) {
-    return ActionChip(
-      label: Text(label),
-      labelStyle: TextStyle(
-        color: stage?.color ?? _kPrimaryBlue,
-        fontWeight: FontWeight.w500,
+  Widget _buildDateFilterField({
+    required String label,
+    required DateTime date,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF757575),
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                DateFormat('dd-MMM-yyyy').format(date),
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: Color(0xFF212121),
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+              const Icon(
+                Icons.calendar_month_outlined,
+                color: Color(0xFF2E3EAF),
+                size: 20,
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Container(
+            height: 1.5,
+            color: const Color(0xFF2E3EAF),
+          ),
+        ],
       ),
-      backgroundColor: stage?.backgroundColor ?? const Color(0xFFE8EAF6),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(
-          color: stage?.color ?? _kPrimaryBlue,
-          width: 0.5,
-        ),
-      ),
-      onPressed: () {
-        Navigator.pop(context);
-        // Filter logic can be extended
-      },
     );
   }
 }

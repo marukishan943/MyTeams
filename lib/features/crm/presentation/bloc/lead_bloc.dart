@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/entities/lead.dart';
 import '../../domain/entities/lead_enums.dart';
+import '../../domain/entities/lead_stats.dart';
 import '../../domain/repositories/lead_repository.dart';
 import 'lead_event.dart';
 import 'lead_state.dart';
@@ -15,6 +16,7 @@ class LeadBloc extends Bloc<LeadEvent, LeadState> {
     on<UpdateLeadEvent>(_onUpdateLead);
     on<DeleteLeadEvent>(_onDeleteLead);
     on<SearchLeads>(_onSearchLeads);
+    on<FilterLeads>(_onFilterLeads);
     on<RefreshLeads>(_onRefreshLeads);
   }
 
@@ -131,42 +133,123 @@ class LeadBloc extends Bloc<LeadEvent, LeadState> {
     }
   }
 
+  bool _matchesCriteria(
+    Lead lead,
+    String query,
+    String source,
+    DateTime? startDate,
+    DateTime? endDate,
+  ) {
+    // 1. Search Query
+    if (query.isNotEmpty) {
+      final q = query.toLowerCase();
+      final matchesQuery = lead.name.toLowerCase().contains(q) ||
+          lead.company.toLowerCase().contains(q) ||
+          lead.phone.contains(q) ||
+          lead.city.toLowerCase().contains(q) ||
+          lead.staffName.toLowerCase().contains(q) ||
+          lead.leadNumber.contains(q);
+      if (!matchesQuery) return false;
+    }
+
+    // 2. Source Filter ('All', 'Call', 'Email', 'Website', 'Others')
+    if (source.isNotEmpty && source.toLowerCase() != 'all') {
+      if (lead.source.displayName.toLowerCase() != source.toLowerCase()) {
+        return false;
+      }
+    }
+
+    // 3. Date Range
+    if (startDate != null) {
+      final start =
+          DateTime(startDate.year, startDate.month, startDate.day, 0, 0, 0);
+      if (lead.date.isBefore(start)) return false;
+    }
+    if (endDate != null) {
+      final end = DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59);
+      if (lead.date.isAfter(end)) return false;
+    }
+
+    return true;
+  }
+
+  void _onFilterLeads(FilterLeads event, Emitter<LeadState> emit) {
+    if (state is LeadsLoaded) {
+      final current = state as LeadsLoaded;
+      final source = event.source ?? current.selectedSource;
+      final start = event.startDate ?? current.filterStartDate;
+      final end = event.endDate ?? current.filterEndDate;
+      final query = current.searchQuery;
+
+      final filteredOpen = current.openLeads
+          .where((l) => _matchesCriteria(l, query, source, start, end))
+          .toList();
+      final filteredClosed = current.closedLeads
+          .where((l) => _matchesCriteria(l, query, source, start, end))
+          .toList();
+
+      final filteredAll = current.allLeads
+          .where((l) => _matchesCriteria(l, query, source, start, end))
+          .toList();
+      final updatedStats = LeadStats(
+        newCount: filteredAll.where((l) => l.stage == LeadStage.newLead).length,
+        contactedCount:
+            filteredAll.where((l) => l.stage == LeadStage.contacted).length,
+        proposalSentCount:
+            filteredAll.where((l) => l.stage == LeadStage.proposalSent).length,
+        disqualifiedCount:
+            filteredAll.where((l) => l.stage == LeadStage.disqualified).length,
+        convertedCount:
+            filteredAll.where((l) => l.stage == LeadStage.converted).length,
+      );
+
+      emit(current.copyWith(
+        filteredOpenLeads: filteredOpen,
+        filteredClosedLeads: filteredClosed,
+        selectedSource: source,
+        filterStartDate: start,
+        filterEndDate: end,
+        stats: updatedStats,
+      ));
+    }
+  }
+
   void _onSearchLeads(SearchLeads event, Emitter<LeadState> emit) {
     if (state is LeadsLoaded) {
-      final currentState = state as LeadsLoaded;
+      final current = state as LeadsLoaded;
       final query = event.query.toLowerCase().trim();
+      final source = current.selectedSource;
+      final start = current.filterStartDate;
+      final end = current.filterEndDate;
 
-      if (query.isEmpty) {
-        emit(currentState.copyWith(
-          filteredOpenLeads: currentState.openLeads,
-          filteredClosedLeads: currentState.closedLeads,
-          searchQuery: '',
-        ));
-      } else {
-        final filteredOpen = currentState.openLeads.where((lead) {
-          return lead.name.toLowerCase().contains(query) ||
-              lead.company.toLowerCase().contains(query) ||
-              lead.phone.contains(query) ||
-              lead.city.toLowerCase().contains(query) ||
-              lead.staffName.toLowerCase().contains(query) ||
-              lead.leadNumber.contains(query);
-        }).toList();
+      final filteredOpen = current.openLeads
+          .where((l) => _matchesCriteria(l, query, source, start, end))
+          .toList();
+      final filteredClosed = current.closedLeads
+          .where((l) => _matchesCriteria(l, query, source, start, end))
+          .toList();
 
-        final filteredClosed = currentState.closedLeads.where((lead) {
-          return lead.name.toLowerCase().contains(query) ||
-              lead.company.toLowerCase().contains(query) ||
-              lead.phone.contains(query) ||
-              lead.city.toLowerCase().contains(query) ||
-              lead.staffName.toLowerCase().contains(query) ||
-              lead.leadNumber.contains(query);
-        }).toList();
+      final filteredAll = current.allLeads
+          .where((l) => _matchesCriteria(l, query, source, start, end))
+          .toList();
+      final updatedStats = LeadStats(
+        newCount: filteredAll.where((l) => l.stage == LeadStage.newLead).length,
+        contactedCount:
+            filteredAll.where((l) => l.stage == LeadStage.contacted).length,
+        proposalSentCount:
+            filteredAll.where((l) => l.stage == LeadStage.proposalSent).length,
+        disqualifiedCount:
+            filteredAll.where((l) => l.stage == LeadStage.disqualified).length,
+        convertedCount:
+            filteredAll.where((l) => l.stage == LeadStage.converted).length,
+      );
 
-        emit(currentState.copyWith(
-          filteredOpenLeads: filteredOpen,
-          filteredClosedLeads: filteredClosed,
-          searchQuery: query,
-        ));
-      }
+      emit(current.copyWith(
+        filteredOpenLeads: filteredOpen,
+        filteredClosedLeads: filteredClosed,
+        searchQuery: query,
+        stats: updatedStats,
+      ));
     }
   }
 
