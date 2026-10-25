@@ -251,13 +251,14 @@ class _VisitDetailScreenState extends State<VisitDetailScreen> {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          const Icon(Icons.person, size: 14, color: Colors.grey),
+                          const Icon(Icons.badge_outlined, size: 14, color: Color(0xFF64748B)),
                           const SizedBox(width: 4),
                           Text(
-                            _currentVisit.staffName,
+                            _currentVisit.staffName.isNotEmpty ? _currentVisit.staffName : 'No Reference',
                             style: const TextStyle(
-                              color: Colors.grey,
+                              color: Color(0xFF475569),
                               fontSize: 13,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],

@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/entities/lead.dart';
 import '../../domain/entities/lead_enums.dart';
 import '../bloc/lead_detail_bloc.dart';
@@ -23,6 +24,14 @@ class _EditLeadScreenState extends State<EditLeadScreen> {
   late LeadSource _selectedSource;
   late LeadStage _selectedStage;
   late int _rating;
+  late String _selectedStaff;
+  List<String> _staffList = [
+    'ADMIN ADMIN',
+    'JITESHBHAI VASANIYA',
+    'Kishan Maru',
+    'Mehul Ajagya',
+    'Sachin Chauhan',
+  ];
   late final TextEditingController _nameController;
   late final TextEditingController _companyController;
   late final TextEditingController _phoneController;
@@ -38,6 +47,8 @@ class _EditLeadScreenState extends State<EditLeadScreen> {
     _selectedSource = widget.lead.source;
     _selectedStage = widget.lead.stage;
     _rating = widget.lead.rating;
+    _selectedStaff = widget.lead.staffName.isNotEmpty ? widget.lead.staffName : 'ADMIN ADMIN';
+    _fetchAdminUsers();
     _nameController = TextEditingController(text: widget.lead.name);
     _companyController = TextEditingController(text: widget.lead.company);
     _phoneController = TextEditingController(text: widget.lead.phone);
@@ -46,6 +57,35 @@ class _EditLeadScreenState extends State<EditLeadScreen> {
     _valueController = TextEditingController(
       text: widget.lead.value > 0 ? widget.lead.value.toString() : '',
     );
+  }
+
+  Future<void> _fetchAdminUsers() async {
+    try {
+      final response = await Supabase.instance.client
+          .from('team_users')
+          .select('first_name, last_name, is_active')
+          .order('first_name', ascending: true);
+
+      final List<String> loaded = [];
+      for (final item in response) {
+        if (item['is_active'] == false) continue;
+        final first = (item['first_name'] ?? '').toString().trim();
+        final last = (item['last_name'] ?? '').toString().trim();
+        final fullName = [first, last].where((s) => s.isNotEmpty).join(' ');
+        if (fullName.isNotEmpty && !loaded.contains(fullName)) {
+          loaded.add(fullName);
+        }
+      }
+
+      if (loaded.isNotEmpty && mounted) {
+        setState(() {
+          _staffList = loaded;
+          if (_selectedStaff.isEmpty || !_staffList.contains(_selectedStaff)) {
+            _selectedStaff = _staffList.first;
+          }
+        });
+      }
+    } catch (_) {}
   }
 
   @override
@@ -163,6 +203,12 @@ class _EditLeadScreenState extends State<EditLeadScreen> {
                   contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 10),
                 ),
               ),
+              const SizedBox(height: 24),
+
+              // ── Reference ───────────────────────────────────────────
+              _buildLabel('Reference'),
+              const SizedBox(height: 8),
+              _buildReferenceField(),
               const SizedBox(height: 24),
 
               // ── Date ────────────────────────────────────────────────
@@ -382,6 +428,57 @@ class _EditLeadScreenState extends State<EditLeadScreen> {
     );
   }
 
+  Widget _buildReferenceField() {
+    final effectiveValue = _staffList.contains(_selectedStaff)
+        ? _selectedStaff
+        : (_staffList.isNotEmpty ? _staffList.first : null);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: effectiveValue,
+          isExpanded: true,
+          icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF475569)),
+          items: _staffList
+              .map((item) => DropdownMenuItem(
+                    value: item,
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.badge_outlined,
+                          size: 18,
+                          color: _kPrimaryBlue,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            item,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              color: Color(0xFF1E293B),
+                              fontWeight: FontWeight.w500,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ))
+              .toList(),
+          onChanged: (val) {
+            if (val != null) setState(() => _selectedStaff = val);
+          },
+        ),
+      ),
+    );
+  }
+
   Widget _buildLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(left: 4),
@@ -417,7 +514,7 @@ class _EditLeadScreenState extends State<EditLeadScreen> {
     context.read<LeadDetailBloc>().add(
           UpdateLeadStageEvent(widget.lead.id, {
             // Lead-info fields
-            'staffName': widget.lead.staffName,
+            'staffName': _selectedStaff,
             'name': _nameController.text.trim().isEmpty ? widget.lead.name : _nameController.text.trim(),
             'company': _companyController.text.trim(),
             'phone': _phoneController.text.trim().isEmpty ? widget.lead.phone : _phoneController.text.trim(),

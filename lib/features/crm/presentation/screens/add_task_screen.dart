@@ -84,26 +84,32 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Staff field
-            _buildSectionLabel('Staff'),
+            _buildSectionLabel('Reference'),
             const SizedBox(height: 8),
             Container(
               padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                border: Border.all(color: const Color(0xFFBDBDBD)),
-                borderRadius: BorderRadius.circular(6),
+                color: const Color(0xFFF8FAFC),
+                border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 children: [
+                  const Icon(Icons.badge_outlined, size: 20, color: _kPrimaryBlue),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       widget.lead.staffName.isNotEmpty
                           ? widget.lead.staffName
-                          : 'Staff Member',
-                      style: const TextStyle(fontSize: 16),
+                          : 'No Reference',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: Color(0xFF1E293B),
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
-                  const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
                 ],
               ),
             ),

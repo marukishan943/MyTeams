@@ -326,11 +326,15 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.person, size: 14, color: Colors.grey[500]),
+                      const Icon(Icons.badge_outlined, size: 14, color: Color(0xFF64748B)),
                       const SizedBox(width: 4),
                       Text(
-                        _currentTask.staffName,
-                        style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                        _currentTask.staffName.isNotEmpty ? _currentTask.staffName : 'No Reference',
+                        style: const TextStyle(
+                          color: Color(0xFF475569),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),

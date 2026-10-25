@@ -425,7 +425,7 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
 
           // Reference (Admin Users dropdown)
           _buildLabel('Reference'),
-          _buildDropdown(
+          _buildReferenceField(
             value: _selectedStaff,
             items: _staffList,
             onChanged: (val) {
@@ -862,6 +862,57 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
           borderSide: BorderSide(color: _kPrimaryBlue, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+      ),
+    );
+  }
+
+  Widget _buildReferenceField({
+    required String value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+  }) {
+    final effectiveValue = items.contains(value) ? value : (items.isNotEmpty ? items.first : null);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: effectiveValue,
+          isExpanded: true,
+          icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF475569)),
+          items: items
+              .map((item) => DropdownMenuItem(
+                    value: item,
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.badge_outlined,
+                          size: 18,
+                          color: _kPrimaryBlue,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            item,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              color: Color(0xFF1E293B),
+                              fontWeight: FontWeight.w500,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ))
+              .toList(),
+          onChanged: onChanged,
+        ),
       ),
     );
   }

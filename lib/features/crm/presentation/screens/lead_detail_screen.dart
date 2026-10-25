@@ -504,21 +504,42 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
                         ),
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    // Staff name
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.person, size: 16, color: Colors.grey[500]),
-                        const SizedBox(width: 4),
-                        Text(
-                          lead.staffName,
-                          style: TextStyle(
-                            fontSize: isSmall ? 12 : 13,
-                            color: Colors.grey[600],
+                    const SizedBox(height: 6),
+                    // Reference badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: const Color(0xFFD1D5DB)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.03),
+                            blurRadius: 3,
+                            offset: const Offset(0, 1),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.badge_outlined, size: 13, color: Color(0xFF4B5563)),
+                          const SizedBox(width: 4),
+                          ConstrainedBox(
+                            constraints: BoxConstraints(maxWidth: screenWidth * 0.4),
+                            child: Text(
+                              lead.staffName.isNotEmpty ? lead.staffName : 'No Reference',
+                              style: TextStyle(
+                                fontSize: isSmall ? 11.5 : 12.5,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF374151),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -643,6 +664,12 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
                     icon: Icons.location_on_outlined,
                     label: 'Territory',
                     value: lead.territory,
+                  ),
+                if (lead.staffName.isNotEmpty)
+                  _buildDetailRow(
+                    icon: Icons.badge_outlined,
+                    label: 'Reference',
+                    value: lead.staffName,
                   ),
                 if (lead.value > 0)
                   _buildDetailRow(
@@ -1467,15 +1494,15 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
           ),
           const SizedBox(width: 14),
 
-          // Staff Name
+          // Reference
           Expanded(
             child: Row(
               children: [
-                Icon(Icons.person, size: 16, color: Colors.grey[500]),
+                const Icon(Icons.badge_outlined, size: 16, color: Color(0xFF64748B)),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    order.staffName,
+                    order.staffName.isNotEmpty ? order.staffName : 'No Reference',
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,

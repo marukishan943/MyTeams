@@ -258,7 +258,7 @@ class _AddInvoiceScreenState extends State<AddInvoiceScreen> {
                     const SizedBox(height: 24),
 
                     // Staff
-                    _buildLabel('Staff'),
+                    _buildLabel('Reference'),
                     const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(

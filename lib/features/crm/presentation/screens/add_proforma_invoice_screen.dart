@@ -1071,7 +1071,7 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
                     const SizedBox(height: 24),
 
                     // ── Staff Dropdown ─────────────────────────────────────────
-                    _buildLabel('Staff'),
+                    _buildLabel('Reference'),
                     const SizedBox(height: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(
