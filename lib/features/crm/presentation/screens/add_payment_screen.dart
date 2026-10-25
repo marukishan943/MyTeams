@@ -73,88 +73,12 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Order Summary Card
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 42,
-                          height: 42,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEEF2FF),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(
-                            Icons.receipt_long_outlined,
-                            color: _kPrimaryBlue,
-                            size: 22,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Order #${widget.order.orderNumber}',
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF0F172A),
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Total: ₹${widget.order.totalAmount.toStringAsFixed(0)}',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: Color(0xFF64748B),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: widget.order.dueBalance > 0
-                            ? const Color(0xFFFEF3C7)
-                            : const Color(0xFFDCFCE7),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        'Due: ₹${widget.order.dueBalance.toStringAsFixed(0)}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: widget.order.dueBalance > 0
-                              ? const Color(0xFFB45309)
-                              : const Color(0xFF166534),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
               // Amount *
               _buildLabel('Amount', required: true),
               const SizedBox(height: 6),
@@ -163,43 +87,27 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
                 style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF0F172A),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF212121),
                 ),
-                decoration: InputDecoration(
-                  prefixIcon: const Padding(
-                    padding: EdgeInsets.only(left: 14, right: 8),
-                    child: Text(
-                      '₹',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF64748B),
-                      ),
-                    ),
+                decoration: const InputDecoration(
+                  prefixText: '₹ ',
+                  prefixStyle: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF757575),
                   ),
-                  prefixIconConstraints:
-                      const BoxConstraints(minWidth: 0, minHeight: 0),
-                  filled: true,
-                  fillColor: const Color(0xFFF8FAFC),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide:
-                        const BorderSide(color: Color(0xFFCBD5E1), width: 1.2),
+                  border: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFFBDBDBD)),
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide:
-                        const BorderSide(color: Color(0xFFCBD5E1), width: 1.2),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: Color(0xFFBDBDBD)),
                   ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide:
-                        const BorderSide(color: _kPrimaryBlue, width: 2),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: _kPrimaryBlue, width: 2),
                   ),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  contentPadding: EdgeInsets.symmetric(vertical: 8),
                 ),
                 validator: (val) {
                   if (val == null || val.trim().isEmpty) {
@@ -212,51 +120,48 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 28),
 
               // Mode *
-              _buildLabel('Payment Mode', required: true),
-              const SizedBox(height: 10),
+              _buildLabel('Mode', required: true),
+              const SizedBox(height: 12),
               Row(
                 children: [
-                  _buildModeChip('Online', Icons.credit_card_outlined),
+                  _buildModeChip('Online'),
                   const SizedBox(width: 12),
-                  _buildModeChip('Cash', Icons.payments_outlined),
+                  _buildModeChip('Cash'),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 28),
 
               // Date *
-              _buildLabel('Payment Date', required: true),
+              _buildLabel('Date', required: true),
               const SizedBox(height: 6),
               GestureDetector(
                 onTap: _pickDate,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 11),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    border: Border.all(
-                        color: const Color(0xFFCBD5E1), width: 1.2),
-                    borderRadius: BorderRadius.circular(8),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: const BoxDecoration(
+                    border: Border(
+                      bottom:
+                          BorderSide(color: Color(0xFFBDBDBD), width: 1),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(
-                        Icons.calendar_today_outlined,
-                        color: _kPrimaryBlue,
-                        size: 18,
-                      ),
-                      const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           DateFormat('dd-MMM-yyyy').format(_selectedDate),
                           style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF1E293B),
+                            fontSize: 16,
+                            color: Color(0xFF212121),
                           ),
                         ),
+                      ),
+                      const Icon(
+                        Icons.calendar_month_outlined,
+                        color: Colors.grey,
+                        size: 24,
                       ),
                     ],
                   ),
@@ -277,7 +182,7 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
         color: Colors.white,
         child: SizedBox(
           width: double.infinity,
-          height: 50,
+          height: 52,
           child: ElevatedButton(
             onPressed: _isSaving ? null : _savePayment,
             style: ElevatedButton.styleFrom(
@@ -298,9 +203,9 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
                     ),
                   )
                 : const Text(
-                    'Save Payment',
+                    'Save',
                     style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
                   ),
           ),
         ),
@@ -308,38 +213,23 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
     );
   }
 
-  Widget _buildModeChip(String mode, IconData icon) {
+  Widget _buildModeChip(String mode) {
     final isSelected = _selectedMode == mode;
     return GestureDetector(
       onTap: () => setState(() => _selectedMode = mode),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? _kPrimaryBlue : const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected ? _kPrimaryBlue : const Color(0xFFCBD5E1),
-            width: 1.2,
-          ),
+          color: isSelected ? _kPrimaryBlue : const Color(0xFFF0F2F5),
+          borderRadius: BorderRadius.circular(6),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 18,
-              color: isSelected ? Colors.white : const Color(0xFF475569),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              mode,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : const Color(0xFF334155),
-              ),
-            ),
-          ],
+        child: Text(
+          mode,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: isSelected ? Colors.white : const Color(0xFF424242),
+          ),
         ),
       ),
     );
@@ -350,18 +240,17 @@ class _AddPaymentScreenState extends State<AddPaymentScreen> {
       text: TextSpan(
         text: text,
         style: const TextStyle(
-          fontSize: 13,
-          color: Color(0xFF475569),
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.2,
+          fontSize: 14,
+          color: Color(0xFF757575),
+          fontWeight: FontWeight.w400,
         ),
         children: required
-            ? const [
-                TextSpan(
+            ? [
+                const TextSpan(
                   text: ' *',
                   style: TextStyle(
                     color: Colors.red,
-                    fontSize: 14,
+                    fontSize: 15,
                     fontWeight: FontWeight.bold,
                   ),
                 ),

@@ -173,84 +173,15 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Client Summary Card
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFEEF2FF),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Icon(
-                              Icons.business_outlined,
-                              color: _kPrimaryBlue,
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        widget.lead.name,
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w700,
-                                          color: Color(0xFF0F172A),
-                                        ),
-                                      ),
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 8, vertical: 3),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFE0E7FF),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: const Text(
-                                        'LEAD',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w700,
-                                          color: _kPrimaryBlue,
-                                          letterSpacing: 0.5,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                if (widget.lead.company.isNotEmpty ||
-                                    widget.lead.phone.isNotEmpty) ...[
-                                  const SizedBox(height: 3),
-                                  Text(
-                                    [widget.lead.company, widget.lead.phone]
-                                        .where((s) => s.isNotEmpty)
-                                        .join(' • '),
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      color: Color(0xFF64748B),
-                                      fontWeight: FontWeight.w400,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ],
+                    // Lead (Read-only title & name)
+                    _buildLabel('Lead'),
+                    const SizedBox(height: 4),
+                    Text(
+                      widget.lead.name,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF212121),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -268,31 +199,23 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
                               GestureDetector(
                                 onTap: _pickDate,
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 11),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF8FAFC),
-                                    border: Border.all(
-                                        color: const Color(0xFFCBD5E1),
-                                        width: 1.2),
-                                    borderRadius: BorderRadius.circular(8),
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  decoration: const BoxDecoration(
+                                    border: Border(
+                                      bottom: BorderSide(
+                                          color: Color(0xFFBDBDBD), width: 1),
+                                    ),
                                   ),
                                   child: Row(
                                     children: [
-                                      const Icon(Icons.calendar_today_outlined,
-                                          color: _kPrimaryBlue, size: 18),
-                                      const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
-                                          DateFormat('dd-MMM-yyyy')
-                                              .format(_selectedDate),
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500,
-                                            color: Color(0xFF1E293B),
-                                          ),
+                                          DateFormat('dd-MMM-yyyy').format(_selectedDate),
+                                          style: const TextStyle(fontSize: 15),
                                         ),
                                       ),
+                                      const Icon(Icons.calendar_month_outlined,
+                                          color: Colors.grey, size: 20),
                                     ],
                                   ),
                                 ),
@@ -300,7 +223,7 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
                             ],
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 20),
                         // Due Date
                         Expanded(
                           child: Column(
@@ -311,40 +234,31 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
                               GestureDetector(
                                 onTap: _pickDueDate,
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 11),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF8FAFC),
-                                    border: Border.all(
-                                        color: const Color(0xFFCBD5E1),
-                                        width: 1.2),
-                                    borderRadius: BorderRadius.circular(8),
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  decoration: const BoxDecoration(
+                                    border: Border(
+                                      bottom: BorderSide(
+                                          color: Color(0xFFBDBDBD), width: 1),
+                                    ),
                                   ),
                                   child: Row(
                                     children: [
-                                      Icon(Icons.event_outlined,
-                                          color: _selectedDueDate != null
-                                              ? _kPrimaryBlue
-                                              : const Color(0xFF94A3B8),
-                                          size: 18),
-                                      const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
                                           _selectedDueDate != null
                                               ? DateFormat('dd-MMM-yyyy')
                                                   .format(_selectedDueDate!)
-                                              : 'Select due date',
+                                              : 'Please Select',
                                           style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: _selectedDueDate != null
-                                                ? FontWeight.w500
-                                                : FontWeight.w400,
+                                            fontSize: 15,
                                             color: _selectedDueDate != null
-                                                ? const Color(0xFF1E293B)
-                                                : const Color(0xFF94A3B8),
+                                                ? const Color(0xFF212121)
+                                                : Colors.grey[500],
                                           ),
                                         ),
                                       ),
+                                      const Icon(Icons.calendar_month_outlined,
+                                          color: Colors.grey, size: 20),
                                     ],
                                   ),
                                 ),
@@ -354,37 +268,37 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 24),
 
                     // Status
                     _buildLabel('Status'),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(
                         children: OrderStatus.values.map((status) {
                           final isSelected = _selectedStatus == status;
                           return Padding(
-                            padding: const EdgeInsets.only(right: 8),
+                            padding: const EdgeInsets.only(right: 10),
                             child: GestureDetector(
                               onTap: () =>
                                   setState(() => _selectedStatus = status),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 9),
+                                    horizontal: 18, vertical: 10),
                                 decoration: BoxDecoration(
                                   color: _getStatusBgColor(status, isSelected),
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.circular(6),
                                   border: Border.all(
                                     color: _getStatusBorderColor(
                                         status, isSelected),
-                                    width: 1.2,
+                                    width: 1,
                                   ),
                                 ),
                                 child: Text(
                                   status.displayName,
                                   style: TextStyle(
-                                    fontSize: 13,
+                                    fontSize: 14,
                                     fontWeight: FontWeight.w600,
                                     color: _getStatusTextColor(
                                         status, isSelected),
@@ -459,66 +373,42 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
             ),
 
             // ── Items Section Header ──────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 10, 20, 12),
+            Container(
+              color: const Color(0xFFF8F9FA),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      const Text(
-                        'Items',
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF0F172A),
-                        ),
+                  RichText(
+                    text: const TextSpan(
+                      text: 'Items',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF212121),
                       ),
-                      const Text(
-                        ' *',
-                        style: TextStyle(
-                          color: Colors.red,
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEEF2FF),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          '${_items.length} added',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: _kPrimaryBlue,
+                      children: [
+                        TextSpan(
+                          text: ' *',
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: _navigateToAddItem,
-                    icon: const Icon(Icons.add, size: 16),
-                    label: const Text(
-                      'Add Item',
-                      style:
-                          TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                      ],
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _kPrimaryBlue,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                  ),
+                  GestureDetector(
+                    onTap: _navigateToAddItem,
+                    child: Container(
+                      width: 34,
+                      height: 34,
+                      decoration: const BoxDecoration(
+                        color: _kPrimaryBlue,
+                        shape: BoxShape.circle,
                       ),
-                      visualDensity: VisualDensity.compact,
+                      child: const Icon(Icons.add, color: Colors.white, size: 24),
                     ),
                   ),
                 ],
@@ -529,72 +419,31 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
             if (_items.isEmpty)
               Padding(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                child: Container(
-                  width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(Icons.inventory_2_outlined,
-                          size: 36, color: Colors.grey[400]),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'No items added yet',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF475569),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Tap "+ Add Item" above to add products to this order',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                child: Text(
+                  'No items added yet. Tap + to add item.',
+                  style: TextStyle(color: Colors.grey[500], fontSize: 14),
                 ),
               )
             else
               ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 itemCount: _items.length,
                 separatorBuilder: (context, index) =>
-                    const SizedBox(height: 10),
+                    const Divider(height: 1, color: Color(0xFFEEEEEE)),
                 itemBuilder: (context, index) {
                   final item = _items[index];
-                  final qtyText =
-                      item.quantity.truncateToDouble() == item.quantity
-                          ? item.quantity.toStringAsFixed(0)
-                          : item.quantity.toStringAsFixed(2);
+                  final qtyText = item.quantity.truncateToDouble() == item.quantity
+                      ? item.quantity.toStringAsFixed(0)
+                      : item.quantity.toStringAsFixed(2);
                   final discText = item.isPercentageDiscount
                       ? '${item.discount}%'
                       : '₹${item.discount.toStringAsFixed(0)}';
 
-                  return Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x08000000),
-                          blurRadius: 4,
-                          offset: Offset(0, 1),
-                        ),
-                      ],
-                    ),
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -606,69 +455,44 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
                                 item.product,
                                 style: const TextStyle(
                                   fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF0F172A),
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF212121),
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  Text(
-                                    'Qty: $qtyText × ₹${item.rate.toStringAsFixed(0)}',
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      color: Color(0xFF64748B),
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  if (item.discount > 0) ...[
-                                    const SizedBox(width: 8),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 6, vertical: 1),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFFEF3C7),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        'Disc: $discText',
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                          color: Color(0xFFB45309),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ],
+                              Text(
+                                'Qty: $qtyText  ×  ₹${item.rate.toStringAsFixed(0)}',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey[700],
+                                ),
                               ),
+                              if (item.discount > 0)
+                                Text(
+                                  'Discount: $discText',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.orange[800],
+                                  ),
+                                ),
                             ],
                           ),
                         ),
+                        Text(
+                          currencyFormat.format(item.total),
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF212121),
+                          ),
+                        ),
                         const SizedBox(width: 8),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              currencyFormat.format(item.total),
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF0F172A),
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            InkWell(
-                              onTap: () =>
-                                  setState(() => _items.removeAt(index)),
-                              borderRadius: BorderRadius.circular(4),
-                              child: const Padding(
-                                padding: EdgeInsets.all(4),
-                                child: Icon(Icons.delete_outline,
-                                    color: Color(0xFFEF4444), size: 18),
-                              ),
-                            ),
-                          ],
+                        GestureDetector(
+                          onTap: () {
+                            setState(() => _items.removeAt(index));
+                          },
+                          child: const Icon(Icons.close,
+                              color: Colors.grey, size: 20),
                         ),
                       ],
                     ),
@@ -677,217 +501,190 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
               ),
 
             // ── Totals Section ────────────────────────────────────────────
-            Padding(
+            Container(
+              color: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    // Taxable Amount
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Taxable Amount',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF64748B),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Text(
-                          currencyFormat.format(_taxableAmount),
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF0F172A),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
+              child: Column(
+                children: [
+                  const Divider(color: Color(0xFFEEEEEE), height: 1),
+                  const SizedBox(height: 16),
 
-                    // Discount Field with unified selector & input
-                    Row(
-                      children: [
-                        const Expanded(
-                          child: Text(
-                            'Discount',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF64748B),
-                              fontWeight: FontWeight.w500,
-                            ),
+                  // Taxable Amount
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Taxable Amount',
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                      Text(
+                        currencyFormat.format(_taxableAmount),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF212121),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Discount Field with ₹ dropdown
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Discount',
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
-                        Container(
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                                color: const Color(0xFFCBD5E1), width: 1.2),
+                      ),
+                      Container(
+                        width: 70,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: const Color(0xFFBDBDBD)),
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(4),
+                            bottomLeft: Radius.circular(4),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 8),
-                                child: DropdownButtonHideUnderline(
-                                  child: DropdownButton<String>(
-                                    value: _discountType,
-                                    items: const [
-                                      DropdownMenuItem(
-                                        value: 'fixed',
-                                        child: Text('₹',
-                                            style: TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w600)),
-                                      ),
-                                      DropdownMenuItem(
-                                        value: 'percent',
-                                        child: Text('%',
-                                            style: TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w600)),
-                                      ),
-                                    ],
-                                    onChanged: (val) {
-                                      if (val != null) {
-                                        setState(() => _discountType = val);
-                                      }
-                                    },
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                  width: 1,
-                                  height: 24,
-                                  color: const Color(0xFFCBD5E1)),
-                              SizedBox(
-                                width: 90,
-                                child: TextField(
-                                  controller: _discountController,
-                                  keyboardType:
-                                      const TextInputType.numberWithOptions(
-                                          decimal: true),
-                                  textAlign: TextAlign.end,
-                                  style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500),
-                                  decoration: const InputDecoration(
-                                    border: InputBorder.none,
-                                    contentPadding: EdgeInsets.symmetric(
-                                        horizontal: 10, vertical: 10),
-                                  ),
-                                  onChanged: (_) => setState(() {}),
-                                ),
-                              ),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _discountType,
+                            items: const [
+                              DropdownMenuItem(value: 'fixed', child: Text('₹')),
+                              DropdownMenuItem(value: 'percent', child: Text('%')),
                             ],
+                            onChanged: (val) {
+                              if (val != null) {
+                                setState(() => _discountType = val);
+                              }
+                            },
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Total Discount
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Total Discount',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF64748B),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Text(
-                          currencyFormat.format(_totalDiscount),
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFFB45309),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Round Off Switch
-                    Row(
-                      children: [
-                        const Text(
-                          'Round Off',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF64748B),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Switch(
-                          value: _roundOff,
-                          activeColor: _kPrimaryBlue,
-                          onChanged: (val) => setState(() => _roundOff = val),
-                        ),
-                        const Spacer(),
-                        Text(
-                          currencyFormat.format(_roundOff
-                              ? (_calculatedTotal -
-                                      (_taxableAmount -
-                                          _totalDiscount +
-                                          _totalTax))
-                                  .abs()
-                              : 0),
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF0F172A),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const Divider(height: 24, color: Color(0xFFE2E8F0)),
-
-                    // Total Banner inside summary card
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEEF2FF),
-                        borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Total Amount',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: _kPrimaryBlue,
-                            ),
+                      Container(
+                        width: 110,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: const Color(0xFFBDBDBD)),
+                          borderRadius: const BorderRadius.only(
+                            topRight: Radius.circular(4),
+                            bottomRight: Radius.circular(4),
                           ),
-                          Text(
-                            currencyFormat.format(_calculatedTotal),
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: _kPrimaryBlue,
-                            ),
+                        ),
+                        child: TextField(
+                          controller: _discountController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
+                          textAlign: TextAlign.end,
+                          decoration: const InputDecoration(
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 10),
                           ),
-                        ],
+                          onChanged: (_) => setState(() {}),
+                        ),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Total Discount
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Total Discount',
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                      Text(
+                        currencyFormat.format(_totalDiscount),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF212121),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Round Off Switch
+                  Row(
+                    children: [
+                      Text(
+                        'Round Off',
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Switch(
+                        value: _roundOff,
+                        activeColor: _kPrimaryBlue,
+                        onChanged: (val) => setState(() => _roundOff = val),
+                      ),
+                      const Spacer(),
+                      Text(
+                        currencyFormat.format(_roundOff
+                            ? (_calculatedTotal -
+                                    (_taxableAmount -
+                                        _totalDiscount +
+                                        _totalTax))
+                                .abs()
+                            : 0),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF212121),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // ── Total Bar ─────────────────────────────────────────────────
+            Container(
+              color: const Color(0xFFF0F2FA),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Total',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF212121),
                     ),
-                  ],
-                ),
+                  ),
+                  Text(
+                    currencyFormat.format(_calculatedTotal),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF212121),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 100),
@@ -938,10 +735,9 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
     return Text(
       text,
       style: const TextStyle(
-        fontSize: 13,
-        color: Color(0xFF475569),
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.2,
+        fontSize: 14,
+        color: Color(0xFF757575),
+        fontWeight: FontWeight.w400,
       ),
     );
   }
@@ -950,28 +746,28 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
     if (isSelected) {
       switch (status) {
         case OrderStatus.open:
-          return const Color(0xFF3949AB);
+          return const Color(0xFF283593);
         case OrderStatus.pending:
-          return const Color(0xFFD97706);
+          return const Color(0xFFFFA000);
         case OrderStatus.cancelled:
-          return const Color(0xFFDC2626);
+          return const Color(0xFFD32F2F);
         case OrderStatus.deliveryDone:
-          return const Color(0xFF475569);
+          return const Color(0xFF455A64);
         case OrderStatus.converted:
-          return const Color(0xFF16A34A);
+          return const Color(0xFF2E7D32);
       }
     }
     switch (status) {
       case OrderStatus.open:
-        return const Color(0xFFEEF2FF);
+        return const Color(0xFFE8EAF6);
       case OrderStatus.pending:
-        return const Color(0xFFFEF3C7);
+        return const Color(0xFFFFF8E1);
       case OrderStatus.cancelled:
-        return const Color(0xFFFEE2E2);
+        return const Color(0xFFFFEBEE);
       case OrderStatus.deliveryDone:
-        return const Color(0xFFF1F5F9);
+        return const Color(0xFFECEFF1);
       case OrderStatus.converted:
-        return const Color(0xFFDCFCE7);
+        return const Color(0xFFC8E6C9);
     }
   }
 
@@ -979,15 +775,15 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
     if (isSelected) return Colors.transparent;
     switch (status) {
       case OrderStatus.open:
-        return const Color(0xFFC7D2FE);
+        return const Color(0xFFC5CAE9);
       case OrderStatus.pending:
-        return const Color(0xFFFDE68A);
+        return const Color(0xFFFFE082);
       case OrderStatus.cancelled:
-        return const Color(0xFFFECACA);
+        return const Color(0xFFFFCDD2);
       case OrderStatus.deliveryDone:
-        return const Color(0xFFCBD5E1);
+        return const Color(0xFFCFD8DC);
       case OrderStatus.converted:
-        return const Color(0xFFBBF7D0);
+        return const Color(0xFFA5D6A7);
     }
   }
 
@@ -995,15 +791,15 @@ class _AddOrderScreenState extends State<AddOrderScreen> {
     if (isSelected) return Colors.white;
     switch (status) {
       case OrderStatus.open:
-        return const Color(0xFF3730A3);
+        return const Color(0xFF283593);
       case OrderStatus.pending:
-        return const Color(0xFF92400E);
+        return const Color(0xFFF57F17);
       case OrderStatus.cancelled:
-        return const Color(0xFF991B1B);
+        return const Color(0xFFC62828);
       case OrderStatus.deliveryDone:
-        return const Color(0xFF334155);
+        return const Color(0xFF546E7A);
       case OrderStatus.converted:
-        return const Color(0xFF166534);
+        return const Color(0xFF2E7D32);
     }
   }
 
