@@ -570,7 +570,7 @@ class _SalesScreenState extends State<SalesScreen>
         borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -1132,29 +1132,38 @@ class _SalesFilterDialogState extends State<_SalesFilterDialog> {
                 const Text('Reference', style: TextStyle(color: Colors.grey, fontSize: 13)),
                 const SizedBox(height: 4),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade400),
-                    borderRadius: BorderRadius.circular(6),
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
                       isExpanded: true,
                       value: _selectedStaff,
+                      icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF475569)),
                       items: widget.staffList.map((String value) {
                         return DropdownMenuItem<String>(
                           value: value,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            child: Row(
-                              children: [
-                                if (value != 'All') ...[
-                                  const Icon(Icons.badge_outlined, size: 16, color: Color(0xFF64748B)),
-                                  const SizedBox(width: 8),
-                                ],
-                                Text(value),
+                          child: Row(
+                            children: [
+                              if (value != 'All') ...[
+                                const Icon(Icons.badge_outlined, size: 18, color: Color(0xFF1E88E5)),
+                                const SizedBox(width: 10),
                               ],
-                            ),
+                              Expanded(
+                                child: Text(
+                                  value,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    color: Color(0xFF1E293B),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
                           ),
                         );
                       }).toList(),

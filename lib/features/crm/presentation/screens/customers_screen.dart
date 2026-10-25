@@ -118,29 +118,38 @@ class _CustomersScreenState extends State<CustomersScreen> {
                           const Text('Reference', style: TextStyle(color: Colors.grey, fontSize: 13)),
                           const SizedBox(height: 4),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
                             decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey.shade400),
-                              borderRadius: BorderRadius.circular(6),
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
                             ),
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
                                 isExpanded: true,
                                 value: staffList.contains(tempStaff) ? tempStaff : 'All',
+                                icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF475569)),
                                 items: staffList.map((String value) {
                                   return DropdownMenuItem<String>(
                                     value: value,
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                                      child: Row(
-                                        children: [
-                                          if (value != 'All') ...[
-                                            const Icon(Icons.badge_outlined, size: 16, color: Color(0xFF64748B)),
-                                            const SizedBox(width: 8),
-                                          ],
-                                          Text(value),
+                                    child: Row(
+                                      children: [
+                                        if (value != 'All') ...[
+                                          const Icon(Icons.badge_outlined, size: 18, color: Color(0xFF1E88E5)),
+                                          const SizedBox(width: 10),
                                         ],
-                                      ),
+                                        Expanded(
+                                          child: Text(
+                                            value,
+                                            style: const TextStyle(
+                                              fontSize: 15,
+                                              color: Color(0xFF1E293B),
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   );
                                 }).toList(),
@@ -158,20 +167,22 @@ class _CustomersScreenState extends State<CustomersScreen> {
                           const Text('Category', style: TextStyle(color: Colors.grey, fontSize: 13)),
                           const SizedBox(height: 4),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
                             decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey.shade400),
-                              borderRadius: BorderRadius.circular(4),
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
                             ),
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
                                 isExpanded: true,
                                 value: tempCategory,
+                                icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF475569)),
                                 items: const [
-                                  DropdownMenuItem(value: 'All', child: Text('All')),
-                                  DropdownMenuItem(value: 'Retailer', child: Text('Retailer')),
-                                  DropdownMenuItem(value: 'Distributor', child: Text('Distributor')),
-                                  DropdownMenuItem(value: 'Other', child: Text('Other')),
+                                  DropdownMenuItem(value: 'All', child: Text('All', style: TextStyle(fontSize: 15, color: Color(0xFF1E293B), fontWeight: FontWeight.w500))),
+                                  DropdownMenuItem(value: 'Retailer', child: Text('Retailer', style: TextStyle(fontSize: 15, color: Color(0xFF1E293B), fontWeight: FontWeight.w500))),
+                                  DropdownMenuItem(value: 'Distributor', child: Text('Distributor', style: TextStyle(fontSize: 15, color: Color(0xFF1E293B), fontWeight: FontWeight.w500))),
+                                  DropdownMenuItem(value: 'Other', child: Text('Other', style: TextStyle(fontSize: 15, color: Color(0xFF1E293B), fontWeight: FontWeight.w500))),
                                 ],
                                 onChanged: (newValue) {
                                   if (newValue != null) {
@@ -187,19 +198,21 @@ class _CustomersScreenState extends State<CustomersScreen> {
                           const Text('Status', style: TextStyle(color: Colors.grey, fontSize: 13)),
                           const SizedBox(height: 4),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
                             decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey.shade400),
-                              borderRadius: BorderRadius.circular(4),
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
                             ),
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
                                 isExpanded: true,
                                 value: tempStatus,
+                                icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF475569)),
                                 items: const [
-                                  DropdownMenuItem(value: 'All', child: Text('All')),
-                                  DropdownMenuItem(value: 'Active', child: Text('Active')),
-                                  DropdownMenuItem(value: 'Inactive', child: Text('Inactive')),
+                                  DropdownMenuItem(value: 'All', child: Text('All', style: TextStyle(fontSize: 15, color: Color(0xFF1E293B), fontWeight: FontWeight.w500))),
+                                  DropdownMenuItem(value: 'Active', child: Text('Active', style: TextStyle(fontSize: 15, color: Color(0xFF1E293B), fontWeight: FontWeight.w500))),
+                                  DropdownMenuItem(value: 'Inactive', child: Text('Inactive', style: TextStyle(fontSize: 15, color: Color(0xFF1E293B), fontWeight: FontWeight.w500))),
                                 ],
                                 onChanged: (newValue) {
                                   if (newValue != null) {
@@ -215,19 +228,28 @@ class _CustomersScreenState extends State<CustomersScreen> {
                           const Text('Territory', style: TextStyle(color: Colors.grey, fontSize: 13)),
                           const SizedBox(height: 4),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
                             decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey.shade400),
-                              borderRadius: BorderRadius.circular(4),
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
                             ),
                             child: DropdownButtonHideUnderline(
                               child: DropdownButton<String>(
                                 isExpanded: true,
                                 value: territoryList.contains(tempTerritory) ? tempTerritory : 'All',
+                                icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF475569)),
                                 items: territoryList.map((String value) {
                                   return DropdownMenuItem<String>(
                                     value: value,
-                                    child: Text(value),
+                                    child: Text(
+                                      value,
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        color: Color(0xFF1E293B),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
                                   );
                                 }).toList(),
                                 onChanged: (newValue) {

@@ -118,44 +118,60 @@ class _AddItemScreenState extends State<AddItemScreen> {
               _buildLabel('Product', required: true),
               const SizedBox(height: 6),
               Container(
-                decoration: const BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(color: Color(0xFFBDBDBD)),
-                  ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
                 ),
-                child: DropdownButtonFormField<String>(
-                  value: _selectedProduct,
-                  hint: Text(
-                    'Please Select',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(vertical: 8),
-                  ),
-                  icon: const Icon(Icons.keyboard_arrow_down,
-                      color: Color(0xFF757575)),
-                  items: _products.map((p) {
-                    return DropdownMenuItem(
-                      value: p,
-                      child: Text(
-                        p,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Color(0xFF212121),
-                          fontWeight: FontWeight.w500,
-                        ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButtonFormField<String>(
+                    value: _selectedProduct,
+                    hint: Text(
+                      'Please Select',
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w400,
                       ),
-                    );
-                  }).toList(),
-                  onChanged: (val) => setState(() => _selectedProduct = val),
-                  validator: (val) =>
-                      val == null || val.isEmpty ? 'Please select a product' : null,
+                    ),
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    icon: const Icon(Icons.keyboard_arrow_down,
+                        color: Color(0xFF475569)),
+                    items: _products.map((p) {
+                      return DropdownMenuItem(
+                        value: p,
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.inventory_2_outlined,
+                              size: 18,
+                              color: _kPrimaryBlue,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                p,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  color: Color(0xFF1E293B),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (val) => setState(() => _selectedProduct = val),
+                    validator: (val) =>
+                        val == null || val.isEmpty ? 'Please select a product' : null,
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
@@ -215,8 +231,9 @@ class _AddItemScreenState extends State<AddItemScreen> {
                   Container(
                     height: 42,
                     decoration: BoxDecoration(
-                      border: Border.all(color: const Color(0xFF9E9E9E)),
-                      borderRadius: BorderRadius.circular(4),
+                      color: const Color(0xFFF8FAFC),
+                      border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -229,11 +246,11 @@ class _AddItemScreenState extends State<AddItemScreen> {
                               items: const [
                                 DropdownMenuItem(
                                   value: true,
-                                  child: Text('%', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                                  child: Text('%', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
                                 ),
                                 DropdownMenuItem(
                                   value: false,
-                                  child: Text('₹', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                                  child: Text('₹', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
                                 ),
                               ],
                               onChanged: (val) {
@@ -241,14 +258,14 @@ class _AddItemScreenState extends State<AddItemScreen> {
                                   setState(() => _isPercentageDiscount = val);
                                 }
                               },
-                              icon: const Icon(Icons.keyboard_arrow_down, size: 20, color: Color(0xFF616161)),
+                              icon: const Icon(Icons.keyboard_arrow_down, size: 20, color: Color(0xFF475569)),
                             ),
                           ),
                         ),
                         Container(
-                          width: 1,
+                          width: 1.2,
                           height: 42,
-                          color: const Color(0xFF9E9E9E),
+                          color: const Color(0xFFCBD5E1),
                         ),
                         SizedBox(
                           width: 100,
@@ -256,7 +273,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                             controller: _discountController,
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             textAlign: TextAlign.end,
-                            style: const TextStyle(fontSize: 16, color: Color(0xFF212121)),
+                            style: const TextStyle(fontSize: 15, color: Color(0xFF1E293B), fontWeight: FontWeight.w500),
                             onChanged: (_) => setState(() {}),
                             decoration: const InputDecoration(
                               hintText: '',

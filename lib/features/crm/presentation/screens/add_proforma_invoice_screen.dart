@@ -1075,54 +1075,52 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
                     const SizedBox(height: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 2),
+                          horizontal: 12, vertical: 2),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF8FAFC),
                         border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: DropdownButtonFormField<String>(
-                        value: _staffList.contains(_selectedStaff)
-                            ? _selectedStaff
-                            : (_staffList.isNotEmpty ? _staffList.first : null),
-                        isExpanded: true,
-                        decoration: const InputDecoration(
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                        ),
-                        icon: const Icon(Icons.keyboard_arrow_down,
-                            color: Color(0xFF475569)),
-                        items: _staffList.map((staff) {
-                          return DropdownMenuItem(
-                            value: staff,
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.badge_outlined,
-                                  size: 18,
-                                  color: _kPrimaryBlue,
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    staff,
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      color: Color(0xFF1E293B),
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _staffList.contains(_selectedStaff)
+                              ? _selectedStaff
+                              : (_staffList.isNotEmpty ? _staffList.first : null),
+                          isExpanded: true,
+                          icon: const Icon(Icons.keyboard_arrow_down,
+                              color: Color(0xFF475569)),
+                          items: _staffList.map((staff) {
+                            return DropdownMenuItem(
+                              value: staff,
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.badge_outlined,
+                                    size: 18,
+                                    color: _kPrimaryBlue,
                                   ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (val) {
-                          if (val != null) {
-                            setState(() => _selectedStaff = val);
-                          }
-                        },
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      staff,
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        color: Color(0xFF1E293B),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (val) {
+                            if (val != null) {
+                              setState(() => _selectedStaff = val);
+                            }
+                          },
+                        ),
                       ),
                     ),
                   ],
@@ -1318,56 +1316,63 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
                         ),
                       ),
                       const Spacer(),
-                      // Type dropdown (₹ or %)
                       Container(
-                        height: 38,
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        height: 42,
                         decoration: BoxDecoration(
-                          border: Border.all(color: const Color(0xFFBDBDBD)),
-                          borderRadius: const BorderRadius.horizontal(
-                              left: Radius.circular(4)),
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
                         ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: _discountType,
-                            items: const [
-                              DropdownMenuItem(value: 'fixed', child: Text('₹')),
-                              DropdownMenuItem(
-                                  value: 'percent', child: Text('%')),
-                            ],
-                            onChanged: (val) {
-                              if (val != null) {
-                                setState(() => _discountType = val);
-                              }
-                            },
-                          ),
-                        ),
-                      ),
-                      // Value input
-                      Container(
-                        width: 90,
-                        height: 38,
-                        decoration: const BoxDecoration(
-                          border: Border(
-                            top: BorderSide(color: Color(0xFFBDBDBD)),
-                            right: BorderSide(color: Color(0xFFBDBDBD)),
-                            bottom: BorderSide(color: Color(0xFFBDBDBD)),
-                          ),
-                          borderRadius: BorderRadius.horizontal(
-                              right: Radius.circular(4)),
-                        ),
-                        child: TextField(
-                          controller: _discountController,
-                          keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true),
-                          textAlign: TextAlign.right,
-                          style: const TextStyle(fontSize: 15),
-                          decoration: const InputDecoration(
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 8),
-                          ),
-                          onChanged: (_) => setState(() {}),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 70,
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  value: _discountType,
+                                  icon: const Icon(Icons.keyboard_arrow_down, size: 18, color: Color(0xFF475569)),
+                                  items: const [
+                                    DropdownMenuItem(
+                                      value: 'fixed',
+                                      child: Text('₹', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'percent',
+                                      child: Text('%', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
+                                    ),
+                                  ],
+                                  onChanged: (val) {
+                                    if (val != null) {
+                                      setState(() => _discountType = val);
+                                    }
+                                  },
+                                ),
+                              ),
+                            ),
+                            Container(
+                              width: 1.2,
+                              height: 42,
+                              color: const Color(0xFFCBD5E1),
+                            ),
+                            SizedBox(
+                              width: 90,
+                              child: TextField(
+                                controller: _discountController,
+                                keyboardType: const TextInputType.numberWithOptions(
+                                    decimal: true),
+                                textAlign: TextAlign.right,
+                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: Color(0xFF1E293B)),
+                                decoration: const InputDecoration(
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 10),
+                                ),
+                                onChanged: (_) => setState(() {}),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -1480,54 +1485,52 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
                   const SizedBox(height: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 2),
+                        horizontal: 12, vertical: 2),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF8FAFC),
                       border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: DropdownButtonFormField<String>(
-                      value: _referenceList.contains(_selectedReference)
-                          ? _selectedReference
-                          : (_referenceList.isNotEmpty ? _referenceList.first : null),
-                      isExpanded: true,
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                      ),
-                      icon: const Icon(Icons.keyboard_arrow_down,
-                          color: Color(0xFF475569)),
-                      items: _referenceList.map((ref) {
-                        return DropdownMenuItem(
-                          value: ref,
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.badge_outlined,
-                                size: 18,
-                                color: _kPrimaryBlue,
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  ref,
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    color: Color(0xFF1E293B),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _referenceList.contains(_selectedReference)
+                            ? _selectedReference
+                            : (_referenceList.isNotEmpty ? _referenceList.first : null),
+                        isExpanded: true,
+                        icon: const Icon(Icons.keyboard_arrow_down,
+                            color: Color(0xFF475569)),
+                        items: _referenceList.map((ref) {
+                          return DropdownMenuItem(
+                            value: ref,
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.badge_outlined,
+                                  size: 18,
+                                  color: _kPrimaryBlue,
                                 ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (val) {
-                        if (val != null) {
-                          setState(() => _selectedReference = val);
-                        }
-                      },
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    ref,
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      color: Color(0xFF1E293B),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() => _selectedReference = val);
+                          }
+                        },
+                      ),
                     ),
                   ),
                 ],
