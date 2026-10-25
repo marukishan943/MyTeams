@@ -30,6 +30,7 @@ import {
   Smartphone,
   Clock,
   Lock,
+  Star,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import type {
@@ -38,7 +39,9 @@ import type {
   CompanyConfig,
   ModuleVisibilityConfig,
   DashboardCardsConfig,
+  MessageTemplate,
 } from '../../types/crm';
+import { templateService } from '../../services/templateService';
 
 interface SettingsViewProps {
   users: TeamUser[];
@@ -199,6 +202,124 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   });
 
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  // Message Templates State
+  const [templates, setTemplates] = useState<MessageTemplate[]>([]);
+  const [templateFilter, setTemplateFilter] = useState<
+    'All' | 'Leads' | 'Customers' | 'Invoices' | 'Proforma Invoices' | 'General'
+  >('All');
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<MessageTemplate | null>(null);
+  const [tmplName, setTmplName] = useState('');
+  const [tmplModule, setTmplModule] = useState<MessageTemplate['module']>('Leads');
+  const [tmplContent, setTmplContent] = useState('');
+  const [tmplIsDefault, setTmplIsDefault] = useState(false);
+  const tmplTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    templateService.fetchTemplates().then(setTemplates);
+  }, []);
+
+  const handleOpenAddTemplate = () => {
+    setEditingTemplate(null);
+    setTmplName('');
+    setTmplModule('Leads');
+    setTmplContent('Hello {{name}}, following up on our recent discussion regarding your requirements with {{brand_name}}.');
+    setTmplIsDefault(templates.filter((t) => t.module === 'Leads').length === 0);
+    setIsTemplateModalOpen(true);
+  };
+
+  const handleOpenEditTemplate = (tmpl: MessageTemplate) => {
+    setEditingTemplate(tmpl);
+    setTmplName(tmpl.name);
+    setTmplModule(tmpl.module);
+    setTmplContent(tmpl.content);
+    setTmplIsDefault(tmpl.is_default);
+    setIsTemplateModalOpen(true);
+  };
+
+  const handleToggleDefaultTemplate = async (tmplId: string, module: MessageTemplate['module']) => {
+    const updated = templates.map((t) => {
+      if (t.module === module) {
+        return { ...t, is_default: t.id === tmplId };
+      }
+      return t;
+    });
+    setTemplates(updated);
+    await templateService.saveTemplates(updated);
+  };
+
+  const handleDeleteTemplate = async (tmpl: MessageTemplate) => {
+    if (!window.confirm(`Are you sure you want to delete template "${tmpl.name}"?`)) return;
+    const updated = templates.filter((t) => t.id !== tmpl.id);
+    setTemplates(updated);
+    await templateService.saveTemplates(updated);
+  };
+
+  const handleSaveTemplate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tmplName.trim() || !tmplContent.trim()) return;
+
+    let updated: MessageTemplate[];
+    if (editingTemplate) {
+      updated = templates.map((t) => {
+        if (t.id === editingTemplate.id) {
+          return {
+            ...t,
+            name: tmplName.trim(),
+            module: tmplModule,
+            content: tmplContent.trim(),
+            is_default: tmplIsDefault,
+            updated_at: new Date().toISOString(),
+          };
+        }
+        if (tmplIsDefault && t.module === tmplModule && t.id !== editingTemplate.id) {
+          return { ...t, is_default: false };
+        }
+        return t;
+      });
+    } else {
+      const newTmpl: MessageTemplate = {
+        id: `tmpl-${Date.now()}`,
+        name: tmplName.trim(),
+        module: tmplModule,
+        content: tmplContent.trim(),
+        is_default: tmplIsDefault,
+        updated_at: new Date().toISOString(),
+      };
+      updated = tmplIsDefault
+        ? [...templates.map((t) => (t.module === tmplModule ? { ...t, is_default: false } : t)), newTmpl]
+        : [...templates, newTmpl];
+    }
+
+    setTemplates(updated);
+    await templateService.saveTemplates(updated);
+    setIsTemplateModalOpen(false);
+    setEditingTemplate(null);
+  };
+
+  const insertVariableTag = (tag: string) => {
+    if (tmplTextareaRef.current) {
+      const start = tmplTextareaRef.current.selectionStart;
+      const end = tmplTextareaRef.current.selectionEnd;
+      const current = tmplContent;
+      const next = current.substring(0, start) + tag + current.substring(end);
+      setTmplContent(next);
+      setTimeout(() => {
+        if (tmplTextareaRef.current) {
+          tmplTextareaRef.current.focus();
+          tmplTextareaRef.current.setSelectionRange(start + tag.length, start + tag.length);
+        }
+      }, 0);
+    } else {
+      setTmplContent((prev) => prev + tag);
+    }
+  };
+
+  const filteredTemplates = useMemo(() => {
+    if (templateFilter === 'All') return templates;
+    return templates.filter((t) => t.module === templateFilter);
+  }, [templates, templateFilter]);
 
   // Users Filters & Search State
   const [searchQuery, setSearchQuery] = useState('');
@@ -1215,44 +1336,155 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </form>
       )}
 
-      {/* TAB 4: TEMPLATES */}
+      {/* TAB 4: MESSAGE TEMPLATES */}
       {activeTab === 'templates' && (
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-2xs space-y-4 text-xs">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-2xs space-y-5 text-xs">
+          {/* Header & Primary Action */}
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-3">
             <div>
-              <h3 className="font-bold text-sm text-gray-900">WhatsApp & Notification Templates</h3>
-              <p className="text-gray-500 text-[11px]">Dynamic templates sent to leads and clients</p>
+              <h3 className="font-bold text-sm text-gray-900 flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-[#3949ab]" />
+                <span>WhatsApp & Notification Templates</span>
+              </h3>
+              <p className="text-gray-500 text-[11px] mt-0.5">
+                Manage message templates and set the default template automatically used when contacting leads on WhatsApp.
+              </p>
             </div>
+            <button
+              onClick={handleOpenAddTemplate}
+              className="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-[#3949ab] hover:bg-[#303f9f] text-white rounded-lg text-xs font-semibold shadow-xs cursor-pointer transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Template</span>
+            </button>
           </div>
 
-          <div className="space-y-3">
-            {[
-              {
-                name: 'Proforma Invoice Share',
-                module: 'Proforma Invoices',
-                content: 'Dear {{customer_name}}, please find your Proforma Invoice {{id}} from {{brand_name}}. Total Amount: {{total}}.',
-              },
-              {
-                name: 'First Follow-Up',
-                module: 'Leads',
-                content: 'Hello {{name}}, following up on our recent discussion regarding your requirements with {{companyName}}.',
-              },
-              {
-                name: 'Invoice Payment Receipt',
-                module: 'Invoices',
-                content: 'Dear {{customer_name}}, we have received your payment of {{amount}} against Invoice {{id}}. Thank you for your business!',
-              },
-            ].map((tmpl) => (
-              <div key={tmpl.name} className="p-4 bg-gray-50 rounded-lg border border-gray-100 space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-gray-900">{tmpl.name}</span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700">
-                    {tmpl.module}
+          {/* Module Filter Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+            {(['All', 'Leads', 'Customers', 'Invoices', 'Proforma Invoices', 'General'] as const).map((mod) => {
+              const isActive = templateFilter === mod;
+              const count = mod === 'All' ? templates.length : templates.filter((t) => t.module === mod).length;
+              return (
+                <button
+                  key={mod}
+                  onClick={() => setTemplateFilter(mod)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                    isActive
+                      ? 'bg-[#3949ab] text-white shadow-xs'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  <span>{mod}</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isActive ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-700'}`}>
+                    {count}
                   </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Template Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredTemplates.map((tmpl) => {
+              const samplePreview = templateService.formatMessage(tmpl.content, {
+                name: 'Rajesh Patel',
+                companyName: 'Shreeji Enterprise',
+                brand_name: company.brand_name || 'IV SQUARE STRUCTURE INDIA PVT LTD',
+                phone: '9876543210',
+                stage: 'Contacted',
+                id: 'INV-2026-081',
+                total: '₹45,000',
+              });
+
+              return (
+                <div
+                  key={tmpl.id}
+                  className={`p-4 rounded-xl border transition-all flex flex-col justify-between space-y-3 ${
+                    tmpl.is_default
+                      ? 'border-emerald-300 bg-emerald-50/20 shadow-2xs'
+                      : 'border-gray-200 bg-white hover:border-gray-300'
+                  }`}
+                >
+                  {/* Card Header */}
+                  <div>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-bold text-gray-900 text-sm">{tmpl.name}</span>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                            {tmpl.module}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Edit & Delete Action Icons */}
+                      <div className="flex items-center space-x-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditTemplate(tmpl)}
+                          className="p-1.5 text-gray-500 hover:text-[#3949ab] hover:bg-[#3949ab]/10 rounded-lg transition-colors cursor-pointer"
+                          title="Edit Template"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteTemplate(tmpl)}
+                          className="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                          title="Delete Template"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Default Status Badge / Action */}
+                    <div className="mt-2 flex items-center justify-between">
+                      {tmpl.is_default ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                          <Star className="w-3 h-3 fill-emerald-600 text-emerald-600" />
+                          <span>Default WhatsApp Message</span>
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleToggleDefaultTemplate(tmpl.id, tmpl.module)}
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-gray-500 hover:text-emerald-700 hover:bg-emerald-50 px-2 py-0.5 rounded-md border border-gray-200 transition-colors cursor-pointer"
+                          title="Click to set this as the default message for this module"
+                        >
+                          <Star className="w-3 h-3 text-gray-400" />
+                          <span>Set as Default</span>
+                        </button>
+                      )}
+                      <span className="text-[10px] text-gray-400">
+                        {tmpl.module === 'Leads' ? 'Used in Lead Detail WhatsApp' : ''}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Template Raw Text */}
+                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-100 font-mono text-[11px] text-gray-700 whitespace-pre-wrap leading-relaxed">
+                    {tmpl.content}
+                  </div>
+
+                  {/* Live Rendered Preview */}
+                  <div className="pt-2 border-t border-gray-100 space-y-1">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                      Live Lead Preview (Rajesh Patel):
+                    </span>
+                    <div className="p-2.5 bg-emerald-50/70 rounded-lg border border-emerald-100 text-[11px] text-emerald-900 font-sans leading-relaxed">
+                      💬 &ldquo;{samplePreview}&rdquo;
+                    </div>
+                  </div>
                 </div>
-                <p className="text-gray-600 font-mono text-[11px]">{tmpl.content}</p>
+              );
+            })}
+
+            {filteredTemplates.length === 0 && (
+              <div className="col-span-2 text-center py-12 text-gray-400 text-xs bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                No templates configured for {templateFilter}. Click &quot;Add Template&quot; above to create one.
               </div>
-            ))}
+            )}
           </div>
         </div>
       )}
@@ -1508,6 +1740,146 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 Close Preview
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ADD / EDIT MESSAGE TEMPLATE MODAL */}
+      {isTemplateModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-gray-100 overflow-hidden text-xs animate-in fade-in zoom-in-95">
+            {/* Modal Header */}
+            <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/70">
+              <div>
+                <h3 className="text-base font-bold text-gray-900">
+                  {editingTemplate ? 'Edit Message Template' : 'Create New Message Template'}
+                </h3>
+                <p className="text-gray-500 text-[11px] mt-0.5">
+                  Configure text and dynamic tags for automatic WhatsApp messaging
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsTemplateModalOpen(false);
+                  setEditingTemplate(null);
+                }}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleSaveTemplate} className="p-5 space-y-4">
+              <div>
+                <label className="block font-semibold text-gray-700 mb-1">Template Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={tmplName}
+                  onChange={(e) => setTmplName(e.target.value)}
+                  placeholder="e.g. Lead Follow-Up Greeting"
+                  className="w-full border border-gray-300 rounded-lg p-2 focus:ring-[#3949ab] focus:border-[#3949ab]"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-gray-700 mb-1">Target Module *</label>
+                <select
+                  value={tmplModule}
+                  onChange={(e) => setTmplModule(e.target.value as MessageTemplate['module'])}
+                  className="w-full border border-gray-300 rounded-lg p-2 bg-white font-medium"
+                >
+                  <option value="Leads">Leads Management</option>
+                  <option value="Customers">Customers Directory</option>
+                  <option value="Invoices">Tax Invoices</option>
+                  <option value="Proforma Invoices">Proforma Invoices</option>
+                  <option value="General">General Inquiries</option>
+                </select>
+              </div>
+
+              {/* Dynamic Tag Insertion Toolbar */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="font-semibold text-gray-700">Dynamic Variable Tags</label>
+                  <span className="text-[10px] text-gray-400">Click a tag to insert</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5 p-2 bg-gray-50 rounded-lg border border-gray-200">
+                  {[
+                    { tag: '{{name}}', label: 'Lead Name' },
+                    { tag: '{{companyName}}', label: 'Company' },
+                    { tag: '{{brand_name}}', label: 'Your Brand' },
+                    { tag: '{{phone}}', label: 'Phone' },
+                    { tag: '{{stage}}', label: 'Lead Stage' },
+                    { tag: '{{total}}', label: 'Total Amount' },
+                    { tag: '{{id}}', label: 'Doc ID' },
+                  ].map((v) => (
+                    <button
+                      key={v.tag}
+                      type="button"
+                      onClick={() => insertVariableTag(v.tag)}
+                      className="px-2 py-1 bg-white hover:bg-[#3949ab] hover:text-white text-gray-700 font-mono text-[10px] font-bold rounded border border-gray-200 transition-colors shadow-2xs cursor-pointer"
+                      title={`Insert ${v.label}`}
+                    >
+                      + {v.tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Textarea */}
+              <div>
+                <label className="block font-semibold text-gray-700 mb-1">Message Content *</label>
+                <textarea
+                  ref={tmplTextareaRef}
+                  required
+                  rows={4}
+                  value={tmplContent}
+                  onChange={(e) => setTmplContent(e.target.value)}
+                  placeholder="Type your message with dynamic tags like {{name}}..."
+                  className="w-full border border-gray-300 rounded-lg p-2.5 font-sans focus:ring-[#3949ab] focus:border-[#3949ab]"
+                />
+              </div>
+
+              {/* Checkbox: Set as Default */}
+              <label className="flex items-center space-x-2.5 cursor-pointer p-2.5 rounded-lg border border-gray-200 hover:bg-gray-50">
+                <input
+                  type="checkbox"
+                  checked={tmplIsDefault}
+                  onChange={(e) => setTmplIsDefault(e.target.checked)}
+                  className="rounded text-[#3949ab] focus:ring-[#3949ab]"
+                />
+                <div>
+                  <span className="font-bold text-gray-800 block">
+                    Set as Default WhatsApp Template for {tmplModule}
+                  </span>
+                  <span className="text-[11px] text-gray-500">
+                    When contacting from {tmplModule === 'Leads' ? 'lead detail' : 'this module'}, this template will be pre-filled automatically.
+                  </span>
+                </div>
+              </label>
+
+              {/* Modal Footer */}
+              <div className="pt-3 border-t border-gray-100 flex items-center justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsTemplateModalOpen(false);
+                    setEditingTemplate(null);
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-100 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-[#3949ab] hover:bg-[#303f9f] text-white rounded-lg font-semibold shadow-xs cursor-pointer transition-colors"
+                >
+                  {editingTemplate ? 'Update Template' : 'Save Template'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

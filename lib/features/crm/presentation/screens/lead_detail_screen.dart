@@ -11,6 +11,7 @@ import '../../domain/entities/lead_visit.dart';
 import '../../domain/entities/lead_task.dart';
 import '../../domain/entities/lead_order.dart';
 import '../../domain/utils/lead_audit_helper.dart';
+import '../../domain/utils/whatsapp_template_helper.dart';
 import '../bloc/lead_detail_bloc.dart';
 import '../bloc/lead_detail_event.dart';
 import '../bloc/lead_detail_state.dart';
@@ -608,7 +609,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
                       child: _buildWhatsAppIcon(size: isSmall ? 20 : 22),
                       tooltip: 'WhatsApp',
                       borderColor: const Color(0xFF25D366),
-                      onTap: () => _openWhatsApp(lead.phone),
+                      onTap: () => _openWhatsApp(lead.phone, lead),
                       isSmall: isSmall,
                     ),
                     SizedBox(width: isSmall ? 10 : 14),
@@ -1846,7 +1847,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
     }
   }
 
-  Future<void> _openWhatsApp(String phone) async {
+  Future<void> _openWhatsApp(String phone, [Lead? lead]) async {
     var cleanPhone = phone.replaceAll(RegExp(r'[^0-9]'), '');
     if (cleanPhone.isEmpty) {
       if (mounted) {
@@ -1860,32 +1861,27 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
       return;
     }
 
-    // Default to country code 91 if 10 digits
-    if (cleanPhone.length == 10) {
-      cleanPhone = '91$cleanPhone';
-    }
-
-    final nativeUri = Uri.parse('whatsapp://send?phone=$cleanPhone');
-    final webUri = Uri.parse('https://wa.me/$cleanPhone');
-
     try {
-      if (await canLaunchUrl(nativeUri)) {
-        await launchUrl(nativeUri, mode: LaunchMode.externalApplication);
-      } else {
-        await launchUrl(webUri, mode: LaunchMode.externalApplication);
+      final template = await WhatsAppTemplateHelper.getLeadDefaultTemplate();
+      final message = WhatsAppTemplateHelper.formatLeadMessage(template, lead, fallbackPhone: phone);
+      final launched = await WhatsAppTemplateHelper.openWhatsApp(phone: cleanPhone, message: message);
+      if (!launched && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not open WhatsApp on this device'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     } catch (_) {
-      try {
-        await launchUrl(webUri, mode: LaunchMode.externalApplication);
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Could not open WhatsApp on this device'),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
+      final launched = await WhatsAppTemplateHelper.openWhatsApp(phone: cleanPhone);
+      if (!launched && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not open WhatsApp on this device'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     }
   }

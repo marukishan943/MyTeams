@@ -237,3 +237,12 @@ export interface DashboardCardsConfig {
   ordersList: boolean;
   customerReminders: boolean;
 }
+
+export interface MessageTemplate {
+  id: string;
+  name: string;
+  module: 'Leads' | 'Customers' | 'Invoices' | 'Proforma Invoices' | 'General';
+  content: string;
+  is_default: boolean;
+  updated_at?: string;
+}

@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import type { Lead, LeadNote } from '../../types/crm';
 import { leadsService } from '../../services/leadsService';
+import { templateService } from '../../services/templateService';
+import { MessageCircle } from 'lucide-react';
 
 interface LeadDetailModalProps {
   lead: Lead | null;
@@ -68,6 +70,31 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
     } finally {
       setIsAddingNote(false);
     }
+  };
+
+  const handleOpenWhatsApp = () => {
+    if (!lead || !lead.phone) {
+      alert('No phone number provided for WhatsApp');
+      return;
+    }
+    const defaultTemplate = templateService.getDefaultTemplate('Leads');
+    let brandName = 'IV SQUARE STRUCTURE INDIA PVT LTD';
+    try {
+      const saved = localStorage.getItem('myteams_company_config');
+      if (saved) brandName = JSON.parse(saved).brand_name || brandName;
+    } catch (_) {}
+
+    const formatted = templateService.formatMessage(defaultTemplate.content, {
+      name: lead.name,
+      companyName: lead.company || lead.name,
+      brand_name: brandName,
+      stage: lead.stage,
+      phone: lead.phone,
+      lead_number: lead.lead_number,
+    });
+
+    const url = templateService.getWhatsAppUrl(lead.phone, formatted);
+    window.open(url, '_blank');
   };
 
   if (!lead) return null;
@@ -153,6 +180,39 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
                   </span>
                   <span>{lead.email}</span>
                 </div>
+              )}
+            </div>
+
+            {/* Quick Action Contact Row (Call, WhatsApp, Mail) */}
+            <div className="pt-3 border-t border-gray-100 flex items-center gap-2">
+              <a
+                href={`tel:${lead.phone}`}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold transition-colors"
+                title="Call phone number"
+              >
+                <Phone className="w-3.5 h-3.5" />
+                <span>Call</span>
+              </a>
+
+              <button
+                type="button"
+                onClick={handleOpenWhatsApp}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                title="Send WhatsApp message with default template"
+              >
+                <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                <span>WhatsApp</span>
+              </button>
+
+              {lead.email && (
+                <a
+                  href={`mailto:${lead.email}?subject=Regarding inquiry for ${encodeURIComponent(lead.name)}`}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 rounded-lg text-xs font-semibold transition-colors"
+                  title="Compose Email"
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  <span>Mail</span>
+                </a>
               )}
             </div>
           </div>
