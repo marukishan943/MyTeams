@@ -11,8 +11,6 @@ import '../../domain/entities/lead_visit.dart';
 import '../../domain/entities/lead_task.dart';
 import '../../domain/entities/lead_order.dart';
 import '../../domain/utils/lead_audit_helper.dart';
-import '../widgets/crm_ui_constants.dart';
-import '../widgets/crm_empty_state.dart';
 import '../bloc/lead_detail_bloc.dart';
 import '../bloc/lead_detail_event.dart';
 import '../bloc/lead_detail_state.dart';
@@ -182,10 +180,6 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
                   },
                 ),
                 IconButton(
-                  icon: const Icon(Icons.share_outlined, color: Colors.white),
-                  onPressed: () => _showShareOptions(context, lead),
-                ),
-                IconButton(
                   icon: const Icon(Icons.delete_outline, color: Colors.white),
                   onPressed: () => _showDeleteDialog(context, lead),
                 ),
@@ -278,31 +272,50 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
       return null;
     }
 
-    return Container(
-      margin: const EdgeInsets.only(left: 32),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          ElevatedButton.icon(
+    final media = MediaQuery.of(context);
+    final screenWidth = media.size.width;
+    final isSmall = screenWidth < 360;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Flexible(
+          child: ElevatedButton(
             onPressed: () => _showConvertToCustomerDialog(context, state.lead),
-            icon: const Icon(Icons.check_circle_outline, size: 20, color: Color(0xFF047857)),
-            label: const Text(
-              'Convert to Customer',
-              style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Color(0xFF047857)),
-            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,
-              elevation: 3,
-              shadowColor: Colors.black26,
+              foregroundColor: const Color(0xFF212121),
+              elevation: 2,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-                side: const BorderSide(color: Color(0xFFA7F3D0), width: 1.5),
+                borderRadius: BorderRadius.circular(8),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+              padding: EdgeInsets.symmetric(
+                horizontal: isSmall ? 12 : 20,
+                vertical: isSmall ? 10 : 14,
+              ),
+            ),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                'Convert to Customer',
+                style: TextStyle(
+                  fontSize: isSmall ? 13 : 15,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
           ),
-        ],
-      ),
+        ),
+        SizedBox(width: isSmall ? 8 : 12),
+        FloatingActionButton(
+          heroTag: 'lead_share_fab',
+          backgroundColor: _kPrimaryBlue,
+          mini: isSmall,
+          onPressed: () => _showShareOptions(context, state.lead),
+          child: const Icon(Icons.reply_outlined, color: Colors.white),
+        ),
+      ],
     );
   }
 
@@ -382,7 +395,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
               borderRadius: BorderRadius.circular(8),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withValues(alpha: 0.08),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -413,534 +426,287 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
   // ── TAB 1: Lead ──────────────────────────────────────────────────
   Widget _buildLeadTab(BuildContext context, LeadDetailLoaded state) {
     final lead = state.lead;
+    final media = MediaQuery.of(context);
+    final screenWidth = media.size.width;
+    final isSmall = screenWidth < 360;
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Hero Lead Profile Card
-          _buildHeroProfileCard(context, lead),
-          const SizedBox(height: 14),
-
-          // 2. Action Buttons Row (Call, WhatsApp, Email)
-          _buildContactActionCard(lead),
-          const SizedBox(height: 14),
-
-          // 3. Contact Information Card
-          _buildSectionCard(
-            title: 'Contact Information',
-            icon: Icons.contact_phone_outlined,
-            children: [
-              if (lead.phone.isNotEmpty)
-                _buildModernDetailRow(
-                  icon: Icons.phone_outlined,
-                  label: 'Phone Number',
-                  value: lead.phone,
-                  actionIcon: Icons.phone,
-                  onAction: () => _makeCall(lead.phone),
-                ),
-              if (lead.email.isNotEmpty)
-                _buildModernDetailRow(
-                  icon: Icons.email_outlined,
-                  label: 'Email Address',
-                  value: lead.email,
-                  actionIcon: Icons.send,
-                  onAction: () => _sendEmail(lead.email, lead.name),
-                ),
-              if (lead.territory.isNotEmpty)
-                _buildModernDetailRow(
-                  icon: Icons.map_outlined,
-                  label: 'Territory',
-                  value: lead.territory,
-                ),
-              if (lead.address.isNotEmpty || lead.city.isNotEmpty || lead.state.isNotEmpty)
-                _buildModernDetailRow(
-                  icon: Icons.location_on_outlined,
-                  label: 'Address',
-                  value: [lead.address, lead.city, lead.state, lead.pincode]
-                      .where((s) => s.isNotEmpty)
-                      .join(', '),
-                ),
-            ],
-          ),
-          const SizedBox(height: 14),
-
-          // 4. Lead Pipeline Details Card
-          _buildSectionCard(
-            title: 'Lead Details',
-            icon: Icons.info_outline_rounded,
-            children: [
-              _buildModernDetailRow(
-                icon: Icons.calendar_today_outlined,
-                label: 'Created Date',
-                value: DateFormat('dd MMM yyyy, hh:mm a').format(lead.createdAt),
-              ),
-              if (lead.company.isNotEmpty)
-                _buildModernDetailRow(
-                  icon: Icons.business_outlined,
-                  label: 'Company',
-                  value: lead.company,
-                ),
-              if (lead.title.isNotEmpty)
-                _buildModernDetailRow(
-                  icon: Icons.badge_outlined,
-                  label: 'Job Title / Designation',
-                  value: lead.title,
-                ),
-              if (lead.value > 0)
-                _buildModernDetailRow(
-                  icon: Icons.currency_rupee_rounded,
-                  label: 'Estimated Value',
-                  value: '₹${NumberFormat('#,##,###').format(lead.value)}',
-                  valueColor: const Color(0xFF047857),
-                ),
-              if (lead.website.isNotEmpty)
-                _buildModernDetailRow(
-                  icon: Icons.language_outlined,
-                  label: 'Website',
-                  value: lead.website,
-                ),
-              if (lead.gst.isNotEmpty)
-                _buildModernDetailRow(
-                  icon: Icons.receipt_long_outlined,
-                  label: 'GST Number',
-                  value: lead.gst,
-                ),
-            ],
-          ),
-
-          // 5. Initial Remarks Card (if present)
-          if (lead.note.isNotEmpty) ...[
-            const SizedBox(height: 14),
-            _buildSectionCard(
-              title: 'Initial Remarks',
-              icon: Icons.sticky_note_2_outlined,
+          // Source & Stage & Rating card
+          Container(
+            color: const Color(0xFFE8EAF6),
+            padding: EdgeInsets.symmetric(
+              horizontal: (screenWidth * 0.05).clamp(12.0, 24.0),
+              vertical: 14,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: CrmStyles.border),
-                  ),
+                // Source label
+                Expanded(
                   child: Text(
-                    lead.note,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: CrmStyles.textPrimary,
-                      height: 1.4,
+                    lead.source.displayName,
+                    style: TextStyle(
+                      fontSize: isSmall ? 14 : 16,
+                      color: const Color(0xFF616161),
+                      fontWeight: FontWeight.w500,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
+                ),
+                const SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    // Stage badge
+                    GestureDetector(
+                      onTap: () => _showStageSelector(context, lead),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: isSmall ? 10 : 16,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: lead.stage.backgroundColor,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            lead.stage.displayName,
+                            style: TextStyle(
+                              fontSize: isSmall ? 12 : 14,
+                              fontWeight: FontWeight.w600,
+                              color: lead.stage.color,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    // Star rating
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: List.generate(
+                        5,
+                        (i) => GestureDetector(
+                          onTap: () => _updateRating(context, lead, i + 1),
+                          child: Icon(
+                            i < lead.rating ? Icons.star : Icons.star_border,
+                            color: i < lead.rating
+                                ? const Color(0xFFFFA000)
+                                : Colors.grey[400],
+                            size: isSmall ? 20 : 24,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    // Staff name
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.person, size: 16, color: Colors.grey[500]),
+                        const SizedBox(width: 4),
+                        Text(
+                          lead.staffName,
+                          style: TextStyle(
+                            fontSize: isSmall ? 12 : 13,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ],
-      ),
-    );
-  }
+          ),
 
-  Widget _buildHeroProfileCard(BuildContext context, Lead lead) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(CrmStyles.radiusLarge),
-        border: Border.all(color: CrmStyles.border),
-        boxShadow: CrmStyles.cardShadow,
-      ),
-      padding: const EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header Row: Source chip + Interactive Stage pill
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Source Pill
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+          // Lead name + location + contact actions
+          Container(
+            color: Colors.white,
+            padding: EdgeInsets.all((screenWidth * 0.05).clamp(12.0, 24.0)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      _getSourceIcon(lead.source.displayName),
-                      size: 13,
-                      color: CrmStyles.textSecondary,
+                    const Icon(
+                      Icons.local_offer,
+                      color: Color(0xFF1A237E),
+                      size: 22,
                     ),
-                    const SizedBox(width: 5),
-                    Text(
-                      lead.source.displayName,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: CrmStyles.textSecondary,
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            lead.name,
+                            style: TextStyle(
+                              fontSize: isSmall ? 18 : 20,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF1A237E),
+                            ),
+                          ),
+                          if (lead.city.isNotEmpty || lead.state.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                [lead.city, lead.state]
+                                    .where((s) => s.isNotEmpty)
+                                    .join(', '),
+                                style: TextStyle(
+                                  fontSize: isSmall ? 13 : 14,
+                                  color: const Color(0xFF757575),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-              ),
-
-              // Interactive Stage Pill with dropdown arrow
-              GestureDetector(
-                onTap: () => _showStageSelector(context, lead),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: lead.stage.backgroundColor,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: lead.stage.color.withOpacity(0.3),
-                      width: 1,
+                const SizedBox(height: 16),
+                // Action buttons: Call, WhatsApp, Mail
+                Row(
+                  children: [
+                    _buildCircleActionButton(
+                      child: Icon(Icons.phone, color: _kPrimaryBlue, size: isSmall ? 20 : 22),
+                      tooltip: 'Call',
+                      onTap: () => _makeCall(lead.phone),
+                      isSmall: isSmall,
                     ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 7,
-                        height: 7,
-                        decoration: BoxDecoration(
-                          color: lead.stage.color,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        lead.stage.displayName,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.bold,
-                          color: lead.stage.color,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.keyboard_arrow_down,
-                        size: 16,
-                        color: lead.stage.color,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-
-          // Lead Name
-          Text(
-            lead.name,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: CrmStyles.textPrimary,
-              letterSpacing: -0.3,
-            ),
-          ),
-
-          // Company
-          if (lead.company.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                const Icon(
-                  Icons.business_outlined,
-                  size: 15,
-                  color: CrmStyles.textMuted,
-                ),
-                const SizedBox(width: 5),
-                Expanded(
-                  child: Text(
-                    lead.company,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: CrmStyles.textSecondary,
+                    SizedBox(width: isSmall ? 10 : 14),
+                    _buildCircleActionButton(
+                      child: _buildWhatsAppIcon(size: isSmall ? 20 : 22),
+                      tooltip: 'WhatsApp',
+                      borderColor: const Color(0xFF25D366),
+                      onTap: () => _openWhatsApp(lead.phone),
+                      isSmall: isSmall,
                     ),
-                  ),
+                    SizedBox(width: isSmall ? 10 : 14),
+                    _buildCircleActionButton(
+                      child: Icon(Icons.email_outlined, color: _kPrimaryBlue, size: isSmall ? 20 : 22),
+                      tooltip: 'Mail',
+                      onTap: () => _sendEmail(lead.email, lead.name),
+                      isSmall: isSmall,
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-
-          // Location
-          if (lead.city.isNotEmpty || lead.state.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                const Icon(
-                  Icons.location_on_outlined,
-                  size: 15,
-                  color: CrmStyles.textMuted,
-                ),
-                const SizedBox(width: 5),
-                Text(
-                  [lead.city, lead.state].where((s) => s.isNotEmpty).join(', '),
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: CrmStyles.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ],
-
-          const SizedBox(height: 14),
-          const Divider(height: 1, color: CrmStyles.borderLight),
-          const SizedBox(height: 12),
-
-          // Footer Row: Rating Stars + Assigned Staff
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Interactive Star Rating
-              Row(
-                children: List.generate(5, (i) {
-                  final starNum = i + 1;
-                  return GestureDetector(
-                    onTap: () => _updateRating(context, lead, starNum),
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 3),
-                      child: Icon(
-                        starNum <= lead.rating
-                            ? Icons.star_rounded
-                            : Icons.star_outline_rounded,
-                        color: starNum <= lead.rating
-                            ? const Color(0xFFFFB300)
-                            : const Color(0xFFCBD5E1),
-                        size: 22,
-                      ),
-                    ),
-                  );
-                }),
-              ),
-
-              // Staff assignment tag
-              if (lead.staffName.isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: CrmStyles.primaryLight,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.person,
-                        size: 13,
-                        color: CrmStyles.primary,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        lead.staffName,
-                        style: const TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w600,
-                          color: CrmStyles.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
           ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildContactActionCard(Lead lead) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(CrmStyles.radiusLarge),
-        border: Border.all(color: CrmStyles.border),
-        boxShadow: CrmStyles.cardShadow,
-      ),
-      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildActionButton(
-            label: 'Call',
-            icon: Icons.phone,
-            color: CrmStyles.primary,
-            bgColor: CrmStyles.primaryLight,
-            onTap: () => _makeCall(lead.phone),
-          ),
-          _buildActionButton(
-            label: 'WhatsApp',
-            customIcon: _buildWhatsAppIcon(size: 22),
-            color: const Color(0xFF25D366),
-            bgColor: const Color(0xFFDCFCE7),
-            onTap: () => _openWhatsApp(lead.phone),
-          ),
-          _buildActionButton(
-            label: 'Email',
-            icon: Icons.email_outlined,
-            color: CrmStyles.primary,
-            bgColor: CrmStyles.primaryLight,
-            onTap: () => _sendEmail(lead.email, lead.name),
-          ),
-        ],
-      ),
-    );
-  }
+          const SizedBox(height: 8),
 
-  Widget _buildActionButton({
-    required String label,
-    IconData? icon,
-    Widget? customIcon,
-    required Color color,
-    required Color bgColor,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
+          // Details section
           Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: bgColor,
-              shape: BoxShape.circle,
+            color: Colors.white,
+            padding: EdgeInsets.symmetric(
+              horizontal: (screenWidth * 0.05).clamp(12.0, 24.0),
+              vertical: 16,
             ),
-            child: Center(
-              child: customIcon ?? Icon(icon, color: color, size: 22),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: CrmStyles.textSecondary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionCard({
-    required String title,
-    required IconData icon,
-    required List<Widget> children,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(CrmStyles.radiusLarge),
-        border: Border.all(color: CrmStyles.border),
-        boxShadow: CrmStyles.cardShadow,
-      ),
-      padding: const EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 18, color: CrmStyles.primary),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: CrmStyles.textPrimary,
-                  letterSpacing: -0.2,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const Divider(height: 1, color: CrmStyles.borderLight),
-          const SizedBox(height: 6),
-          ...children,
-        ],
-      ),
-    );
-  }
-
-  Widget _buildModernDetailRow({
-    required IconData icon,
-    required String label,
-    required String value,
-    Color? valueColor,
-    IconData? actionIcon,
-    VoidCallback? onAction,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 9),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, size: 16, color: CrmStyles.textSecondary),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: CrmStyles.textMuted,
-                    fontWeight: FontWeight.w500,
-                  ),
+                _buildDetailRow(
+                  icon: Icons.access_time_outlined,
+                  label: 'Created On',
+                  value: DateFormat('dd MMM yyyy hh:mm a')
+                      .format(lead.createdAt),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w600,
-                    color: valueColor ?? CrmStyles.textPrimary,
+                if (lead.company.isNotEmpty)
+                  _buildDetailRow(
+                    icon: Icons.business_outlined,
+                    label: 'Company',
+                    value: lead.company,
                   ),
-                ),
+                if (lead.phone.isNotEmpty)
+                  _buildDetailRow(
+                    icon: Icons.phone_outlined,
+                    label: 'Phone',
+                    value: lead.phone,
+                  ),
+                if (lead.email.isNotEmpty)
+                  _buildDetailRow(
+                    icon: Icons.email_outlined,
+                    label: 'Email',
+                    value: lead.email,
+                  ),
+                if (lead.territory.isNotEmpty)
+                  _buildDetailRow(
+                    icon: Icons.location_on_outlined,
+                    label: 'Territory',
+                    value: lead.territory,
+                  ),
+                if (lead.value > 0)
+                  _buildDetailRow(
+                    icon: Icons.currency_rupee_outlined,
+                    label: 'Value',
+                    value: '₹${NumberFormat('#,##,###').format(lead.value)}',
+                  ),
+                if (lead.title.isNotEmpty)
+                  _buildDetailRow(
+                    icon: Icons.title_outlined,
+                    label: 'Title',
+                    value: lead.title,
+                  ),
+                if (lead.note.isNotEmpty)
+                  _buildDetailRow(
+                    icon: Icons.note_outlined,
+                    label: 'Note',
+                    value: lead.note,
+                  ),
               ],
             ),
           ),
-          if (actionIcon != null && onAction != null)
-            GestureDetector(
-              onTap: onAction,
-              child: Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: CrmStyles.primaryLight,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Icon(actionIcon, size: 16, color: CrmStyles.primary),
-              ),
-            ),
+          const SizedBox(height: 100), // bottom padding for FABs
         ],
       ),
     );
   }
 
-  IconData _getSourceIcon(String source) {
-    final s = source.toLowerCase();
-    if (s.contains('call')) return Icons.phone_outlined;
-    if (s.contains('email')) return Icons.email_outlined;
-    if (s.contains('web')) return Icons.language_outlined;
-    return Icons.tag_outlined;
+  Widget _buildCircleActionButton({
+    required Widget child,
+    required VoidCallback onTap,
+    Color? borderColor,
+    String? tooltip,
+    bool isSmall = false,
+  }) {
+    final size = isSmall ? 40.0 : 46.0;
+    Widget btn = GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white,
+          border: Border.all(
+            color: borderColor ?? _kPrimaryBlue,
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Center(child: child),
+      ),
+    );
+
+    if (tooltip != null) {
+      return Tooltip(message: tooltip, child: btn);
+    }
+    return btn;
   }
 
   Widget _buildWhatsAppIcon({double size = 22}) {
@@ -959,6 +725,47 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
             Icons.phone,
             size: size * 0.52,
             color: Colors.white,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: Colors.grey[500]),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[500],
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF212121),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -1174,12 +981,12 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
   Widget _buildVisitsTab(BuildContext context, LeadDetailLoaded state) {
     final visits = state.visits;
     if (visits.isEmpty) {
-      return CrmEmptyState(
-        icon: Icons.calendar_month_outlined,
-        title: 'No Visits Recorded',
-        message: 'Schedule a site visit or log a meeting with this lead.',
-        buttonText: 'Schedule Visit',
-        onButtonPressed: () => _navigateToAddVisit(context, state.lead),
+      return const Center(
+        child: Text(
+          'No visits recorded.\nTap + to add a visit.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.grey, fontSize: 15),
+        ),
       );
     }
     return ListView.builder(
@@ -1240,145 +1047,128 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
   }
 
   Widget _buildVisitCard(BuildContext context, LeadDetailLoaded state, LeadVisit visit) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(CrmStyles.radiusLarge),
-        border: Border.all(color: CrmStyles.border),
-        boxShadow: CrmStyles.cardShadow,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(CrmStyles.radiusLarge),
-        child: InkWell(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => BlocProvider.value(
-                  value: context.read<LeadDetailBloc>(),
-                  child: VisitDetailScreen(
-                    lead: state.lead,
-                    visit: visit,
-                  ),
-                ),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => BlocProvider.value(
+              value: context.read<LeadDetailBloc>(),
+              child: VisitDetailScreen(
+                lead: state.lead,
+                visit: visit,
               ),
-            );
-          },
-          borderRadius: BorderRadius.circular(CrmStyles.radiusLarge),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
+            ),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+          // Time block
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE8EAF6),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              DateFormat('hh:mm\na').format(visit.startTime).toUpperCase(),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: _kPrimaryBlue,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Time block
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: CrmStyles.primaryLight,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    DateFormat('hh:mm\na').format(visit.startTime).toUpperCase(),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: CrmStyles.primary,
-                      height: 1.2,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        visit.subject.isNotEmpty ? visit.subject : 'Site Visit',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: CrmStyles.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(Icons.person_outline, size: 14, color: CrmStyles.textMuted),
-                          const SizedBox(width: 4),
-                          Text(
-                            visit.staffName,
-                            style: const TextStyle(
-                              fontSize: 12.5,
-                              color: CrmStyles.textSecondary,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                // Purpose badge & Image
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: CrmStyles.border),
-                      ),
-                      child: Text(
-                        visit.purpose.displayName,
-                        style: const TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w600,
-                          color: CrmStyles.textSecondary,
-                        ),
+                    Icon(Icons.person, size: 15, color: Colors.grey[400]),
+                    const SizedBox(width: 4),
+                    Text(
+                      visit.staffName,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey[600],
                       ),
                     ),
-                    if (visit.images.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.photo_library_outlined, size: 14, color: CrmStyles.primary),
-                          const SizedBox(width: 3),
-                          Text(
-                            '${visit.images.length}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: CrmStyles.primary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
                   ],
                 ),
+                if (visit.subject.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    visit.subject,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
-        ),
+          // Purpose badge and Image Action
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                decoration: BoxDecoration(
+                  border: Border.all(color: const Color(0xFF616161)),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  visit.purpose.displayName,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF212121),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Icon(
+                visit.images.isEmpty ? Icons.error_outline : Icons.image_outlined,
+                color: _kPrimaryBlue,
+                size: 22,
+              ),
+            ],
+          ),
+        ],
       ),
-    );
+    ));
   }
 
   // ── TAB 4: Tasks ─────────────────────────────────────────────────
   Widget _buildTasksTab(BuildContext context, LeadDetailLoaded state) {
     final tasks = state.tasks.where((t) => t.parentId == null).toList();
     if (tasks.isEmpty) {
-      return CrmEmptyState(
-        icon: Icons.checklist_rounded,
-        title: 'No Tasks Scheduled',
-        message: 'Create follow-ups, calls, or reminders for this lead.',
-        buttonText: 'Add New Task',
-        onButtonPressed: () => _navigateToAddTask(context, state.lead),
+      return const Center(
+        child: Text(
+          'No tasks yet.\nTap + to add a task.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.grey, fontSize: 15),
+        ),
       );
     }
     return ListView.builder(
@@ -1402,141 +1192,116 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
   }
 
   Widget _buildTaskCard(BuildContext context, LeadDetailLoaded state, LeadTask task) {
-    Color priorityColor = CrmStyles.primary;
-    String priorityText = 'Normal';
-    if (task.priority == 3) {
-      priorityColor = CrmStyles.danger;
-      priorityText = 'High';
-    } else if (task.priority == 2) {
-      priorityColor = CrmStyles.warning;
-      priorityText = 'Medium';
-    } else if (task.priority == 1) {
-      priorityColor = const Color(0xFF0284C7);
-      priorityText = 'Low';
-    }
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => BlocProvider.value(
+              value: context.read<LeadDetailBloc>(),
+              child: TaskDetailScreen(
+                lead: state.lead,
+                task: task,
+              ),
+            ),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(CrmStyles.radiusLarge),
-        border: Border.all(color: CrmStyles.border),
-        boxShadow: CrmStyles.cardShadow,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(CrmStyles.radiusLarge),
-        child: InkWell(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => BlocProvider.value(
-                  value: context.read<LeadDetailBloc>(),
-                  child: TaskDetailScreen(
-                    lead: state.lead,
-                    task: task,
-                  ),
-                ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Time block
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE8EAF6),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              DateFormat('hh:mm\na').format(task.startTime).toUpperCase(),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: _kPrimaryBlue,
               ),
-            );
-          },
-          borderRadius: BorderRadius.circular(CrmStyles.radiusLarge),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Time block
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: CrmStyles.primaryLight,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    DateFormat('hh:mm\na').format(task.startTime).toUpperCase(),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: CrmStyles.primary,
-                      height: 1.2,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        task.subject.isNotEmpty ? task.subject : 'Task',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: CrmStyles.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(Icons.person_outline, size: 14, color: CrmStyles.textMuted),
-                          const SizedBox(width: 4),
-                          Text(
-                            task.staffName,
-                            style: const TextStyle(
-                              fontSize: 12.5,
-                              color: CrmStyles.textSecondary,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: CrmStyles.border),
-                      ),
-                      child: Text(
-                        task.type.displayName,
-                        style: const TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w600,
-                          color: CrmStyles.textSecondary,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: priorityColor.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        priorityText,
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: priorityColor,
-                        ),
+                    Icon(Icons.person, size: 15, color: Colors.grey[400]),
+                    const SizedBox(width: 4),
+                    Text(
+                      task.staffName,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey[600],
                       ),
                     ),
                   ],
                 ),
+                if (task.subject.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    task.subject,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
-        ),
+          Column(
+            children: [
+              // Type badge
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                decoration: BoxDecoration(
+                  border: Border.all(color: const Color(0xFF616161)),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  task.type.displayName,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF212121),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Priority indicator
+              Icon(
+                Icons.error_outline,
+                color: task.priority > 0 ? Colors.red : _kPrimaryBlue,
+                size: 22,
+              ),
+            ],
+          ),
+        ],
+      ),
       ),
     );
   }
@@ -1545,10 +1310,11 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
   Widget _buildSalesTab(BuildContext context, LeadDetailLoaded state) {
     final orders = state.orders;
     if (orders.isEmpty) {
-      return const CrmEmptyState(
-        icon: Icons.receipt_long_outlined,
-        title: 'No Commercial Records',
-        message: 'Orders, invoices, and quotations created for this lead will appear here.',
+      return const Center(
+        child: Text(
+          'No Record Found!',
+          style: TextStyle(color: Colors.grey, fontSize: 15),
+        ),
       );
     }
 
@@ -1660,7 +1426,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -1821,103 +1587,62 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
   void _showStageSelector(BuildContext context, Lead lead) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFCBD5E1),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
+        return Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Change Stage',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF212121),
                 ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Update Lead Stage',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: CrmStyles.textPrimary,
-                    letterSpacing: -0.2,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Select the new status in the conversion pipeline',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: CrmStyles.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                ...LeadStage.values.map((stage) {
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: LeadStage.values.map((stage) {
                   final isSelected = lead.stage == stage;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Material(
-                      color: isSelected ? stage.backgroundColor : const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(12),
-                      child: InkWell(
-                        onTap: () {
-                          Navigator.pop(ctx);
-                          context.read<LeadDetailBloc>().add(
-                                UpdateLeadStageEvent(lead.id, {'stage': stage}),
-                              );
-                        },
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: isSelected ? stage.color : CrmStyles.border,
-                              width: isSelected ? 1.5 : 1,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 10,
-                                height: 10,
-                                decoration: BoxDecoration(
-                                  color: stage.color,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  stage.displayName,
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                                    color: isSelected ? stage.color : CrmStyles.textPrimary,
-                                  ),
-                                ),
-                              ),
-                              if (isSelected)
-                                Icon(Icons.check_circle_rounded, color: stage.color, size: 20),
-                            ],
-                          ),
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      context.read<LeadDetailBloc>().add(
+                            UpdateLeadStageEvent(
+                                lead.id, {'stage': stage}),
+                          );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: stage.backgroundColor,
+                        borderRadius: BorderRadius.circular(20),
+                        border: isSelected
+                            ? Border.all(color: stage.color, width: 2)
+                            : null,
+                      ),
+                      child: Text(
+                        stage.displayName,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: stage.color,
                         ),
                       ),
                     ),
                   );
-                }),
-              ],
-            ),
+                }).toList(),
+              ),
+              const SizedBox(height: 16),
+            ],
           ),
         );
       },
