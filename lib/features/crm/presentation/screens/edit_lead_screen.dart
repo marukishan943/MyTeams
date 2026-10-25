@@ -113,7 +113,7 @@ class _EditLeadScreenState extends State<EditLeadScreen> {
                   border: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFE0E0E0))),
                   enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFE0E0E0))),
                   focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: _kPrimaryBlue, width: 2)),
-                  contentPadding: EdgeInsets.symmetric(vertical: 10),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 10),
                 ),
               ),
               const SizedBox(height: 24),
@@ -129,7 +129,7 @@ class _EditLeadScreenState extends State<EditLeadScreen> {
                   border: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFE0E0E0))),
                   enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFE0E0E0))),
                   focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: _kPrimaryBlue, width: 2)),
-                  contentPadding: EdgeInsets.symmetric(vertical: 10),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 10),
                 ),
               ),
               const SizedBox(height: 24),
@@ -145,7 +145,7 @@ class _EditLeadScreenState extends State<EditLeadScreen> {
                   border: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFE0E0E0))),
                   enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFE0E0E0))),
                   focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: _kPrimaryBlue, width: 2)),
-                  contentPadding: EdgeInsets.symmetric(vertical: 10),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 10),
                 ),
               ),
               const SizedBox(height: 24),
@@ -160,7 +160,7 @@ class _EditLeadScreenState extends State<EditLeadScreen> {
                   border: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFE0E0E0))),
                   enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFE0E0E0))),
                   focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: _kPrimaryBlue, width: 2)),
-                  contentPadding: EdgeInsets.symmetric(vertical: 10),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 10),
                 ),
               ),
               const SizedBox(height: 24),
@@ -318,7 +318,7 @@ class _EditLeadScreenState extends State<EditLeadScreen> {
                   focusedBorder: UnderlineInputBorder(
                     borderSide: BorderSide(color: _kPrimaryBlue, width: 2),
                   ),
-                  contentPadding: EdgeInsets.symmetric(vertical: 10),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 10),
                 ),
               ),
               const SizedBox(height: 24),
@@ -341,7 +341,7 @@ class _EditLeadScreenState extends State<EditLeadScreen> {
                   focusedBorder: UnderlineInputBorder(
                     borderSide: BorderSide(color: _kPrimaryBlue, width: 2),
                   ),
-                  contentPadding: EdgeInsets.symmetric(vertical: 10),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 10),
                 ),
               ),
               const SizedBox(height: 100),
@@ -383,12 +383,15 @@ class _EditLeadScreenState extends State<EditLeadScreen> {
   }
 
   Widget _buildLabel(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-        fontSize: 14,
-        color: Color(0xFF9E9E9E),
-        fontWeight: FontWeight.w400,
+    return Padding(
+      padding: const EdgeInsets.only(left: 4),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 14,
+          color: Color(0xFF9E9E9E),
+          fontWeight: FontWeight.w400,
+        ),
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/entities/lead_enums.dart';
 import '../bloc/lead_bloc.dart';
 import '../bloc/lead_event.dart';
@@ -30,7 +31,7 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
   int _currentStep = 0; // 0 = Contact, 1 = Lead
 
   // ─── Contact step fields ────────────────────────────────────────────
-  String _selectedStaff = 'Bhavin Prajapati';
+  String _selectedStaff = 'ADMIN ADMIN';
   final _nameController = TextEditingController();
   final _companyController = TextEditingController();
   final _phoneController = TextEditingController(text: '+91');
@@ -58,11 +59,12 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
   final ImagePicker _picker = ImagePicker();
   final List<LeadImageData> _selectedVisitImages = [];
 
-  final List<String> _staffList = [
-    'Bhavin Prajapati',
-    'Mehul Ajagya',
+  List<String> _staffList = [
+    'ADMIN ADMIN',
+    'JITESHBHAI VASANIYA',
     'Kishan Maru',
-    'Rahul Sharma',
+    'Mehul Ajagya',
+    'Sachin Chauhan',
   ];
 
   final List<String> _territoryList = [
@@ -80,6 +82,36 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
   void initState() {
     super.initState();
     _retrieveLostData();
+    _fetchAdminUsers();
+  }
+
+  Future<void> _fetchAdminUsers() async {
+    try {
+      final response = await Supabase.instance.client
+          .from('team_users')
+          .select('first_name, last_name, is_active')
+          .order('first_name', ascending: true);
+
+      final List<String> loaded = [];
+      for (final item in response) {
+        if (item['is_active'] == false) continue;
+        final first = (item['first_name'] ?? '').toString().trim();
+        final last = (item['last_name'] ?? '').toString().trim();
+        final fullName = [first, last].where((s) => s.isNotEmpty).join(' ');
+        if (fullName.isNotEmpty && !loaded.contains(fullName)) {
+          loaded.add(fullName);
+        }
+      }
+
+      if (loaded.isNotEmpty && mounted) {
+        setState(() {
+          _staffList = loaded;
+          if (!_staffList.contains(_selectedStaff)) {
+            _selectedStaff = _staffList.first;
+          }
+        });
+      }
+    } catch (_) {}
   }
 
   /// Recover photos if Android OS killed the activity while camera was active
@@ -260,15 +292,6 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Staff dropdown
-          _buildLabel('Staff'),
-          _buildDropdown(
-            value: _selectedStaff,
-            items: _staffList,
-            onChanged: (val) => setState(() => _selectedStaff = val!),
-          ),
-          const SizedBox(height: 16),
-
           // Name
           _buildLabel('Name', required: true),
           _buildUnderlineField(
@@ -398,6 +421,19 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
               hint: 'Country',
             ),
           ],
+          const SizedBox(height: 20),
+
+          // Reference (Admin Users dropdown)
+          _buildLabel('Reference'),
+          _buildDropdown(
+            value: _selectedStaff,
+            items: _staffList,
+            onChanged: (val) {
+              if (val != null) {
+                setState(() => _selectedStaff = val);
+              }
+            },
+          ),
           const SizedBox(height: 24),
 
           // Additional Detail
@@ -765,7 +801,7 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
   // ─── Shared Widgets ────────────────────────────────────────────────
   Widget _buildLabel(String text, {bool required = false}) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.only(left: 4, bottom: 4),
       child: RichText(
         text: TextSpan(
           text: text,
@@ -825,7 +861,7 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
         focusedBorder: const UnderlineInputBorder(
           borderSide: BorderSide(color: _kPrimaryBlue, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 10),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
       ),
     );
   }
@@ -835,6 +871,8 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
     required List<String> items,
     required ValueChanged<String?> onChanged,
   }) {
+    final effectiveValue = items.contains(value) ? value : (items.isNotEmpty ? items.first : null);
+
     return Container(
       decoration: const BoxDecoration(
         border: Border(
@@ -842,17 +880,20 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
         ),
       ),
       child: DropdownButtonFormField<String>(
-        value: value,
+        value: effectiveValue,
         isExpanded: true,
         items: items
             .map((item) => DropdownMenuItem(
                   value: item,
-                  child: Text(
-                    item,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Color(0xFF212121),
-                      fontWeight: FontWeight.w500,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    child: Text(
+                      item,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFF212121),
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ))
@@ -860,7 +901,7 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
         onChanged: onChanged,
         decoration: const InputDecoration(
           border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(vertical: 8),
+          contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 8),
         ),
         icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF757575)),
       ),
