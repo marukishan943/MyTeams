@@ -19,7 +19,10 @@ import {
   User,
   Download,
   Ban,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import type { SalesOrder, PaymentRecord, InventoryItem } from '../../types/crm';
 import { CancelOrderModal } from './CancelOrderModal';
 import { InventoryDetailModal } from './InventoryDetailModal';
@@ -404,6 +407,19 @@ function OrderRowActions({
   );
 }
 
+function getPageNumbers(current: number, total: number): (number | string)[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+  if (current <= 4) {
+    return [1, 2, 3, 4, 5, '...', total];
+  }
+  if (current >= total - 3) {
+    return [1, '...', total - 4, total - 3, total - 2, total - 1, total];
+  }
+  return [1, '...', current - 1, current, current + 1, '...', total];
+}
+
 export const SalesList: React.FC<SalesListProps> = ({
   orders,
   payments,
@@ -429,7 +445,7 @@ export const SalesList: React.FC<SalesListProps> = ({
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [staffFilter, setStaffFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Confirmation alert dialogue state for Cancel Proforma Invoice
   const [cancelModalOrder, setCancelModalOrder] = useState<SalesOrder | null>(null);
@@ -532,6 +548,102 @@ export const SalesList: React.FC<SalesListProps> = ({
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  const paginatedPayments = filteredPayments.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const paginatedInventory = filteredInventory.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const handleDownloadAll = () => {
+    if (subTab === 'proforma_invoice' || subTab === 'invoice') {
+      if (filteredOrders.length === 0) {
+        alert('No records available to download.');
+        return;
+      }
+
+      const isPFI = subTab === 'proforma_invoice';
+      const exportRows = filteredOrders.map((o) => ({
+        'Order No': o.order_number || '',
+        'Type': isPFI ? 'Proforma Invoice' : 'Tax Invoice',
+        'Date': o.date ? new Date(o.date).toLocaleDateString('en-GB') : '',
+        'Customer': o.reference_name || '',
+        'Total Amount (₹)': o.total_amount || 0,
+        'Status': o.status?.toUpperCase() || '',
+        'Staff': o.staff_name || '',
+        'Due Date': o.due_date ? new Date(o.due_date).toLocaleDateString('en-GB') : '',
+        'Notes': o.notes || '',
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportRows);
+      const columnKeys = Object.keys(exportRows[0] || {});
+      worksheet['!cols'] = columnKeys.map((key) => {
+        let maxLen = key.length;
+        for (const row of exportRows) {
+          const val = String((row as Record<string, unknown>)[key] || '');
+          if (val.length > maxLen) maxLen = Math.min(val.length, 60);
+        }
+        return { wch: Math.max(maxLen + 3, 10) };
+      });
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(
+        workbook,
+        worksheet,
+        isPFI ? 'Proforma Invoices' : 'Invoices'
+      );
+      XLSX.writeFile(
+        workbook,
+        isPFI ? 'Sales_Orders_UpTeams.xlsx' : 'Invoices_UpTeams.xlsx'
+      );
+    } else if (subTab === 'payments') {
+      if (filteredPayments.length === 0) {
+        alert('No payments available to download.');
+        return;
+      }
+
+      const exportRows = filteredPayments.map((p) => ({
+        'Payment No': p.payment_number || p.id || '',
+        'Sales ID': p.sales_id || '',
+        'Customer': p.contact_name || '',
+        'Company': p.company_name || '',
+        'Amount (₹)': p.amount || 0,
+        'Mode': p.mode?.toUpperCase() || '',
+        'Date': p.date ? new Date(p.date).toLocaleDateString('en-GB') : '',
+        'Staff': p.staff_name || '',
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportRows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Payments');
+      XLSX.writeFile(workbook, 'Payments_UpTeams.xlsx');
+    } else if (subTab === 'inventory') {
+      if (filteredInventory.length === 0) {
+        alert('No inventory items available to download.');
+        return;
+      }
+
+      const exportRows = filteredInventory.map((i) => ({
+        'Item Name': i.name || '',
+        'SKU': i.sku || '',
+        'Category': i.category || '',
+        'Quantity': i.quantity || 0,
+        'Unit': i.unit || '',
+        'Rate (₹)': i.rate || 0,
+        'Min Stock': i.min_stock || 0,
+        'Status': i.status || '',
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportRows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Inventory');
+      XLSX.writeFile(workbook, 'Inventory_UpTeams.xlsx');
+    }
+  };
 
   const getOrderStatusPill = (status: SalesOrder['status']) => {
     if (status === 'converted' || status === 'delivered') {
@@ -1062,7 +1174,7 @@ export const SalesList: React.FC<SalesListProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 bg-white">
-                {filteredPayments.map((p) => (
+                {paginatedPayments.map((p) => (
                   <tr key={p.id} className="hover:bg-blue-50/20 transition-colors">
                     <td className="px-3.5 py-3.5 font-mono font-bold text-[#1a237e]">
                       {p.payment_number}
@@ -1122,7 +1234,7 @@ export const SalesList: React.FC<SalesListProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 bg-white">
-                {filteredInventory.map((item) => (
+                {paginatedInventory.map((item) => (
                   <tr key={item.id} className="hover:bg-blue-50/20 transition-colors">
                     <td className="px-3.5 py-3.5 font-bold text-gray-900">
                       {item.name}
@@ -1173,51 +1285,109 @@ export const SalesList: React.FC<SalesListProps> = ({
           </div>
         )}
 
-        {/* ── BOTTOM TOTAL SUMMARY BAR (Exact UpTeams styling from screenshot) ── */}
-        {isOrderView && (
-          <div className="w-full px-4 py-2.5 bg-white border-t border-gray-200 flex flex-wrap items-center justify-between gap-3 text-xs">
-            {/* 3 Summary Pills */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="px-3 py-1 rounded bg-blue-50 text-[#1a237e] border border-blue-200 font-bold text-xs">
-                <span>Total </span>
-                <span className="font-mono">₹{formatCurrencyINR(totalAmount)}</span>
-              </div>
-              <div className="px-3 py-1 rounded bg-emerald-50 text-[#059669] border border-emerald-200 font-bold text-xs">
-                <span>Converted </span>
-                <span className="font-mono">₹{formatCurrencyINR(convertedAmount)}</span>
-              </div>
-              <div className="px-3 py-1 rounded bg-amber-50 text-[#d97706] border border-amber-200 font-bold text-xs">
-                <span>Open </span>
-                <span className="font-mono">₹{formatCurrencyINR(openAmount)}</span>
-              </div>
-            </div>
+        {/* ── BOTTOM SUMMARY BAR & PAGINATION ── */}
+        <div className="w-full px-4 py-3 bg-white border-t border-gray-200 flex flex-wrap items-center justify-between gap-3 text-xs text-gray-500">
+          {/* Left: Download All Button & Order Summary Pills */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <button
+              onClick={handleDownloadAll}
+              title={`Download all ${getSubTabTitle()} in Excel format`}
+              className="inline-flex items-center gap-2 px-3.5 py-2 bg-[#1a237e] hover:bg-[#283593] text-white text-xs font-semibold rounded shadow-sm transition-colors cursor-pointer"
+            >
+              <Download className="w-4 h-4" />
+              <span>Download All</span>
+            </button>
 
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="flex items-center space-x-1 ml-auto text-gray-500 text-xs">
-                <button
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  className="px-2.5 py-1 border border-gray-200 rounded disabled:opacity-40 hover:bg-gray-50 cursor-pointer"
-                >
-                  Previous
-                </button>
-                <span className="px-2 font-medium">
-                  {currentPage} / {totalPages}
-                </span>
-                <button
-                  disabled={currentPage === totalPages}
-                  onClick={() =>
-                    setCurrentPage((p) => Math.min(totalPages, p + 1))
-                  }
-                  className="px-2.5 py-1 border border-gray-200 rounded disabled:opacity-40 hover:bg-gray-50 cursor-pointer"
-                >
-                  Next
-                </button>
+            {isOrderView && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="px-3 py-1 rounded bg-blue-50 text-[#1a237e] border border-blue-200 font-bold text-xs">
+                  <span>Total </span>
+                  <span className="font-mono">₹{formatCurrencyINR(totalAmount)}</span>
+                </div>
+                <div className="px-3 py-1 rounded bg-emerald-50 text-[#059669] border border-emerald-200 font-bold text-xs">
+                  <span>Converted </span>
+                  <span className="font-mono">₹{formatCurrencyINR(convertedAmount)}</span>
+                </div>
+                <div className="px-3 py-1 rounded bg-amber-50 text-[#d97706] border border-amber-200 font-bold text-xs">
+                  <span>Open </span>
+                  <span className="font-mono">₹{formatCurrencyINR(openAmount)}</span>
+                </div>
               </div>
             )}
           </div>
-        )}
+
+          {/* Right: Showing text, Page size dropdown, Page navigation */}
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-gray-500 text-xs">
+              Showing {totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} -{' '}
+              {Math.min(currentPage * itemsPerPage, totalItems)} of{' '}
+              {totalItems.toLocaleString()}
+            </span>
+
+            {/* Page size dropdown */}
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="border border-gray-300 rounded px-2 py-1 text-xs text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-[#1a237e] cursor-pointer"
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+
+            {/* Page navigation buttons */}
+            <div className="flex items-center gap-1">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                className="min-w-[28px] h-7 px-1.5 rounded flex items-center justify-center text-blue-600 hover:bg-gray-100 disabled:text-gray-300 disabled:hover:bg-transparent disabled:cursor-not-allowed cursor-pointer transition-colors"
+                title="Previous page"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+
+              {getPageNumbers(currentPage, totalPages).map((p, idx) => {
+                if (typeof p === 'string') {
+                  return (
+                    <span
+                      key={`ellipsis-${idx}`}
+                      className="px-1 text-gray-400 select-none flex items-center justify-center text-xs"
+                    >
+                      ...
+                    </span>
+                  );
+                }
+                const isActive = p === currentPage;
+                return (
+                  <button
+                    key={`page-${p}`}
+                    onClick={() => setCurrentPage(p)}
+                    className={`min-w-[28px] h-7 px-2 rounded flex items-center justify-center text-xs transition-colors cursor-pointer ${
+                      isActive
+                        ? 'bg-[#1a237e] text-white font-semibold shadow-xs'
+                        : 'text-blue-600 hover:bg-gray-100 font-normal'
+                    }`}
+                  >
+                    {p}
+                  </button>
+                );
+              })}
+
+              <button
+                disabled={currentPage === totalPages || totalItems === 0}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                className="min-w-[28px] h-7 px-1.5 rounded flex items-center justify-center text-blue-600 hover:bg-gray-100 disabled:text-gray-300 disabled:hover:bg-transparent disabled:cursor-not-allowed cursor-pointer transition-colors"
+                title="Next page"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* ── CONFIRMATION ALERT DIALOGUE FOR CANCEL PROFORMA INVOICE ── */}
