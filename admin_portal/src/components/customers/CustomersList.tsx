@@ -15,7 +15,10 @@ import {
   User as UserIcon,
   Download,
   Contact,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import type { Customer } from '../../types/crm';
 import { ToggleCustomerStatusModal } from './ToggleCustomerStatusModal';
 
@@ -170,6 +173,19 @@ function CustomerRowActions({
   );
 }
 
+function getPageNumbers(current: number, total: number): (number | string)[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+  if (current <= 4) {
+    return [1, 2, 3, 4, 5, '...', total];
+  }
+  if (current >= total - 3) {
+    return [1, '...', total - 4, total - 3, total - 2, total - 1, total];
+  }
+  return [1, '...', current - 1, current, current + 1, '...', total];
+}
+
 export const CustomersList: React.FC<CustomersListProps> = ({
   customers,
   onOpenAdd,
@@ -184,11 +200,61 @@ export const CustomersList: React.FC<CustomersListProps> = ({
   const [staffFilter, setStaffFilter] = useState<string>('all');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Confirmation alert dialogue state
   const [customerToToggle, setCustomerToToggle] = useState<Customer | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  const handleDownloadAll = () => {
+    if (filteredCustomers.length === 0) {
+      alert('No customers available to download.');
+      return;
+    }
+
+    const exportRows = filteredCustomers.map((cust) => {
+      const area = cust.address || cust.territory || '';
+      const location = [cust.city, cust.state].filter(Boolean).join(', ') || ' ';
+      const reference = (cust.created_by || cust.staff_name || 'ISHA VORA').toUpperCase();
+      const category = cust.category || 'New';
+      const active = cust.status === 'Active' ? 'Yes' : 'No';
+      const staff = cust.staff_name || cust.created_by || '';
+
+      return {
+        ID: formatCustomerNumber(cust.customer_number),
+        Name: cust.name || cust.company || '',
+        Location: location,
+        Area: area,
+        REFERANCE: reference,
+        Category: category,
+        Active: active,
+        Staff: staff,
+        Phone: cust.phone || '',
+        Email: cust.email || '',
+        Company: cust.company || '',
+      };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(exportRows);
+
+    // Auto-fit column widths
+    const columnKeys = Object.keys(exportRows[0] || {});
+    worksheet['!cols'] = columnKeys.map((key) => {
+      let maxLen = key.length;
+      for (const row of exportRows) {
+        const val = String((row as Record<string, unknown>)[key] || '');
+        if (val.length > maxLen) {
+          maxLen = Math.min(val.length, 60);
+        }
+      }
+      return { wch: Math.max(maxLen + 3, 10) };
+    });
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Customers');
+
+    XLSX.writeFile(workbook, 'Customers  UpTeams.xlsx');
+  };
 
   const handleConfirmToggle = async (customerId: string, targetStatus: 'Active' | 'Inactive') => {
     if (!onToggleStatus) return;
@@ -595,37 +661,92 @@ export const CustomersList: React.FC<CustomersListProps> = ({
         </table>
       </div>
 
-      {/* ── PAGINATION BAR ── */}
-      {totalPages > 1 && (
-        <div className="w-full px-4 py-2.5 border-t border-gray-200 flex items-center justify-between text-xs text-gray-500 bg-white">
-          <div>
-            Showing {(currentPage - 1) * itemsPerPage + 1}–
+      {/* ── BOTTOM BAR: DOWNLOAD ALL & PAGINATION ── */}
+      <div className="w-full px-4 py-3 border-t border-gray-200 flex flex-wrap items-center justify-between gap-3 text-xs text-gray-500 bg-white">
+        {/* Left: Download All Button */}
+        <div>
+          <button
+            onClick={handleDownloadAll}
+            title="Download all customers in Excel format"
+            className="inline-flex items-center gap-2 px-3.5 py-2 bg-[#1a237e] hover:bg-[#283593] text-white text-xs font-semibold rounded shadow-sm transition-colors cursor-pointer"
+          >
+            <Download className="w-4 h-4" />
+            <span>Download All</span>
+          </button>
+        </div>
+
+        {/* Right: Showing text, Page size dropdown, Page navigation */}
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-gray-500 text-xs">
+            Showing {filteredCustomers.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} -{' '}
             {Math.min(currentPage * itemsPerPage, filteredCustomers.length)} of{' '}
-            {filteredCustomers.length} customers
-          </div>
-          <div className="flex items-center space-x-1">
+            {filteredCustomers.length.toLocaleString()}
+          </span>
+
+          {/* Page size dropdown */}
+          <select
+            value={itemsPerPage}
+            onChange={(e) => {
+              setItemsPerPage(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+            className="border border-gray-300 rounded px-2 py-1 text-xs text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-[#1a237e] cursor-pointer"
+          >
+            <option value={10}>10</option>
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+
+          {/* Page navigation buttons */}
+          <div className="flex items-center gap-1">
             <button
               disabled={currentPage === 1}
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              className="px-2.5 py-1 border border-gray-200 rounded disabled:opacity-40 hover:bg-gray-50 cursor-pointer"
+              className="min-w-[28px] h-7 px-1.5 rounded flex items-center justify-center text-blue-600 hover:bg-gray-100 disabled:text-gray-300 disabled:hover:bg-transparent disabled:cursor-not-allowed cursor-pointer transition-colors"
+              title="Previous page"
             >
-              Previous
+              <ChevronLeft className="w-4 h-4" />
             </button>
-            <span className="px-2 font-medium">
-              {currentPage} / {totalPages}
-            </span>
-            <button
-              disabled={currentPage === totalPages}
-              onClick={() =>
-                setCurrentPage((p) => Math.min(totalPages, p + 1))
+
+            {getPageNumbers(currentPage, totalPages).map((p, idx) => {
+              if (typeof p === 'string') {
+                return (
+                  <span
+                    key={`ellipsis-${idx}`}
+                    className="px-1 text-gray-400 select-none flex items-center justify-center text-xs"
+                  >
+                    ...
+                  </span>
+                );
               }
-              className="px-2.5 py-1 border border-gray-200 rounded disabled:opacity-40 hover:bg-gray-50 cursor-pointer"
+              const isActive = p === currentPage;
+              return (
+                <button
+                  key={`page-${p}`}
+                  onClick={() => setCurrentPage(p)}
+                  className={`min-w-[28px] h-7 px-2 rounded flex items-center justify-center text-xs transition-colors cursor-pointer ${
+                    isActive
+                      ? 'bg-[#1a237e] text-white font-semibold shadow-xs'
+                      : 'text-blue-600 hover:bg-gray-100 font-normal'
+                  }`}
+                >
+                  {p}
+                </button>
+              );
+            })}
+
+            <button
+              disabled={currentPage === totalPages || filteredCustomers.length === 0}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              className="min-w-[28px] h-7 px-1.5 rounded flex items-center justify-center text-blue-600 hover:bg-gray-100 disabled:text-gray-300 disabled:hover:bg-transparent disabled:cursor-not-allowed cursor-pointer transition-colors"
+              title="Next page"
             >
-              Next
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </div>
-      )}
+      </div>
 
       {/* ── CONFIRMATION ALERT DIALOGUE FOR STATUS TOGGLE ── */}
       <ToggleCustomerStatusModal
