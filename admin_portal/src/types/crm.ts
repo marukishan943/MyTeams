@@ -135,6 +135,24 @@ export interface PaymentRecord {
   created_at: string;
 }
 
+export interface UserModulePermissions {
+  leads_view?: 'all' | 'own';
+  leads_create?: boolean;
+  leads_edit?: boolean;
+  leads_delete?: boolean;
+  leads_export?: boolean;
+  customers_view?: 'all' | 'own';
+  customers_create?: boolean;
+  customers_edit?: boolean;
+  customers_export?: boolean;
+  sales_pfi?: boolean;
+  sales_invoice?: boolean;
+  sales_payment?: boolean;
+  sales_export?: boolean;
+  visits_tracking?: boolean;
+  visits_routes?: boolean;
+}
+
 export interface TeamUser {
   id: string;
   user_code: string;
@@ -147,6 +165,15 @@ export interface TeamUser {
   location_tracking: boolean;
   is_active: boolean;
   created_at: string;
+  last_login?: string;
+  device_info?: string;
+  last_location?: {
+    lat: number;
+    lng: number;
+    address?: string;
+    updated_at: string;
+  };
+  permissions?: UserModulePermissions;
 }
 
 export interface CompanyConfig {
