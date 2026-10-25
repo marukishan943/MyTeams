@@ -622,22 +622,37 @@ class _SalesScreenState extends State<SalesScreen>
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.person, size: 13, color: Colors.grey[400]),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        order.staffName,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[500],
-                        ),
-                        overflow: TextOverflow.ellipsis,
+                const SizedBox(height: 5),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.badge_outlined,
+                        size: 12,
+                        color: Color(0xFF64748B),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          order.staffName.isNotEmpty ? order.staffName : 'No Reference',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF475569),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -834,22 +849,37 @@ class _SalesScreenState extends State<SalesScreen>
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.person, size: 13, color: Colors.grey[400]),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        item.order.staffName,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[500],
-                        ),
-                        overflow: TextOverflow.ellipsis,
+                const SizedBox(height: 5),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.badge_outlined,
+                        size: 12,
+                        color: Color(0xFF64748B),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          item.order.staffName.isNotEmpty ? item.order.staffName : 'No Reference',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF475569),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -1098,13 +1128,13 @@ class _SalesFilterDialogState extends State<_SalesFilterDialog> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                const Text('Staff', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                const Text('Reference', style: TextStyle(color: Colors.grey, fontSize: 13)),
                 const SizedBox(height: 4),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.grey.shade400),
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(6),
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
@@ -1113,7 +1143,18 @@ class _SalesFilterDialogState extends State<_SalesFilterDialog> {
                       items: widget.staffList.map((String value) {
                         return DropdownMenuItem<String>(
                           value: value,
-                          child: Text(value),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Row(
+                              children: [
+                                if (value != 'All') ...[
+                                  const Icon(Icons.badge_outlined, size: 16, color: Color(0xFF64748B)),
+                                  const SizedBox(width: 8),
+                                ],
+                                Text(value),
+                              ],
+                            ),
+                          ),
                         );
                       }).toList(),
                       onChanged: (newValue) {

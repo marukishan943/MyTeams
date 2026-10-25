@@ -242,17 +242,28 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen>
                       ),
                       const SizedBox(width: 16),
                     ],
-                    Icon(Icons.person, size: 16, color: Colors.grey[600]),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        customer.staffName.isNotEmpty ? customer.staffName : 'Mehul Ajagya',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[700],
-                          fontWeight: FontWeight.w500,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.badge_outlined, size: 14, color: Color(0xFF64748B)),
+                          const SizedBox(width: 5),
+                          Text(
+                            customer.staffName.isNotEmpty ? customer.staffName : 'No Reference',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF334155),
+                              fontWeight: FontWeight.w600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
                     ),
                   ],

@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -27,7 +28,7 @@ class AddCustomerScreen extends StatefulWidget {
 class _AddCustomerScreenState extends State<AddCustomerScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  String _selectedStaff = 'Mehul Ajagya';
+  String _selectedStaff = 'ADMIN ADMIN';
   final _nameController = TextEditingController();
   final _companyController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -47,13 +48,48 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
   final ImagePicker _picker = ImagePicker();
   final List<CustomerImageData> _selectedVisitImages = [];
 
-  final List<String> _staffList = [
-    'Mehul Ajagya',
-    'Bhavin Prajapati',
-    'Prashantkumar',
+  List<String> _staffList = [
+    'ADMIN ADMIN',
+    'JITESHBHAI VASANIYA',
     'Kishan Maru',
-    'Rahul Sharma',
+    'Mehul Ajagya',
+    'Sachin Chauhan',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAdminUsers();
+  }
+
+  Future<void> _fetchAdminUsers() async {
+    try {
+      final response = await Supabase.instance.client
+          .from('team_users')
+          .select('first_name, last_name, is_active')
+          .order('first_name', ascending: true);
+
+      final List<String> loaded = [];
+      for (final item in response) {
+        if (item['is_active'] == false) continue;
+        final first = (item['first_name'] ?? '').toString().trim();
+        final last = (item['last_name'] ?? '').toString().trim();
+        final fullName = [first, last].where((s) => s.isNotEmpty).join(' ');
+        if (fullName.isNotEmpty && !loaded.contains(fullName)) {
+          loaded.add(fullName);
+        }
+      }
+
+      if (loaded.isNotEmpty && mounted) {
+        setState(() {
+          _staffList = loaded;
+          if (!_staffList.contains(_selectedStaff)) {
+            _selectedStaff = _staffList.first;
+          }
+        });
+      }
+    } catch (_) {}
+  }
 
   final List<String> _territoryList = [
     'Please Select',
@@ -225,16 +261,6 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ─── Staff ───────────────────────────────────────────────
-                _buildLabel('Staff'),
-                const SizedBox(height: 4),
-                _buildBoxedDropdown(
-                  value: _selectedStaff,
-                  items: _staffList,
-                  onChanged: (val) => setState(() => _selectedStaff = val!),
-                ),
-                const SizedBox(height: 16),
-
                 // ─── Name * ──────────────────────────────────────────────
                 _buildLabel('Name', required: true),
                 _buildUnderlineField(
@@ -358,6 +384,12 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                   _buildLabel('Country'),
                   _buildUnderlineField(controller: _countryController, hint: 'Country'),
                 ],
+                const SizedBox(height: 20),
+
+                // ─── Reference ────────────────────────────────────────────
+                _buildLabel('Reference'),
+                const SizedBox(height: 8),
+                _buildReferenceField(),
                 const SizedBox(height: 24),
 
                 // ─── ADDITIONAL DETAIL ───────────────────────────────────
@@ -437,6 +469,57 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
     );
   }
 
+  Widget _buildReferenceField() {
+    final effectiveValue = _staffList.contains(_selectedStaff)
+        ? _selectedStaff
+        : (_staffList.isNotEmpty ? _staffList.first : null);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: effectiveValue,
+          isExpanded: true,
+          icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF475569)),
+          items: _staffList
+              .map((item) => DropdownMenuItem(
+                    value: item,
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.badge_outlined,
+                          size: 18,
+                          color: _kPrimaryBlue,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            item,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              color: Color(0xFF1E293B),
+                              fontWeight: FontWeight.w500,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ))
+              .toList(),
+          onChanged: (val) {
+            if (val != null) setState(() => _selectedStaff = val);
+          },
+        ),
+      ),
+    );
+  }
+
   Widget _buildUnderlineField({
     required TextEditingController controller,
     String? hint,
@@ -459,7 +542,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
             ? Icon(suffixIcon, color: const Color(0xFF757575), size: 22)
             : null,
         isDense: true,
-        contentPadding: const EdgeInsets.symmetric(vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
         enabledBorder: const UnderlineInputBorder(
           borderSide: BorderSide(color: Color(0xFFD6D6D6)),
         ),
@@ -478,9 +561,9 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: const Color(0xFFBDBDBD)),
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
@@ -491,7 +574,10 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
           items: items.map((item) {
             return DropdownMenuItem<String>(
               value: item,
-              child: Text(item),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Text(item),
+              ),
             );
           }).toList(),
           onChanged: onChanged,

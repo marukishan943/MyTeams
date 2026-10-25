@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../domain/entities/lead.dart';
 import '../../domain/entities/lead_order.dart';
@@ -40,12 +41,42 @@ class _AddInvoiceScreenState extends State<AddInvoiceScreen> {
   bool _roundOff = false;
   bool _isSaving = false;
 
-  final List<String> _staffList = [
-    'Bhavin Prajapati',
-    'Mehul Ajagya',
+  List<String> _staffList = [
+    'ADMIN ADMIN',
+    'JITESHBHAI VASANIYA',
     'Kishan Maru',
-    'Rahul Sharma',
+    'Mehul Ajagya',
+    'Sachin Chauhan',
   ];
+
+  Future<void> _fetchAdminUsers() async {
+    try {
+      final response = await Supabase.instance.client
+          .from('team_users')
+          .select('first_name, last_name, is_active')
+          .order('first_name', ascending: true);
+
+      final List<String> loaded = [];
+      for (final item in response) {
+        if (item['is_active'] == false) continue;
+        final first = (item['first_name'] ?? '').toString().trim();
+        final last = (item['last_name'] ?? '').toString().trim();
+        final fullName = [first, last].where((s) => s.isNotEmpty).join(' ');
+        if (fullName.isNotEmpty && !loaded.contains(fullName)) {
+          loaded.add(fullName);
+        }
+      }
+
+      if (loaded.isNotEmpty && mounted) {
+        setState(() {
+          _staffList = loaded;
+          if (!_staffList.contains(_selectedStaff)) {
+            _selectedStaff = _staffList.first;
+          }
+        });
+      }
+    } catch (_) {}
+  }
 
   String get _screenTitle =>
       widget.isProforma ? 'Add Proforma Invoice' : 'Add Invoice';
@@ -53,6 +84,7 @@ class _AddInvoiceScreenState extends State<AddInvoiceScreen> {
   @override
   void initState() {
     super.initState();
+    _fetchAdminUsers();
     if (widget.existingInvoice != null) {
       final o = widget.existingInvoice!;
       _selectedDate = o.date;
@@ -257,36 +289,52 @@ class _AddInvoiceScreenState extends State<AddInvoiceScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Staff
+                    // Reference
                     _buildLabel('Reference'),
                     const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 4),
+                          horizontal: 14, vertical: 2),
                       decoration: BoxDecoration(
-                        border: Border.all(color: const Color(0xFFBDBDBD)),
-                        borderRadius: BorderRadius.circular(6),
+                        color: const Color(0xFFF8FAFC),
+                        border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: DropdownButtonFormField<String>(
-                        value: _selectedStaff,
+                        value: _staffList.contains(_selectedStaff)
+                            ? _selectedStaff
+                            : (_staffList.isNotEmpty ? _staffList.first : null),
                         isExpanded: true,
                         decoration: const InputDecoration(
                           border: InputBorder.none,
                           contentPadding:
-                              EdgeInsets.symmetric(vertical: 8),
+                              EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                         ),
                         icon: const Icon(Icons.keyboard_arrow_down,
-                            color: Color(0xFF757575)),
+                            color: Color(0xFF475569)),
                         items: _staffList.map((staff) {
                           return DropdownMenuItem(
                             value: staff,
-                            child: Text(
-                              staff,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Color(0xFF212121),
-                                fontWeight: FontWeight.w500,
-                              ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.badge_outlined,
+                                  size: 18,
+                                  color: _kPrimaryBlue,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    staff,
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      color: Color(0xFF1E293B),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
                             ),
                           );
                         }).toList(),

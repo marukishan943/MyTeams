@@ -1070,35 +1070,51 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // ── Staff Dropdown ─────────────────────────────────────────
+                    // ── Reference Dropdown ──────────────────────────────────────
                     _buildLabel('Reference'),
                     const SizedBox(height: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 14, vertical: 2),
                       decoration: BoxDecoration(
-                        border: Border.all(color: const Color(0xFFBDBDBD)),
-                        borderRadius: BorderRadius.circular(4),
+                        color: const Color(0xFFF8FAFC),
+                        border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: DropdownButtonFormField<String>(
-                        value: _selectedStaff,
+                        value: _staffList.contains(_selectedStaff)
+                            ? _selectedStaff
+                            : (_staffList.isNotEmpty ? _staffList.first : null),
                         isExpanded: true,
                         decoration: const InputDecoration(
                           border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(vertical: 8),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                         ),
                         icon: const Icon(Icons.keyboard_arrow_down,
-                            color: Color(0xFF757575)),
+                            color: Color(0xFF475569)),
                         items: _staffList.map((staff) {
                           return DropdownMenuItem(
                             value: staff,
-                            child: Text(
-                              staff,
-                              style: const TextStyle(
-                                fontSize: 15,
-                                color: Color(0xFF212121),
-                                fontWeight: FontWeight.w500,
-                              ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.badge_outlined,
+                                  size: 18,
+                                  color: _kPrimaryBlue,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    staff,
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      color: Color(0xFF1E293B),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
                             ),
                           );
                         }).toList(),
@@ -1451,7 +1467,7 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'REFERANCE',
+                    'REFERENCE',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -1460,34 +1476,50 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  _buildRequiredLabel('REFERANCE'),
+                  _buildRequiredLabel('Reference'),
                   const SizedBox(height: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 2),
                     decoration: BoxDecoration(
-                      border: Border.all(color: const Color(0xFFBDBDBD)),
-                      borderRadius: BorderRadius.circular(4),
+                      color: const Color(0xFFF8FAFC),
+                      border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: DropdownButtonFormField<String>(
-                      value: _selectedReference,
+                      value: _referenceList.contains(_selectedReference)
+                          ? _selectedReference
+                          : (_referenceList.isNotEmpty ? _referenceList.first : null),
                       isExpanded: true,
                       decoration: const InputDecoration(
                         border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(vertical: 8),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                       ),
                       icon: const Icon(Icons.keyboard_arrow_down,
-                          color: Color(0xFF757575)),
+                          color: Color(0xFF475569)),
                       items: _referenceList.map((ref) {
                         return DropdownMenuItem(
                           value: ref,
-                          child: Text(
-                            ref,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              color: Color(0xFF212121),
-                              fontWeight: FontWeight.w500,
-                            ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.badge_outlined,
+                                size: 18,
+                                color: _kPrimaryBlue,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  ref,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    color: Color(0xFF1E293B),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
                           ),
                         );
                       }).toList(),
