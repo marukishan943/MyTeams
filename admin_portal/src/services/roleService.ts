@@ -197,8 +197,15 @@ export const roleService = {
     }
   },
 
-  mapRoleToModuleVisibility(role: AppRole): ModuleVisibilityConfig {
+  /**
+   * Maps a role's permissions to module-level visibility.
+   * IMPORTANT: Only drives Leads/Customers/Sales/Expenses visibility.
+   * Reports and Settings are ALWAYS admin-controlled separately —
+   * they are NEVER automatically toggled when role permissions change.
+   */
+  mapRoleToModuleVisibility(role: AppRole): Partial<ModuleVisibilityConfig> {
     const p = role.permissions;
+
     const hasSales =
       p.quotations ||
       (p.proforma_invoices && p.proforma_invoices.enabled) ||
@@ -210,10 +217,9 @@ export const roleService = {
     return {
       leads: p.leads ? p.leads.enabled : true,
       customers: p.customers ? p.customers.enabled : true,
-      sales: hasSales,
+      sales: !!hasSales,
       expenses: p.expenses ? p.expenses.enabled : true,
-      reports: Boolean(p.leads?.reports || p.invoices?.reports || p.expenses?.reports),
-      settings: role.access === 'Admin' || role.access === 'Manager',
+      // reports and settings intentionally omitted — never auto-changed
     };
   },
 };

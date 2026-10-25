@@ -85,14 +85,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final config = raw;
         if (config != null && mounted) {
           setState(() {
-            final perm = RolePermissionService.instance;
+            // Module visibility = what admin has toggled in web portal (Module & Cards settings).
+            // Role permissions (Add/Edit/Delete) are checked separately per screen action.
+            // We do NOT hide Reports or Settings based on role — those are admin-controlled.
             _moduleVisibility = {
-              'leads': config['leads'] != false && perm.canViewModule('leads'),
-              'customers': config['customers'] != false && perm.canViewModule('customers'),
-              'sales': config['sales'] != false && perm.canViewModule('sales'),
-              'expenses': config['expenses'] != false && perm.canViewModule('expenses'),
+              'leads': config['leads'] != false,
+              'customers': config['customers'] != false,
+              'sales': config['sales'] != false,
+              'expenses': config['expenses'] != false,
               'reports': config['reports'] != false,
-              'settings': config['settings'] != false && (perm.isAdmin || perm.isManager),
+              'settings': config['settings'] != false,
             };
           });
         }

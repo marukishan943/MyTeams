@@ -295,20 +295,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       await roleService.saveRoles(nextRoles);
       setRoles(nextRoles);
 
-      // Map to module visibility and apply immediately to control shown modules
+      // Save current role's granular permissions for mobile/flutter sync.
+      // NOTE: We do NOT modify module (sidebar) visibility here.
+      // Module visibility (Leads/Customers/Sales etc. nav items) is a SEPARATE admin
+      // setting controlled under Modules & Cards — it must never be auto-toggled
+      // just because a role's sub-permissions (Add/Edit/Delete) changed.
       const targetRole =
         nextRoles.find((r) => r.name.toLowerCase() === formRoleName.toLowerCase()) ||
         nextRoles[0];
-      const newVis = roleService.mapRoleToModuleVisibility(targetRole);
-
-      if (onToggleModule && moduleVisibility) {
-        (Object.keys(newVis) as (keyof ModuleVisibilityConfig)[]).forEach((key) => {
-          if (moduleVisibility[key] !== newVis[key]) {
-            onToggleModule(key);
-          }
-        });
-      }
-      localStorage.setItem('myteams_module_visibility', JSON.stringify(newVis));
       localStorage.setItem(
         'myteams_current_role_permissions',
         JSON.stringify(targetRole.permissions)
