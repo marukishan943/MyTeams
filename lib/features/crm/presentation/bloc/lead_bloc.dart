@@ -5,6 +5,7 @@ import '../../domain/entities/lead_stats.dart';
 import '../../domain/repositories/lead_repository.dart';
 import 'lead_event.dart';
 import 'lead_state.dart';
+import '../../domain/utils/lead_audit_helper.dart';
 
 class LeadBloc extends Bloc<LeadEvent, LeadState> {
   final LeadRepository leadRepository;
@@ -115,6 +116,11 @@ class LeadBloc extends Bloc<LeadEvent, LeadState> {
         note: data['note'] ?? existing.note,
       );
       await leadRepository.updateLead(updated);
+      await LeadAuditHelper.recordLeadChanges(
+        existing: existing,
+        updated: updated,
+        repository: leadRepository,
+      );
       emit(const LeadOperationSuccess('Lead updated successfully'));
       add(const LoadLeads());
     } catch (e) {

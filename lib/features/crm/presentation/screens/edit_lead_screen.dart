@@ -23,6 +23,10 @@ class _EditLeadScreenState extends State<EditLeadScreen> {
   late LeadSource _selectedSource;
   late LeadStage _selectedStage;
   late int _rating;
+  late final TextEditingController _nameController;
+  late final TextEditingController _companyController;
+  late final TextEditingController _phoneController;
+  late final TextEditingController _emailController;
   late final TextEditingController _titleController;
   late final TextEditingController _valueController;
   bool _isSaving = false;
@@ -34,6 +38,10 @@ class _EditLeadScreenState extends State<EditLeadScreen> {
     _selectedSource = widget.lead.source;
     _selectedStage = widget.lead.stage;
     _rating = widget.lead.rating;
+    _nameController = TextEditingController(text: widget.lead.name);
+    _companyController = TextEditingController(text: widget.lead.company);
+    _phoneController = TextEditingController(text: widget.lead.phone);
+    _emailController = TextEditingController(text: widget.lead.email);
     _titleController = TextEditingController(text: widget.lead.title);
     _valueController = TextEditingController(
       text: widget.lead.value > 0 ? widget.lead.value.toString() : '',
@@ -42,6 +50,10 @@ class _EditLeadScreenState extends State<EditLeadScreen> {
 
   @override
   void dispose() {
+    _nameController.dispose();
+    _companyController.dispose();
+    _phoneController.dispose();
+    _emailController.dispose();
     _titleController.dispose();
     _valueController.dispose();
     super.dispose();
@@ -84,6 +96,68 @@ class _EditLeadScreenState extends State<EditLeadScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ── Name ────────────────────────────────────────────────
+              _buildLabel('Name'),
+              const SizedBox(height: 4),
+              TextField(
+                controller: _nameController,
+                style: const TextStyle(fontSize: 16, color: Color(0xFF212121)),
+                decoration: const InputDecoration(
+                  border: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFE0E0E0))),
+                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFE0E0E0))),
+                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: _kPrimaryBlue, width: 2)),
+                  contentPadding: EdgeInsets.symmetric(vertical: 10),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // ── Phone ───────────────────────────────────────────────
+              _buildLabel('Phone'),
+              const SizedBox(height: 4),
+              TextField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                style: const TextStyle(fontSize: 16, color: Color(0xFF212121)),
+                decoration: const InputDecoration(
+                  border: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFE0E0E0))),
+                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFE0E0E0))),
+                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: _kPrimaryBlue, width: 2)),
+                  contentPadding: EdgeInsets.symmetric(vertical: 10),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // ── Email ───────────────────────────────────────────────
+              _buildLabel('Email'),
+              const SizedBox(height: 4),
+              TextField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                style: const TextStyle(fontSize: 16, color: Color(0xFF212121)),
+                decoration: const InputDecoration(
+                  border: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFE0E0E0))),
+                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFE0E0E0))),
+                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: _kPrimaryBlue, width: 2)),
+                  contentPadding: EdgeInsets.symmetric(vertical: 10),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // ── Company ─────────────────────────────────────────────
+              _buildLabel('Company'),
+              const SizedBox(height: 4),
+              TextField(
+                controller: _companyController,
+                style: const TextStyle(fontSize: 16, color: Color(0xFF212121)),
+                decoration: const InputDecoration(
+                  border: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFE0E0E0))),
+                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFE0E0E0))),
+                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: _kPrimaryBlue, width: 2)),
+                  contentPadding: EdgeInsets.symmetric(vertical: 10),
+                ),
+              ),
+              const SizedBox(height: 24),
+
               // ── Date ────────────────────────────────────────────────
               _buildLabel('Date'),
               const SizedBox(height: 8),
@@ -332,12 +406,12 @@ class _EditLeadScreenState extends State<EditLeadScreen> {
     setState(() => _isSaving = true);
     context.read<LeadDetailBloc>().add(
           UpdateLeadStageEvent(widget.lead.id, {
-            // Lead-info fields — keep original values
+            // Lead-info fields
             'staffName': widget.lead.staffName,
-            'name': widget.lead.name,
-            'company': widget.lead.company,
-            'phone': widget.lead.phone,
-            'email': widget.lead.email,
+            'name': _nameController.text.trim().isEmpty ? widget.lead.name : _nameController.text.trim(),
+            'company': _companyController.text.trim(),
+            'phone': _phoneController.text.trim().isEmpty ? widget.lead.phone : _phoneController.text.trim(),
+            'email': _emailController.text.trim(),
             'website': widget.lead.website,
             'gst': widget.lead.gst,
             'territory': widget.lead.territory,

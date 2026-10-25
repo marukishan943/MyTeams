@@ -10,6 +10,7 @@ import '../../domain/entities/lead_note.dart';
 import '../../domain/entities/lead_visit.dart';
 import '../../domain/entities/lead_task.dart';
 import '../../domain/entities/lead_order.dart';
+import '../../domain/utils/lead_audit_helper.dart';
 import '../bloc/lead_detail_bloc.dart';
 import '../bloc/lead_detail_event.dart';
 import '../bloc/lead_detail_state.dart';
@@ -38,6 +39,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
   late TabController _tabController;
   final TextEditingController _noteController = TextEditingController();
   final FocusNode _noteFocusNode = FocusNode();
+  final ScrollController _notesScrollController = ScrollController();
   bool _salesFabExpanded = false;
 
   @override
@@ -57,6 +59,7 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
     _tabController.dispose();
     _noteController.dispose();
     _noteFocusNode.dispose();
+    _notesScrollController.dispose();
     super.dispose();
   }
 
@@ -731,24 +734,27 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
 
   // ── TAB 2: Notes ─────────────────────────────────────────────────
   Widget _buildNotesTab(BuildContext context, LeadDetailLoaded state) {
-    final notes = state.notes;
+    // Sort chronologically (oldest to newest) to display timeline downwards matching reference
+    final notes = List<LeadNote>.from(state.notes)
+      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+
     return Column(
       children: [
         Expanded(
           child: notes.isEmpty
               ? const Center(
                   child: Text(
-                    'No notes yet.\nStart the conversation below.',
+                    'No notes or activity yet.\nAdd a note below or change lead details.',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.grey, fontSize: 15),
                   ),
                 )
               : ListView.builder(
+                  controller: _notesScrollController,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 12,
                   ),
-                  reverse: false,
                   itemCount: notes.length,
                   itemBuilder: (context, index) {
                     final note = notes[index];
@@ -757,82 +763,93 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
                           notes[index - 1].createdAt,
                           note.createdAt,
                         );
+
+                    final parsed = LeadAuditHelper.parseNoteContent(
+                      note.content,
+                      state.lead.staffName,
+                    );
+                    final formattedTime =
+                        DateFormat('hh:mm a').format(note.createdAt).toLowerCase();
+
+                    bool showAuthorHeader = true;
+                    if (index > 0) {
+                      final prev = notes[index - 1];
+                      final prevParsed = LeadAuditHelper.parseNoteContent(
+                        prev.content,
+                        state.lead.staffName,
+                      );
+                      final prevTime =
+                          DateFormat('hh:mm a').format(prev.createdAt).toLowerCase();
+                      if (_isSameDay(prev.createdAt, note.createdAt) &&
+                          prevParsed.author == parsed.author &&
+                          prevTime == formattedTime) {
+                        showAuthorHeader = false;
+                      }
+                    }
+
                     return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (showDateHeader) _buildNoteDateHeader(note.createdAt),
-                        _buildNoteItem(note),
+                        if (showAuthorHeader)
+                          Padding(
+                            padding: EdgeInsets.only(
+                              top: showDateHeader ? 0 : 8,
+                              bottom: 6,
+                            ),
+                            child: Text(
+                              '${parsed.author.toUpperCase()}, $formattedTime',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Color(0xFF757575),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        _buildNoteItem(parsed.text),
                       ],
                     );
                   },
                 ),
         ),
         // Bottom note input bar
-        _buildNoteInputBar(context),
+        _buildNoteInputBar(context, state.lead.staffName),
       ],
     );
   }
 
   Widget _buildNoteDateHeader(DateTime date) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final dateOnly = DateTime(date.year, date.month, date.day);
-
-    String label;
-    if (dateOnly == today) {
-      label = 'TODAY';
-    } else if (dateOnly == today.subtract(const Duration(days: 1))) {
-      label = 'YESTERDAY';
-    } else {
-      label = DateFormat('dd MMM yyyy').format(date).toUpperCase();
-    }
+    final dayMonth = DateFormat('dd MMM').format(date);
+    final dayOfWeek = DateFormat('EEE').format(date).toUpperCase();
+    final label = '$dayMonth ($dayOfWeek)';
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.symmetric(vertical: 14),
       child: Row(
         children: [
-          Expanded(child: Divider(color: Colors.grey[300])),
+          const Expanded(
+            child: Divider(
+              color: Color(0xFFE0E0E0),
+              thickness: 0.8,
+              height: 1,
+            ),
+          ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 14),
             child: Text(
               label,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[500],
-                fontWeight: FontWeight.w500,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-          Expanded(child: Divider(color: Colors.grey[300])),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNoteItem(LeadNote note) {
-    return Align(
-      alignment: Alignment.centerRight,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Text(
-            DateFormat('hh:mm a').format(note.createdAt).toLowerCase(),
-            style: TextStyle(fontSize: 11, color: Colors.grey[500]),
-          ),
-          const SizedBox(height: 4),
-          Container(
-            margin: const EdgeInsets.only(bottom: 12, left: 60),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE8EAF6),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              note.content,
               style: const TextStyle(
-                fontSize: 15,
-                color: Color(0xFF212121),
+                fontSize: 13,
+                color: Color(0xFF757575),
+                fontWeight: FontWeight.w400,
               ),
+            ),
+          ),
+          const Expanded(
+            child: Divider(
+              color: Color(0xFFE0E0E0),
+              thickness: 0.8,
+              height: 1,
             ),
           ),
         ],
@@ -840,13 +857,33 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
     );
   }
 
-  Widget _buildNoteInputBar(BuildContext context) {
+  Widget _buildNoteItem(String text) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEEF2F9),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 14.5,
+          color: Color(0xFF212121),
+          height: 1.35,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoteInputBar(BuildContext context, [String? staffName]) {
     return Container(
       color: Colors.white,
       padding: EdgeInsets.only(
         left: 16,
-        right: 8,
-        top: 12,
+        right: 12,
+        top: 10,
         bottom: MediaQuery.of(context).viewInsets.bottom + 12,
       ),
       child: Row(
@@ -857,9 +894,9 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
               focusNode: _noteFocusNode,
               decoration: InputDecoration(
                 hintText: 'Enter Note',
-                hintStyle: const TextStyle(color: Color(0xFFBDBDBD)),
+                hintStyle: const TextStyle(color: Color(0xFF9E9E9E), fontSize: 15),
                 filled: true,
-                fillColor: const Color(0xFFF5F5F5),
+                fillColor: const Color(0xFFF5F6F8),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
                   borderSide: BorderSide.none,
@@ -875,15 +912,15 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
           ),
           const SizedBox(width: 8),
           GestureDetector(
-            onTap: () => _sendNote(context),
+            onTap: () => _sendNote(context, staffName),
             child: Container(
-              width: 48,
-              height: 48,
+              width: 46,
+              height: 46,
               decoration: const BoxDecoration(
                 color: _kPrimaryBlue,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.send, color: Colors.white, size: 22),
+              child: const Icon(Icons.send, color: Colors.white, size: 20),
             ),
           ),
         ],
@@ -891,12 +928,11 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
     );
   }
 
-  void _sendNote(BuildContext context) {
+  void _sendNote(BuildContext context, [String? staffName]) {
     final text = _noteController.text.trim();
     if (text.isEmpty) return;
-    context
-        .read<LeadDetailBloc>()
-        .add(AddNoteEvent(widget.leadId, text));
+    final author = LeadAuditHelper.getAuthorName(staffName);
+    context.read<LeadDetailBloc>().add(AddNoteEvent(widget.leadId, text, author));
     _noteController.clear();
     _noteFocusNode.unfocus();
   }

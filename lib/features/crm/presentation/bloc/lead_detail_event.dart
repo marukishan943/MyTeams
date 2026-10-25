@@ -32,11 +32,12 @@ class UpdateLeadStageEvent extends LeadDetailEvent {
 class AddNoteEvent extends LeadDetailEvent {
   final String leadId;
   final String content;
+  final String? authorName;
 
-  const AddNoteEvent(this.leadId, this.content);
+  const AddNoteEvent(this.leadId, this.content, [this.authorName]);
 
   @override
-  List<Object?> get props => [leadId, content];
+  List<Object?> get props => [leadId, content, authorName];
 }
 
 class AddVisitEvent extends LeadDetailEvent {

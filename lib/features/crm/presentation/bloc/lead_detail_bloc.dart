@@ -5,6 +5,7 @@ import 'lead_detail_event.dart';
 import 'lead_detail_state.dart';
 import 'lead_event.dart';
 import 'lead_bloc.dart';
+import '../../domain/utils/lead_audit_helper.dart';
 
 class LeadDetailBloc extends Bloc<LeadDetailEvent, LeadDetailState> {
   final LeadRepository leadRepository;
@@ -84,6 +85,11 @@ class LeadDetailBloc extends Bloc<LeadDetailEvent, LeadDetailState> {
         isClosed: data['isClosed'] ?? existing.isClosed,
       );
       await leadRepository.updateLead(updated);
+      await LeadAuditHelper.recordLeadChanges(
+        existing: existing,
+        updated: updated,
+        repository: leadRepository,
+      );
       leadBloc.add(const LoadLeads());
       add(LoadLeadDetail(event.leadId));
       emit(const LeadDetailOperationSuccess('Lead updated successfully'));
@@ -95,10 +101,14 @@ class LeadDetailBloc extends Bloc<LeadDetailEvent, LeadDetailState> {
   Future<void> _onAddNote(
       AddNoteEvent event, Emitter<LeadDetailState> emit) async {
     try {
+      final author = event.authorName ?? LeadAuditHelper.getAuthorName();
       final note = LeadNote(
         id: '',
         leadId: event.leadId,
-        content: event.content,
+        content: LeadAuditHelper.formatNoteContent(
+          text: event.content,
+          authorName: author,
+        ),
         createdAt: DateTime.now(),
       );
       await leadRepository.addLeadNote(note);
