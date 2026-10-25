@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import '../../domain/entities/lead.dart';
@@ -6,8 +6,8 @@ import '../../domain/entities/lead_enums.dart';
 import '../bloc/lead_detail_bloc.dart';
 import '../bloc/lead_detail_event.dart';
 import '../bloc/lead_detail_state.dart';
-
-const Color _kPrimaryBlue = Color(0xFF3949AB);
+import '../widgets/crm_ui_constants.dart';
+import '../widgets/crm_form_components.dart';
 
 class EditLeadScreen extends StatefulWidget {
   final Lead lead;
@@ -69,14 +69,18 @@ class _EditLeadScreenState extends State<EditLeadScreen> {
         } else if (state is LeadDetailError) {
           setState(() => _isSaving = false);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: CrmStyles.danger,
+              behavior: SnackBarBehavior.floating,
+            ),
           );
         }
       },
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: CrmStyles.background,
         appBar: AppBar(
-          backgroundColor: _kPrimaryBlue,
+          backgroundColor: CrmStyles.primary,
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -88,300 +92,320 @@ class _EditLeadScreenState extends State<EditLeadScreen> {
               color: Colors.white,
               fontSize: 20,
               fontWeight: FontWeight.bold,
+              letterSpacing: -0.2,
             ),
           ),
         ),
         body: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Name ────────────────────────────────────────────────
-              _buildLabel('Name'),
-              const SizedBox(height: 4),
-              TextField(
-                controller: _nameController,
-                style: const TextStyle(fontSize: 16, color: Color(0xFF212121)),
-                decoration: const InputDecoration(
-                  border: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFE0E0E0))),
-                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFE0E0E0))),
-                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: _kPrimaryBlue, width: 2)),
-                  contentPadding: EdgeInsets.symmetric(vertical: 10),
-                ),
+              // Section 1: Contact Information
+              _buildSectionWrapper(
+                title: 'Contact Details',
+                icon: Icons.person_outline,
+                children: [
+                  CrmTextField(
+                    controller: _nameController,
+                    label: 'Contact Name',
+                    hint: 'e.g. John Doe',
+                    required: true,
+                    prefixIcon: Icons.badge_outlined,
+                  ),
+                  const SizedBox(height: 16),
+                  CrmTextField(
+                    controller: _phoneController,
+                    label: 'Phone Number',
+                    hint: 'e.g. 9876543210',
+                    required: true,
+                    keyboardType: TextInputType.phone,
+                    prefixIcon: Icons.phone_outlined,
+                  ),
+                  const SizedBox(height: 16),
+                  CrmTextField(
+                    controller: _emailController,
+                    label: 'Email Address',
+                    hint: 'e.g. name@company.com',
+                    keyboardType: TextInputType.emailAddress,
+                    prefixIcon: Icons.email_outlined,
+                  ),
+                  const SizedBox(height: 16),
+                  CrmTextField(
+                    controller: _companyController,
+                    label: 'Company Name',
+                    hint: 'e.g. Acme Corp',
+                    prefixIcon: Icons.business_outlined,
+                  ),
+                ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
-              // ── Phone ───────────────────────────────────────────────
-              _buildLabel('Phone'),
-              const SizedBox(height: 4),
-              TextField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                style: const TextStyle(fontSize: 16, color: Color(0xFF212121)),
-                decoration: const InputDecoration(
-                  border: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFE0E0E0))),
-                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFE0E0E0))),
-                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: _kPrimaryBlue, width: 2)),
-                  contentPadding: EdgeInsets.symmetric(vertical: 10),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // ── Email ───────────────────────────────────────────────
-              _buildLabel('Email'),
-              const SizedBox(height: 4),
-              TextField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                style: const TextStyle(fontSize: 16, color: Color(0xFF212121)),
-                decoration: const InputDecoration(
-                  border: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFE0E0E0))),
-                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFE0E0E0))),
-                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: _kPrimaryBlue, width: 2)),
-                  contentPadding: EdgeInsets.symmetric(vertical: 10),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // ── Company ─────────────────────────────────────────────
-              _buildLabel('Company'),
-              const SizedBox(height: 4),
-              TextField(
-                controller: _companyController,
-                style: const TextStyle(fontSize: 16, color: Color(0xFF212121)),
-                decoration: const InputDecoration(
-                  border: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFE0E0E0))),
-                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFE0E0E0))),
-                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: _kPrimaryBlue, width: 2)),
-                  contentPadding: EdgeInsets.symmetric(vertical: 10),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // ── Date ────────────────────────────────────────────────
-              _buildLabel('Date'),
-              const SizedBox(height: 8),
-              GestureDetector(
-                onTap: _pickDate,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: const BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(color: _kPrimaryBlue, width: 2),
+              // Section 2: Pipeline & Stage Details
+              _buildSectionWrapper(
+                title: 'Lead Pipeline',
+                icon: Icons.tune_rounded,
+                children: [
+                  // Stage selection chips
+                  const Text(
+                    'Lead Stage',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: CrmStyles.textSecondary,
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          DateFormat('dd-MMM-yyyy').format(_selectedDate),
-                          style: const TextStyle(
-                            fontSize: 17,
-                            color: Color(0xFF212121),
-                          ),
-                        ),
-                      ),
-                      const Icon(Icons.calendar_month_outlined,
-                          color: _kPrimaryBlue, size: 24),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 28),
-
-              // ── Source ──────────────────────────────────────────────
-              _buildLabel('Source'),
-              const SizedBox(height: 12),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: LeadSource.values.map((source) {
-                    final isSelected = _selectedSource == source;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 10),
-                      child: GestureDetector(
-                        onTap: () => setState(() => _selectedSource = source),
-                        child: Container(
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: LeadStage.values.map((stage) {
+                      final isSelected = _selectedStage == stage;
+                      return GestureDetector(
+                        onTap: () => setState(() => _selectedStage = stage),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? _kPrimaryBlue
-                                : const Color(0xFFF0F0F0),
-                            borderRadius: BorderRadius.circular(8),
+                            horizontal: 14,
+                            vertical: 8,
                           ),
-                          child: Text(
-                            source.displayName,
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: isSelected
-                                  ? Colors.white
-                                  : const Color(0xFF424242),
+                          decoration: BoxDecoration(
+                            color: isSelected ? stage.color : stage.backgroundColor,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: stage.color.withOpacity(isSelected ? 1.0 : 0.4),
+                              width: 1.5,
                             ),
                           ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (isSelected) ...[
+                                const Icon(Icons.check, size: 14, color: Colors.white),
+                                const SizedBox(width: 4),
+                              ],
+                              Text(
+                                stage.displayName,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: isSelected ? Colors.white : stage.color,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-              const SizedBox(height: 28),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 20),
 
-              // ── Stage ───────────────────────────────────────────────
-              _buildLabel('Stage'),
-              const SizedBox(height: 12),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: LeadStage.values.map((stage) {
-                    final isSelected = _selectedStage == stage;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 10),
-                      child: GestureDetector(
-                        onTap: () => setState(() => _selectedStage = stage),
-                        child: Container(
+                  // Source selection chips
+                  const Text(
+                    'Lead Source',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: CrmStyles.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: LeadSource.values.map((source) {
+                      final isSelected = _selectedSource == source;
+                      return GestureDetector(
+                        onTap: () => setState(() => _selectedSource = source),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 12),
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
                           decoration: BoxDecoration(
-                            color: isSelected
-                                ? stage.color
-                                : stage.backgroundColor,
-                            borderRadius: BorderRadius.circular(8),
+                            color: isSelected ? CrmStyles.primary : Colors.white,
+                            borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: stage.color.withOpacity(0.5),
+                              color: isSelected ? CrmStyles.primary : CrmStyles.border,
                               width: 1.5,
                             ),
                           ),
                           child: Text(
-                            stage.displayName,
+                            source.displayName,
                             style: TextStyle(
-                              fontSize: 15,
+                              fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: isSelected ? Colors.white : stage.color,
+                              color: isSelected ? Colors.white : CrmStyles.textSecondary,
                             ),
                           ),
                         ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-              const SizedBox(height: 28),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 20),
 
-              // ── Rating ──────────────────────────────────────────────
-              _buildLabel('Rating'),
-              const SizedBox(height: 10),
-              Row(
-                children: List.generate(5, (index) {
-                  return GestureDetector(
-                    onTap: () => setState(() => _rating = index + 1),
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 6),
-                      child: Icon(
-                        index < _rating ? Icons.star : Icons.star_border,
-                        size: 44,
-                        color: index < _rating
-                            ? const Color(0xFFFFC107)
-                            : Colors.grey[400],
+                  // Date Picker Card
+                  const Text(
+                    'Lead Date',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: CrmStyles.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: _pickDate,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(CrmStyles.radiusMedium),
+                        border: Border.all(color: CrmStyles.border),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.calendar_month_outlined,
+                            color: CrmStyles.primary,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              DateFormat('dd-MMM-yyyy').format(_selectedDate),
+                              style: const TextStyle(
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w600,
+                                color: CrmStyles.textPrimary,
+                              ),
+                            ),
+                          ),
+                          const Icon(
+                            Icons.keyboard_arrow_down,
+                            color: CrmStyles.textMuted,
+                          ),
+                        ],
                       ),
                     ),
-                  );
-                }),
-              ),
-              const SizedBox(height: 28),
+                  ),
+                  const SizedBox(height: 20),
 
-              const Divider(color: Color(0xFFEEEEEE), height: 1),
-              const SizedBox(height: 24),
-
-              // ── Title ───────────────────────────────────────────────
-              _buildLabel('Title'),
-              const SizedBox(height: 4),
-              TextField(
-                controller: _titleController,
-                style: const TextStyle(fontSize: 16, color: Color(0xFF212121)),
-                decoration: const InputDecoration(
-                  hintText: '',
-                  border: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFFE0E0E0)),
+                  // Rating Section
+                  const Text(
+                    'Lead Rating',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: CrmStyles.textSecondary,
+                    ),
                   ),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFFE0E0E0)),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: List.generate(5, (index) {
+                      final starNum = index + 1;
+                      return GestureDetector(
+                        onTap: () => setState(() => _rating = starNum),
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: Icon(
+                            starNum <= _rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                            size: 36,
+                            color: starNum <= _rating
+                                ? const Color(0xFFFFB300)
+                                : const Color(0xFFCBD5E1),
+                          ),
+                        ),
+                      );
+                    }),
                   ),
-                  focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: _kPrimaryBlue, width: 2),
-                  ),
-                  contentPadding: EdgeInsets.symmetric(vertical: 10),
-                ),
+                ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
-              // ── Value ───────────────────────────────────────────────
-              _buildLabel('Value'),
-              const SizedBox(height: 4),
-              TextField(
-                controller: _valueController,
-                keyboardType: TextInputType.number,
-                style: const TextStyle(fontSize: 16, color: Color(0xFF212121)),
-                decoration: const InputDecoration(
-                  hintText: '',
-                  border: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFFE0E0E0)),
+              // Section 3: Commercial & Scope
+              _buildSectionWrapper(
+                title: 'Commercial & Scope',
+                icon: Icons.currency_rupee_rounded,
+                children: [
+                  CrmTextField(
+                    controller: _titleController,
+                    label: 'Requirement / Title',
+                    hint: 'e.g. Solar rooftop 10kW',
+                    prefixIcon: Icons.title_rounded,
                   ),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFFE0E0E0)),
+                  const SizedBox(height: 16),
+                  CrmTextField(
+                    controller: _valueController,
+                    label: 'Estimated Value (₹)',
+                    hint: 'e.g. 50000',
+                    keyboardType: TextInputType.number,
+                    prefixIcon: Icons.currency_rupee_rounded,
                   ),
-                  focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: _kPrimaryBlue, width: 2),
-                  ),
-                  contentPadding: EdgeInsets.symmetric(vertical: 10),
-                ),
+                ],
               ),
-              const SizedBox(height: 100),
             ],
           ),
         ),
-        // ── Bottom Save Button ───────────────────────────────────────
         bottomNavigationBar: Container(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-            top: 12,
+          padding: EdgeInsets.fromLTRB(
+            16,
+            12,
+            16,
+            MediaQuery.of(context).viewInsets.bottom + 16,
           ),
-          color: Colors.white,
-          child: SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton.icon(
-              onPressed: _isSaving ? null : _save,
-              icon: const Icon(Icons.check, size: 20),
-              label: const Text(
-                'Save',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _kPrimaryBlue,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            border: Border(top: BorderSide(color: CrmStyles.border)),
+          ),
+          child: CrmPrimaryButton(
+            label: 'Save Changes',
+            icon: Icons.check,
+            isLoading: _isSaving,
+            onPressed: _save,
           ),
         ),
       ),
     );
   }
 
-  Widget _buildLabel(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-        fontSize: 14,
-        color: Color(0xFF9E9E9E),
-        fontWeight: FontWeight.w400,
+  Widget _buildSectionWrapper({
+    required String title,
+    required IconData icon,
+    required List<Widget> children,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(CrmStyles.radiusLarge),
+        border: Border.all(color: CrmStyles.border),
+        boxShadow: CrmStyles.cardShadow,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 18, color: CrmStyles.primary),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: CrmStyles.textPrimary,
+                  letterSpacing: -0.2,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          const Divider(height: 1, color: CrmStyles.borderLight),
+          const SizedBox(height: 14),
+          ...children,
+        ],
       ),
     );
   }
@@ -391,10 +415,10 @@ class _EditLeadScreenState extends State<EditLeadScreen> {
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
+      lastDate: DateTime(2035),
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.light(primary: _kPrimaryBlue),
+          colorScheme: const ColorScheme.light(primary: CrmStyles.primary),
         ),
         child: child!,
       ),
@@ -406,11 +430,14 @@ class _EditLeadScreenState extends State<EditLeadScreen> {
     setState(() => _isSaving = true);
     context.read<LeadDetailBloc>().add(
           UpdateLeadStageEvent(widget.lead.id, {
-            // Lead-info fields
             'staffName': widget.lead.staffName,
-            'name': _nameController.text.trim().isEmpty ? widget.lead.name : _nameController.text.trim(),
+            'name': _nameController.text.trim().isEmpty
+                ? widget.lead.name
+                : _nameController.text.trim(),
             'company': _companyController.text.trim(),
-            'phone': _phoneController.text.trim().isEmpty ? widget.lead.phone : _phoneController.text.trim(),
+            'phone': _phoneController.text.trim().isEmpty
+                ? widget.lead.phone
+                : _phoneController.text.trim(),
             'email': _emailController.text.trim(),
             'website': widget.lead.website,
             'gst': widget.lead.gst,
@@ -420,13 +447,13 @@ class _EditLeadScreenState extends State<EditLeadScreen> {
             'state': widget.lead.state,
             'pincode': widget.lead.pincode,
             'country': widget.lead.country,
-            // Editable fields
             'date': _selectedDate,
             'source': _selectedSource,
             'stage': _selectedStage,
             'rating': _rating,
             'title': _titleController.text.trim(),
-            'value': double.tryParse(_valueController.text.trim()) ?? widget.lead.value,
+            'value': double.tryParse(_valueController.text.trim()) ??
+                widget.lead.value,
             'note': widget.lead.note,
             'isClosed': widget.lead.isClosed,
           }),
