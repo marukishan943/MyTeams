@@ -261,3 +261,45 @@ export interface MessageTemplate {
   is_default: boolean;
   updated_at?: string;
 }
+
+
+export interface RoleModulePermission {
+  enabled: boolean;
+  add?: boolean;
+  edit?: boolean;
+  delete?: boolean;
+  decision?: boolean; // Approve/Reject for expenses
+  reports?: boolean;
+}
+
+export interface RolePermissions {
+  location_tracking: boolean;
+  visits: boolean;
+  tasks: boolean;
+  leads: RoleModulePermission;
+  customers: RoleModulePermission;
+  quotations: boolean;
+  proforma_invoices: RoleModulePermission;
+  invoices: RoleModulePermission;
+  orders: boolean;
+  inventory: RoleModulePermission;
+  payments: boolean;
+  attendance: boolean;
+  leaves: boolean;
+  expenses: RoleModulePermission;
+  forms: boolean;
+  pms: boolean;
+  payroll: boolean;
+  users: RoleModulePermission;
+}
+
+export interface AppRole {
+  id: string;
+  name: string;
+  access: 'Admin' | 'Manager' | 'Staff' | string;
+  users_count: number;
+  permissions: RolePermissions;
+  is_system?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}

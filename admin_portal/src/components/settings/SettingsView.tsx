@@ -40,10 +40,14 @@ import {
   ShoppingCart,
   Navigation,
   ArrowUpDown,
+  Check,
+  Tag,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import type {
   TeamUser,
+  AppRole,
+  RolePermissions,
   UserModulePermissions,
   CompanyConfig,
   CompanyOffice,
@@ -53,6 +57,7 @@ import type {
 } from '../../types/crm';
 import { templateService } from '../../services/templateService';
 import { officeService } from '../../services/officeService';
+import { roleService, DEFAULT_ROLE_PERMISSIONS } from '../../services/roleService';
 
 interface SettingsViewProps {
   users: TeamUser[];
@@ -81,6 +86,30 @@ const AVAILABLE_COLUMNS = [
   { key: 'status', label: 'Status' },
   { key: 'actions', label: 'Actions' },
 ];
+
+
+const PermSwitch: React.FC<{
+  label: string;
+  checked: boolean;
+  onChange: (val: boolean) => void;
+}> = ({ label, checked, onChange }) => (
+  <div className="flex flex-col items-center select-none">
+    <span className="text-[11px] font-semibold text-gray-500 mb-1">{label}</span>
+    <button
+      type="button"
+      onClick={() => onChange(!checked)}
+      className={`w-9 h-5 flex items-center rounded-full p-0.5 transition-colors cursor-pointer ${
+        checked ? 'bg-[#1a237e]' : 'bg-gray-300'
+      }`}
+    >
+      <div
+        className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+          checked ? 'translate-x-4' : 'translate-x-0'
+        }`}
+      />
+    </button>
+  </div>
+);
 
 function getPageNumbers(currentPage: number, totalPages: number): (number | string)[] {
   if (totalPages <= 7) {
@@ -179,10 +208,123 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 }) => {
   // Navigation State
   const [activeTab, setActiveTab] = useState<
-    'profile' | 'company' | 'sales_settings' | 'templates' | 'users' | 'modules'
+    'profile' | 'company' | 'sales_settings' | 'templates' | 'users' | 'roles' | 'modules'
   >('company');
 
   const [companySubTab, setCompanySubTab] = useState<'profile' | 'offices' | 'settings' | 'reminders'>('profile');
+
+
+  // ========================================================
+  // 6. ROLES & PERMISSIONS STATE (Screenshots 161941, 161958, 162039, 162052)
+  // ========================================================
+  const [roles, setRoles] = useState<AppRole[]>([]);
+  const [rolesSubView, setRolesSubView] = useState<'list' | 'edit' | 'create'>('list');
+  const [currentEditingRole, setCurrentEditingRole] = useState<AppRole | null>(null);
+  const [formRoleName, setFormRoleName] = useState('');
+  const [formRoleAccess, setFormRoleAccess] = useState('Admin');
+  const [formRolePermissions, setFormRolePermissions] = useState<RolePermissions>(
+    DEFAULT_ROLE_PERMISSIONS.admin
+  );
+  const [isSavingRole, setIsSavingRole] = useState(false);
+  const [roleSavedSuccess, setRoleSavedSuccess] = useState(false);
+  const [activeRoleMenuId, setActiveRoleMenuId] = useState<string | null>(null);
+  const [rolePageSize, setRolePageSize] = useState(10);
+  const [roleCurrentPage, setRoleCurrentPage] = useState(1);
+
+  useEffect(() => {
+    roleService.fetchRoles().then(setRoles);
+  }, []);
+
+  const handleOpenAddRole = () => {
+    setCurrentEditingRole(null);
+    setFormRoleName('');
+    setFormRoleAccess('Staff');
+    setFormRolePermissions(JSON.parse(JSON.stringify(DEFAULT_ROLE_PERMISSIONS.staff)));
+    setRolesSubView('create');
+  };
+
+  const handleOpenEditRole = (role: AppRole) => {
+    setCurrentEditingRole(role);
+    setFormRoleName(role.name);
+    setFormRoleAccess(role.access);
+    setFormRolePermissions(JSON.parse(JSON.stringify(role.permissions)));
+    setRolesSubView('edit');
+  };
+
+  const handleDeleteRole = async (roleId: string) => {
+    if (!confirm('Are you sure you want to delete this custom role?')) return;
+    const next = roles.filter((r) => r.id !== roleId);
+    setRoles(next);
+    await roleService.saveRoles(next);
+  };
+
+  const handleSaveRole = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formRoleName.trim()) {
+      alert('Please enter a role name.');
+      return;
+    }
+    setIsSavingRole(true);
+    try {
+      let nextRoles: AppRole[];
+      if (currentEditingRole) {
+        nextRoles = roles.map((r) =>
+          r.id === currentEditingRole.id
+            ? {
+                ...r,
+                name: formRoleName.trim(),
+                access: formRoleAccess,
+                permissions: formRolePermissions,
+                updated_at: new Date().toISOString(),
+              }
+            : r
+        );
+      } else {
+        const newRole: AppRole = {
+          id: 'role-' + Date.now(),
+          name: formRoleName.trim(),
+          access: formRoleAccess,
+          users_count: 0,
+          permissions: formRolePermissions,
+          is_system: false,
+          created_at: new Date().toISOString(),
+        };
+        nextRoles = [...roles, newRole];
+      }
+
+      await roleService.saveRoles(nextRoles);
+      setRoles(nextRoles);
+
+      // Map to module visibility and apply immediately to control shown modules
+      const targetRole =
+        nextRoles.find((r) => r.name.toLowerCase() === formRoleName.toLowerCase()) ||
+        nextRoles[0];
+      const newVis = roleService.mapRoleToModuleVisibility(targetRole);
+
+      if (onToggleModule && moduleVisibility) {
+        (Object.keys(newVis) as (keyof ModuleVisibilityConfig)[]).forEach((key) => {
+          if (moduleVisibility[key] !== newVis[key]) {
+            onToggleModule(key);
+          }
+        });
+      }
+      localStorage.setItem('myteams_module_visibility', JSON.stringify(newVis));
+      localStorage.setItem(
+        'myteams_current_role_permissions',
+        JSON.stringify(targetRole.permissions)
+      );
+
+      setRoleSavedSuccess(true);
+      setTimeout(() => {
+        setRoleSavedSuccess(false);
+        setRolesSubView('list');
+      }, 1000);
+    } catch (err) {
+      console.error('Failed to save role:', err);
+    } finally {
+      setIsSavingRole(false);
+    }
+  };
 
   // ========================================================
   // 1. MY PROFILE STATE (Screenshot 2026-10-25 153809.png)
@@ -923,6 +1065,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </button>
               <button
                 type="button"
+                onClick={() => {
+                  setActiveTab('roles');
+                  setRolesSubView('list');
+                }}
+                className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === 'roles'
+                    ? 'bg-[#1a237e] text-white shadow-xs'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <ShieldCheck className="w-4 h-4" />
+                <span>Roles</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => setActiveTab('modules')}
                 className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   activeTab === 'modules'
@@ -956,6 +1113,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 ? 'Templates'
                 : activeTab === 'users'
                 ? 'Users & Team Hierarchy'
+                : activeTab === 'roles'
+                ? rolesSubView === 'list'
+                  ? 'Roles'
+                  : rolesSubView === 'create'
+                  ? 'Add Role'
+                  : 'Edit Role'
                 : 'Modules & Cards'}
             </span>
           </div>
@@ -2280,6 +2443,1020 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
             </div>
           )}
+
+          
+          {/* ======================================================== */}
+          {/* SCREEN 7: ROLES & PERMISSIONS                            */}
+          {/* (Screenshots 161941, 161958, 162039, 162052)            */}
+          {/* ======================================================== */}
+          {activeTab === 'roles' && (
+            <div className="space-y-4">
+              {roleSavedSuccess && (
+                <div className="p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg flex items-center space-x-2 text-xs font-semibold animate-in fade-in">
+                  <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                  <span>Role permissions updated successfully! Module visibility and user access controls updated.</span>
+                </div>
+              )}
+
+              {rolesSubView === 'list' ? (
+                /* VIEW 1: ROLES MATRIX TABLE (Screenshots 161941 & 161958) */
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-lg font-bold text-gray-900">Roles</h2>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleOpenAddRole}
+                      className="px-4 py-2 bg-[#1a237e] hover:bg-[#151c65] text-white rounded-lg font-bold text-xs flex items-center space-x-1.5 shadow-sm transition-all cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Add Role</span>
+                    </button>
+                  </div>
+
+                  {/* Matrix Data Table */}
+                  <div className="bg-white border border-gray-200 rounded-xl shadow-xs overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs text-left border-collapse min-w-[1500px]">
+                        <thead>
+                          <tr className="bg-[#f8fafc] text-gray-700 font-bold border-b border-gray-200 select-none">
+                            <th className="py-3 px-4 min-w-[120px]">
+                              <div className="flex items-center space-x-1 cursor-pointer">
+                                <span>Name</span>
+                                <ArrowUpDown className="w-3 h-3 text-gray-400" />
+                              </div>
+                            </th>
+                            <th className="py-3 px-3 min-w-[100px]">
+                              <div className="flex items-center space-x-1 cursor-pointer">
+                                <span>Access</span>
+                                <ArrowUpDown className="w-3 h-3 text-gray-400" />
+                              </div>
+                            </th>
+                            <th className="py-3 px-3 min-w-[80px]">
+                              <div className="flex items-center space-x-1 cursor-pointer">
+                                <span>Users</span>
+                                <ArrowUpDown className="w-3 h-3 text-gray-400" />
+                              </div>
+                            </th>
+                            <th className="py-3 px-2 text-center min-w-[120px]">Location Tracking</th>
+                            <th className="py-3 px-2 text-center min-w-[80px]">Visits</th>
+                            <th className="py-3 px-2 text-center min-w-[80px]">Tasks</th>
+                            <th className="py-3 px-2 text-center min-w-[80px]">Leads</th>
+                            <th className="py-3 px-2 text-center min-w-[90px]">Customers</th>
+                            <th className="py-3 px-2 text-center min-w-[90px]">Quotations</th>
+                            <th className="py-3 px-2 text-center min-w-[130px]">Proforma Invoices</th>
+                            <th className="py-3 px-2 text-center min-w-[90px]">Invoices</th>
+                            <th className="py-3 px-2 text-center min-w-[80px]">Orders</th>
+                            <th className="py-3 px-2 text-center min-w-[90px]">Inventory</th>
+                            <th className="py-3 px-2 text-center min-w-[90px]">Payments</th>
+                            <th className="py-3 px-2 text-center min-w-[90px]">Attendance</th>
+                            <th className="py-3 px-2 text-center min-w-[80px]">Leaves</th>
+                            <th className="py-3 px-2 text-center min-w-[90px]">Expenses</th>
+                            <th className="py-3 px-2 text-center min-w-[80px]">Forms</th>
+                            <th className="py-3 px-2 text-center min-w-[80px]">PMS</th>
+                            <th className="py-3 px-2 text-center min-w-[80px]">Payroll</th>
+                            <th className="py-3 px-3 text-center min-w-[50px]"></th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {roles.map((role) => {
+                            const userCount =
+                              users.filter(
+                                (u) => u.role.toLowerCase() === role.access.toLowerCase()
+                              ).length || role.users_count;
+                            const p = role.permissions;
+
+                            return (
+                              <tr
+                                key={role.id}
+                                className="hover:bg-blue-50/30 transition-colors group"
+                              >
+                                <td className="py-3 px-4 font-bold text-[#1a237e]">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenEditRole(role)}
+                                    className="hover:underline cursor-pointer text-left"
+                                  >
+                                    {role.name}
+                                  </button>
+                                </td>
+                                <td className="py-3 px-3 text-gray-700">{role.access}</td>
+                                <td className="py-3 px-3 font-semibold text-gray-900">{userCount}</td>
+                                <td className="py-3 px-2 text-center">
+                                  {p.location_tracking ? (
+                                    <Check className="w-4 h-4 text-[#1a237e] stroke-[2.5] mx-auto" />
+                                  ) : (
+                                    <X className="w-4 h-4 text-gray-300 stroke-[2] mx-auto" />
+                                  )}
+                                </td>
+                                <td className="py-3 px-2 text-center">
+                                  {p.visits ? (
+                                    <Check className="w-4 h-4 text-[#1a237e] stroke-[2.5] mx-auto" />
+                                  ) : (
+                                    <X className="w-4 h-4 text-gray-300 stroke-[2] mx-auto" />
+                                  )}
+                                </td>
+                                <td className="py-3 px-2 text-center">
+                                  {p.tasks ? (
+                                    <Check className="w-4 h-4 text-[#1a237e] stroke-[2.5] mx-auto" />
+                                  ) : (
+                                    <X className="w-4 h-4 text-gray-300 stroke-[2] mx-auto" />
+                                  )}
+                                </td>
+                                <td className="py-3 px-2 text-center">
+                                  {p.leads?.enabled ? (
+                                    <Check className="w-4 h-4 text-[#1a237e] stroke-[2.5] mx-auto" />
+                                  ) : (
+                                    <X className="w-4 h-4 text-gray-300 stroke-[2] mx-auto" />
+                                  )}
+                                </td>
+                                <td className="py-3 px-2 text-center">
+                                  {p.customers?.enabled ? (
+                                    <Check className="w-4 h-4 text-[#1a237e] stroke-[2.5] mx-auto" />
+                                  ) : (
+                                    <X className="w-4 h-4 text-gray-300 stroke-[2] mx-auto" />
+                                  )}
+                                </td>
+                                <td className="py-3 px-2 text-center">
+                                  {p.quotations ? (
+                                    <Check className="w-4 h-4 text-[#1a237e] stroke-[2.5] mx-auto" />
+                                  ) : (
+                                    <X className="w-4 h-4 text-gray-300 stroke-[2] mx-auto" />
+                                  )}
+                                </td>
+                                <td className="py-3 px-2 text-center">
+                                  {p.proforma_invoices?.enabled ? (
+                                    <Check className="w-4 h-4 text-[#1a237e] stroke-[2.5] mx-auto" />
+                                  ) : (
+                                    <X className="w-4 h-4 text-gray-300 stroke-[2] mx-auto" />
+                                  )}
+                                </td>
+                                <td className="py-3 px-2 text-center">
+                                  {p.invoices?.enabled ? (
+                                    <Check className="w-4 h-4 text-[#1a237e] stroke-[2.5] mx-auto" />
+                                  ) : (
+                                    <X className="w-4 h-4 text-gray-300 stroke-[2] mx-auto" />
+                                  )}
+                                </td>
+                                <td className="py-3 px-2 text-center">
+                                  {p.orders ? (
+                                    <Check className="w-4 h-4 text-[#1a237e] stroke-[2.5] mx-auto" />
+                                  ) : (
+                                    <X className="w-4 h-4 text-gray-300 stroke-[2] mx-auto" />
+                                  )}
+                                </td>
+                                <td className="py-3 px-2 text-center">
+                                  {p.inventory?.enabled ? (
+                                    <Check className="w-4 h-4 text-[#1a237e] stroke-[2.5] mx-auto" />
+                                  ) : (
+                                    <X className="w-4 h-4 text-gray-300 stroke-[2] mx-auto" />
+                                  )}
+                                </td>
+                                <td className="py-3 px-2 text-center">
+                                  {p.payments ? (
+                                    <Check className="w-4 h-4 text-[#1a237e] stroke-[2.5] mx-auto" />
+                                  ) : (
+                                    <X className="w-4 h-4 text-gray-300 stroke-[2] mx-auto" />
+                                  )}
+                                </td>
+                                <td className="py-3 px-2 text-center">
+                                  {p.attendance ? (
+                                    <Check className="w-4 h-4 text-[#1a237e] stroke-[2.5] mx-auto" />
+                                  ) : (
+                                    <X className="w-4 h-4 text-gray-300 stroke-[2] mx-auto" />
+                                  )}
+                                </td>
+                                <td className="py-3 px-2 text-center">
+                                  {p.leaves ? (
+                                    <Check className="w-4 h-4 text-[#1a237e] stroke-[2.5] mx-auto" />
+                                  ) : (
+                                    <X className="w-4 h-4 text-gray-300 stroke-[2] mx-auto" />
+                                  )}
+                                </td>
+                                <td className="py-3 px-2 text-center">
+                                  {p.expenses?.enabled ? (
+                                    <Check className="w-4 h-4 text-[#1a237e] stroke-[2.5] mx-auto" />
+                                  ) : (
+                                    <X className="w-4 h-4 text-gray-300 stroke-[2] mx-auto" />
+                                  )}
+                                </td>
+                                <td className="py-3 px-2 text-center">
+                                  {p.forms ? (
+                                    <Check className="w-4 h-4 text-[#1a237e] stroke-[2.5] mx-auto" />
+                                  ) : (
+                                    <X className="w-4 h-4 text-gray-300 stroke-[2] mx-auto" />
+                                  )}
+                                </td>
+                                <td className="py-3 px-2 text-center">
+                                  {p.pms ? (
+                                    <Check className="w-4 h-4 text-[#1a237e] stroke-[2.5] mx-auto" />
+                                  ) : (
+                                    <X className="w-4 h-4 text-gray-300 stroke-[2] mx-auto" />
+                                  )}
+                                </td>
+                                <td className="py-3 px-2 text-center">
+                                  {p.payroll ? (
+                                    <Check className="w-4 h-4 text-[#1a237e] stroke-[2.5] mx-auto" />
+                                  ) : (
+                                    <X className="w-4 h-4 text-gray-300 stroke-[2] mx-auto" />
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 text-center relative">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setActiveRoleMenuId(
+                                        activeRoleMenuId === role.id ? null : role.id
+                                      )
+                                    }
+                                    className="p-1 hover:bg-gray-100 rounded text-[#1a237e] cursor-pointer"
+                                  >
+                                    <MoreHorizontal className="w-5 h-5" />
+                                  </button>
+                                  {activeRoleMenuId === role.id && (
+                                    <div className="absolute right-3 top-8 z-30 w-32 bg-white border border-gray-200 rounded-lg shadow-xl py-1 text-xs">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setActiveRoleMenuId(null);
+                                          handleOpenEditRole(role);
+                                        }}
+                                        className="w-full flex items-center space-x-2 px-3 py-2 text-gray-700 hover:bg-gray-50 cursor-pointer font-medium"
+                                      >
+                                        <Pencil className="w-3.5 h-3.5 text-[#1a237e]" />
+                                        <span>Edit</span>
+                                      </button>
+                                      {!role.is_system && (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setActiveRoleMenuId(null);
+                                            handleDeleteRole(role.id);
+                                          }}
+                                          className="w-full flex items-center space-x-2 px-3 py-2 text-red-600 hover:bg-red-50 cursor-pointer font-medium"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                                          <span>Delete</span>
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                        <tfoot>
+                          <tr className="bg-white border-t border-gray-200 font-bold">
+                            <td className="py-3 px-4 text-gray-900">Total</td>
+                            <td></td>
+                            <td className="py-3 px-3 text-gray-900">
+                              {roles.reduce((acc, r) => {
+                                const c =
+                                  users.filter(
+                                    (u) => u.role.toLowerCase() === r.access.toLowerCase()
+                                  ).length || r.users_count;
+                                return acc + c;
+                              }, 0)}
+                            </td>
+                            <td colSpan={18} className="py-3 px-4"></td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+
+                    {/* Pagination Bar */}
+                    <div className="px-5 py-3 bg-white border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 gap-2">
+                      <div>
+                        Showing 1 - {roles.length} of {roles.length}
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="flex items-center space-x-1">
+                          <select
+                            value={rolePageSize}
+                            onChange={(e) => setRolePageSize(Number(e.target.value))}
+                            className="bg-gray-50 border border-gray-200 rounded px-2 py-1 text-xs text-gray-700"
+                          >
+                            <option value={10}>10</option>
+                            <option value={25}>25</option>
+                            <option value={50}>50</option>
+                          </select>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <button
+                            type="button"
+                            disabled
+                            className="p-1 rounded border border-gray-200 text-gray-400 cursor-not-allowed"
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                          </button>
+                          <button type="button" onClick={() => setRoleCurrentPage(1)} className="w-7 h-7 bg-[#1a237e] text-white rounded font-bold flex items-center justify-center cursor-pointer">{roleCurrentPage}</button>
+                          <button
+                            type="button"
+                            disabled
+                            className="p-1 rounded border border-gray-200 text-gray-400 cursor-not-allowed"
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* VIEW 2: ADD / EDIT ROLE SCREEN (Screenshots 162039 & 162052) */
+                <form onSubmit={handleSaveRole} className="space-y-4">
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900">
+                      {formRoleName || 'Add Role'}
+                    </h2>
+                  </div>
+
+                  {/* Top Card: Basic Info */}
+                  <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-xs">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Name <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={formRoleName}
+                          onChange={(e) => setFormRoleName(e.target.value)}
+                          placeholder="e.g. Admin, Manager, Sales Lead"
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs font-semibold text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#1a237e] bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Access <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                            <Tag className="w-4 h-4" />
+                          </div>
+                          {rolesSubView === 'create' ? (
+                            <select
+                              value={formRoleAccess}
+                              onChange={(e) => setFormRoleAccess(e.target.value)}
+                              className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs font-semibold text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#1a237e]"
+                            >
+                              <option value="Admin">Admin</option>
+                              <option value="Manager">Manager</option>
+                              <option value="Staff">Staff</option>
+                            </select>
+                          ) : (
+                            <input
+                              type="text"
+                              value={formRoleAccess}
+                              readOnly
+                              className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs font-semibold text-gray-600 cursor-not-allowed"
+                            />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Permissions Section */}
+                  <div className="space-y-2.5">
+                    <h3 className="text-sm font-bold text-gray-900 pt-1">Permissions</h3>
+
+                    {/* 1. Location Tracking */}
+                    <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 flex items-center shadow-xs">
+                      <label className="flex items-center space-x-3 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={formRolePermissions.location_tracking}
+                          onChange={(e) =>
+                            setFormRolePermissions({
+                              ...formRolePermissions,
+                              location_tracking: e.target.checked,
+                            })
+                          }
+                          className="w-4 h-4 rounded text-[#1a237e] border-gray-300"
+                        />
+                        <span className="text-xs font-semibold text-gray-800">
+                          Location Tracking
+                        </span>
+                      </label>
+                    </div>
+
+                    {/* 2. Visits */}
+                    <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 flex items-center shadow-xs">
+                      <label className="flex items-center space-x-3 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={formRolePermissions.visits}
+                          onChange={(e) =>
+                            setFormRolePermissions({
+                              ...formRolePermissions,
+                              visits: e.target.checked,
+                            })
+                          }
+                          className="w-4 h-4 rounded text-[#1a237e] border-gray-300"
+                        />
+                        <span className="text-xs font-semibold text-gray-800">Visits</span>
+                      </label>
+                    </div>
+
+                    {/* 3. Tasks */}
+                    <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 flex items-center shadow-xs">
+                      <label className="flex items-center space-x-3 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={formRolePermissions.tasks}
+                          onChange={(e) =>
+                            setFormRolePermissions({
+                              ...formRolePermissions,
+                              tasks: e.target.checked,
+                            })
+                          }
+                          className="w-4 h-4 rounded text-[#1a237e] border-gray-300"
+                        />
+                        <span className="text-xs font-semibold text-gray-800">Tasks</span>
+                      </label>
+                    </div>
+
+                    {/* 4. Leads */}
+                    <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                      <label className="flex items-center space-x-3 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={formRolePermissions.leads?.enabled}
+                          onChange={(e) =>
+                            setFormRolePermissions({
+                              ...formRolePermissions,
+                              leads: {
+                                ...formRolePermissions.leads,
+                                enabled: e.target.checked,
+                              },
+                            })
+                          }
+                          className="w-4 h-4 rounded text-[#1a237e] border-gray-300"
+                        />
+                        <span className="text-xs font-semibold text-gray-800">Leads</span>
+                      </label>
+                      <div className="flex items-center space-x-8 pl-7 sm:pl-0">
+                        <PermSwitch
+                          label="Add"
+                          checked={!!formRolePermissions.leads?.add}
+                          onChange={(v) =>
+                            setFormRolePermissions({
+                              ...formRolePermissions,
+                              leads: { ...formRolePermissions.leads, add: v },
+                            })
+                          }
+                        />
+                        <PermSwitch
+                          label="Edit"
+                          checked={!!formRolePermissions.leads?.edit}
+                          onChange={(v) =>
+                            setFormRolePermissions({
+                              ...formRolePermissions,
+                              leads: { ...formRolePermissions.leads, edit: v },
+                            })
+                          }
+                        />
+                        <PermSwitch
+                          label="Delete"
+                          checked={!!formRolePermissions.leads?.delete}
+                          onChange={(v) =>
+                            setFormRolePermissions({
+                              ...formRolePermissions,
+                              leads: { ...formRolePermissions.leads, delete: v },
+                            })
+                          }
+                        />
+                        <PermSwitch
+                          label="Reports"
+                          checked={!!formRolePermissions.leads?.reports}
+                          onChange={(v) =>
+                            setFormRolePermissions({
+                              ...formRolePermissions,
+                              leads: { ...formRolePermissions.leads, reports: v },
+                            })
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    {/* 5. Customers */}
+                    <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                      <label className="flex items-center space-x-3 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={formRolePermissions.customers?.enabled}
+                          onChange={(e) =>
+                            setFormRolePermissions({
+                              ...formRolePermissions,
+                              customers: {
+                                ...formRolePermissions.customers,
+                                enabled: e.target.checked,
+                              },
+                            })
+                          }
+                          className="w-4 h-4 rounded text-[#1a237e] border-gray-300"
+                        />
+                        <span className="text-xs font-semibold text-gray-800">Customers</span>
+                      </label>
+                      <div className="flex items-center space-x-8 pl-7 sm:pl-0">
+                        <PermSwitch
+                          label="Add"
+                          checked={!!formRolePermissions.customers?.add}
+                          onChange={(v) =>
+                            setFormRolePermissions({
+                              ...formRolePermissions,
+                              customers: { ...formRolePermissions.customers, add: v },
+                            })
+                          }
+                        />
+                        <PermSwitch
+                          label="Edit"
+                          checked={!!formRolePermissions.customers?.edit}
+                          onChange={(v) =>
+                            setFormRolePermissions({
+                              ...formRolePermissions,
+                              customers: { ...formRolePermissions.customers, edit: v },
+                            })
+                          }
+                        />
+                        <PermSwitch
+                          label="Delete"
+                          checked={!!formRolePermissions.customers?.delete}
+                          onChange={(v) =>
+                            setFormRolePermissions({
+                              ...formRolePermissions,
+                              customers: { ...formRolePermissions.customers, delete: v },
+                            })
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    {/* 6. Sales Group Card */}
+                    <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-xs space-y-4">
+                      <div className="text-xs font-bold text-gray-900">Sales</div>
+
+                      {/* Quotations */}
+                      <div className="pl-2">
+                        <label className="flex items-center space-x-3 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={formRolePermissions.quotations}
+                            onChange={(e) =>
+                              setFormRolePermissions({
+                                ...formRolePermissions,
+                                quotations: e.target.checked,
+                              })
+                            }
+                            className="w-4 h-4 rounded text-[#1a237e] border-gray-300"
+                          />
+                          <span className="text-xs font-semibold text-gray-800">
+                            Quotations
+                          </span>
+                        </label>
+                      </div>
+
+                      {/* Proforma Invoices */}
+                      <div className="pl-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 border-t border-gray-50">
+                        <label className="flex items-center space-x-3 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={formRolePermissions.proforma_invoices?.enabled}
+                            onChange={(e) =>
+                              setFormRolePermissions({
+                                ...formRolePermissions,
+                                proforma_invoices: {
+                                  ...formRolePermissions.proforma_invoices,
+                                  enabled: e.target.checked,
+                                },
+                              })
+                            }
+                            className="w-4 h-4 rounded text-[#1a237e] border-gray-300"
+                          />
+                          <span className="text-xs font-semibold text-gray-800">
+                            Proforma Invoices
+                          </span>
+                        </label>
+                        <div className="flex items-center space-x-8 pl-7 sm:pl-0">
+                          <PermSwitch
+                            label="Add"
+                            checked={!!formRolePermissions.proforma_invoices?.add}
+                            onChange={(v) =>
+                              setFormRolePermissions({
+                                ...formRolePermissions,
+                                proforma_invoices: {
+                                  ...formRolePermissions.proforma_invoices,
+                                  add: v,
+                                },
+                              })
+                            }
+                          />
+                          <PermSwitch
+                            label="Edit"
+                            checked={!!formRolePermissions.proforma_invoices?.edit}
+                            onChange={(v) =>
+                              setFormRolePermissions({
+                                ...formRolePermissions,
+                                proforma_invoices: {
+                                  ...formRolePermissions.proforma_invoices,
+                                  edit: v,
+                                },
+                              })
+                            }
+                          />
+                          <PermSwitch
+                            label="Delete"
+                            checked={!!formRolePermissions.proforma_invoices?.delete}
+                            onChange={(v) =>
+                              setFormRolePermissions({
+                                ...formRolePermissions,
+                                proforma_invoices: {
+                                  ...formRolePermissions.proforma_invoices,
+                                  delete: v,
+                                },
+                              })
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      {/* Invoices */}
+                      <div className="pl-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 border-t border-gray-50">
+                        <label className="flex items-center space-x-3 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={formRolePermissions.invoices?.enabled}
+                            onChange={(e) =>
+                              setFormRolePermissions({
+                                ...formRolePermissions,
+                                invoices: {
+                                  ...formRolePermissions.invoices,
+                                  enabled: e.target.checked,
+                                },
+                              })
+                            }
+                            className="w-4 h-4 rounded text-[#1a237e] border-gray-300"
+                          />
+                          <span className="text-xs font-semibold text-gray-800">Invoices</span>
+                        </label>
+                        <div className="flex items-center space-x-8 pl-7 sm:pl-0">
+                          <PermSwitch
+                            label="Add"
+                            checked={!!formRolePermissions.invoices?.add}
+                            onChange={(v) =>
+                              setFormRolePermissions({
+                                ...formRolePermissions,
+                                invoices: { ...formRolePermissions.invoices, add: v },
+                              })
+                            }
+                          />
+                          <PermSwitch
+                            label="Edit"
+                            checked={!!formRolePermissions.invoices?.edit}
+                            onChange={(v) =>
+                              setFormRolePermissions({
+                                ...formRolePermissions,
+                                invoices: { ...formRolePermissions.invoices, edit: v },
+                              })
+                            }
+                          />
+                          <PermSwitch
+                            label="Delete"
+                            checked={!!formRolePermissions.invoices?.delete}
+                            onChange={(v) =>
+                              setFormRolePermissions({
+                                ...formRolePermissions,
+                                invoices: { ...formRolePermissions.invoices, delete: v },
+                              })
+                            }
+                          />
+                          <PermSwitch
+                            label="Reports"
+                            checked={!!formRolePermissions.invoices?.reports}
+                            onChange={(v) =>
+                              setFormRolePermissions({
+                                ...formRolePermissions,
+                                invoices: { ...formRolePermissions.invoices, reports: v },
+                              })
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      {/* Orders */}
+                      <div className="pl-2 pt-1 border-t border-gray-50">
+                        <label className="flex items-center space-x-3 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={formRolePermissions.orders}
+                            onChange={(e) =>
+                              setFormRolePermissions({
+                                ...formRolePermissions,
+                                orders: e.target.checked,
+                              })
+                            }
+                            className="w-4 h-4 rounded text-[#1a237e] border-gray-300"
+                          />
+                          <span className="text-xs font-semibold text-gray-800">Orders</span>
+                        </label>
+                      </div>
+
+                      {/* Inventory */}
+                      <div className="pl-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 border-t border-gray-50">
+                        <label className="flex items-center space-x-3 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={formRolePermissions.inventory?.enabled}
+                            onChange={(e) =>
+                              setFormRolePermissions({
+                                ...formRolePermissions,
+                                inventory: {
+                                  ...formRolePermissions.inventory,
+                                  enabled: e.target.checked,
+                                },
+                              })
+                            }
+                            className="w-4 h-4 rounded text-[#1a237e] border-gray-300"
+                          />
+                          <span className="text-xs font-semibold text-gray-800">Inventory</span>
+                        </label>
+                        <div className="flex items-center space-x-8 pl-7 sm:pl-0">
+                          <PermSwitch
+                            label="Add"
+                            checked={!!formRolePermissions.inventory?.add}
+                            onChange={(v) =>
+                              setFormRolePermissions({
+                                ...formRolePermissions,
+                                inventory: { ...formRolePermissions.inventory, add: v },
+                              })
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      {/* Payments */}
+                      <div className="pl-2 pt-1 border-t border-gray-50">
+                        <label className="flex items-center space-x-3 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={formRolePermissions.payments}
+                            onChange={(e) =>
+                              setFormRolePermissions({
+                                ...formRolePermissions,
+                                payments: e.target.checked,
+                              })
+                            }
+                            className="w-4 h-4 rounded text-[#1a237e] border-gray-300"
+                          />
+                          <span className="text-xs font-semibold text-gray-800">Payments</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* 7. Attendance */}
+                    <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 flex items-center shadow-xs">
+                      <label className="flex items-center space-x-3 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={formRolePermissions.attendance}
+                          onChange={(e) =>
+                            setFormRolePermissions({
+                              ...formRolePermissions,
+                              attendance: e.target.checked,
+                            })
+                          }
+                          className="w-4 h-4 rounded text-[#1a237e] border-gray-300"
+                        />
+                        <span className="text-xs font-semibold text-gray-800">Attendance</span>
+                      </label>
+                    </div>
+
+                    {/* 8. Leaves */}
+                    <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 flex items-center shadow-xs">
+                      <label className="flex items-center space-x-3 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={formRolePermissions.leaves}
+                          onChange={(e) =>
+                            setFormRolePermissions({
+                              ...formRolePermissions,
+                              leaves: e.target.checked,
+                            })
+                          }
+                          className="w-4 h-4 rounded text-[#1a237e] border-gray-300"
+                        />
+                        <span className="text-xs font-semibold text-gray-800">Leaves</span>
+                      </label>
+                    </div>
+
+                    {/* 9. Expenses */}
+                    <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                      <label className="flex items-center space-x-3 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={formRolePermissions.expenses?.enabled}
+                          onChange={(e) =>
+                            setFormRolePermissions({
+                              ...formRolePermissions,
+                              expenses: {
+                                ...formRolePermissions.expenses,
+                                enabled: e.target.checked,
+                              },
+                            })
+                          }
+                          className="w-4 h-4 rounded text-[#1a237e] border-gray-300"
+                        />
+                        <span className="text-xs font-semibold text-gray-800">Expenses</span>
+                      </label>
+                      <div className="flex items-center space-x-7 pl-7 sm:pl-0">
+                        <PermSwitch
+                          label="Add"
+                          checked={!!formRolePermissions.expenses?.add}
+                          onChange={(v) =>
+                            setFormRolePermissions({
+                              ...formRolePermissions,
+                              expenses: { ...formRolePermissions.expenses, add: v },
+                            })
+                          }
+                        />
+                        <PermSwitch
+                          label="Edit"
+                          checked={!!formRolePermissions.expenses?.edit}
+                          onChange={(v) =>
+                            setFormRolePermissions({
+                              ...formRolePermissions,
+                              expenses: { ...formRolePermissions.expenses, edit: v },
+                            })
+                          }
+                        />
+                        <PermSwitch
+                          label="Decision"
+                          checked={!!formRolePermissions.expenses?.decision}
+                          onChange={(v) =>
+                            setFormRolePermissions({
+                              ...formRolePermissions,
+                              expenses: { ...formRolePermissions.expenses, decision: v },
+                            })
+                          }
+                        />
+                        <PermSwitch
+                          label="Delete"
+                          checked={!!formRolePermissions.expenses?.delete}
+                          onChange={(v) =>
+                            setFormRolePermissions({
+                              ...formRolePermissions,
+                              expenses: { ...formRolePermissions.expenses, delete: v },
+                            })
+                          }
+                        />
+                        <PermSwitch
+                          label="Reports"
+                          checked={!!formRolePermissions.expenses?.reports}
+                          onChange={(v) =>
+                            setFormRolePermissions({
+                              ...formRolePermissions,
+                              expenses: { ...formRolePermissions.expenses, reports: v },
+                            })
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    {/* 10. Forms */}
+                    <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 flex items-center shadow-xs">
+                      <label className="flex items-center space-x-3 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={formRolePermissions.forms}
+                          onChange={(e) =>
+                            setFormRolePermissions({
+                              ...formRolePermissions,
+                              forms: e.target.checked,
+                            })
+                          }
+                          className="w-4 h-4 rounded text-[#1a237e] border-gray-300"
+                        />
+                        <span className="text-xs font-semibold text-gray-800">Forms</span>
+                      </label>
+                    </div>
+
+                    {/* 11. PMS */}
+                    <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 flex items-center shadow-xs">
+                      <label className="flex items-center space-x-3 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={formRolePermissions.pms}
+                          onChange={(e) =>
+                            setFormRolePermissions({
+                              ...formRolePermissions,
+                              pms: e.target.checked,
+                            })
+                          }
+                          className="w-4 h-4 rounded text-[#1a237e] border-gray-300"
+                        />
+                        <span className="text-xs font-semibold text-gray-800">PMS</span>
+                      </label>
+                    </div>
+
+                    {/* 12. Payroll */}
+                    <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 flex items-center shadow-xs">
+                      <label className="flex items-center space-x-3 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={formRolePermissions.payroll}
+                          onChange={(e) =>
+                            setFormRolePermissions({
+                              ...formRolePermissions,
+                              payroll: e.target.checked,
+                            })
+                          }
+                          className="w-4 h-4 rounded text-[#1a237e] border-gray-300"
+                        />
+                        <span className="text-xs font-semibold text-gray-800">Payroll</span>
+                      </label>
+                    </div>
+
+                    {/* 13. Users */}
+                    <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                      <label className="flex items-center space-x-3 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={formRolePermissions.users?.enabled}
+                          onChange={(e) =>
+                            setFormRolePermissions({
+                              ...formRolePermissions,
+                              users: {
+                                ...formRolePermissions.users,
+                                enabled: e.target.checked,
+                              },
+                            })
+                          }
+                          className="w-4 h-4 rounded text-[#1a237e] border-gray-300"
+                        />
+                        <span className="text-xs font-semibold text-gray-800">Users</span>
+                      </label>
+                      <div className="flex items-center space-x-8 pl-7 sm:pl-0">
+                        <PermSwitch
+                          label="Add"
+                          checked={!!formRolePermissions.users?.add}
+                          onChange={(v) =>
+                            setFormRolePermissions({
+                              ...formRolePermissions,
+                              users: { ...formRolePermissions.users, add: v },
+                            })
+                          }
+                        />
+                        <PermSwitch
+                          label="Edit"
+                          checked={!!formRolePermissions.users?.edit}
+                          onChange={(v) =>
+                            setFormRolePermissions({
+                              ...formRolePermissions,
+                              users: { ...formRolePermissions.users, edit: v },
+                            })
+                          }
+                        />
+                        <PermSwitch
+                          label="Delete"
+                          checked={!!formRolePermissions.users?.delete}
+                          onChange={(v) =>
+                            setFormRolePermissions({
+                              ...formRolePermissions,
+                              users: { ...formRolePermissions.users, delete: v },
+                            })
+                          }
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bottom Action Buttons */}
+                  <div className="flex items-center space-x-3 pt-3">
+                    <button
+                      type="submit"
+                      disabled={isSavingRole}
+                      className="px-6 py-2.5 bg-[#1a237e] hover:bg-[#151c65] text-white rounded-lg font-bold text-xs shadow-sm transition-all cursor-pointer flex items-center space-x-2"
+                    >
+                      {isSavingRole && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                      <span>Save</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRolesSubView('list')}
+                      className="px-5 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg font-bold text-xs transition-all cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          )}
+
 
           {/* SCREEN 6: MODULES & CARDS VISIBILITY */}
           {activeTab === 'modules' && (
