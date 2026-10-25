@@ -107,8 +107,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
   // Sub task:   0=Task  1=Notes  2=Logs
   bool get _isTaskTab => _tabController.index == 0;
   bool get _isNotesTab => _tabController.index == 1;
-  bool get _isSubTasksOrLogsTab =>
-      _tabController.index >= (_isSubTask ? 2 : 2);
 
   List<Widget> _buildAppBarActions() {
     if (_isNotesTab) {
@@ -574,7 +572,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
                             borderRadius: BorderRadius.circular(10),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.04),
+                                color: Colors.black.withValues(alpha: 0.04),
                                 blurRadius: 6,
                                 offset: const Offset(0, 2),
                               ),
@@ -639,6 +637,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
               child: FloatingActionButton(
                 backgroundColor: _kPrimaryBlue,
                 onPressed: () async {
+                  final bloc = context.read<LeadDetailBloc>();
                   final newSubTask = await Navigator.push<LeadTask>(
                     context,
                     MaterialPageRoute(
@@ -646,7 +645,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen>
                     ),
                   );
                   if (newSubTask != null && mounted) {
-                    context.read<LeadDetailBloc>().add(AddTaskEvent(newSubTask));
+                    bloc.add(AddTaskEvent(newSubTask));
                   }
                 },
                 child: const Icon(Icons.add, color: Colors.white),
@@ -862,8 +861,9 @@ class _AddTaskLogScreenState extends State<AddTaskLogScreen> {
                             context: context,
                             initialTime: _startTime,
                           );
-                          if (picked != null)
+                          if (picked != null) {
                             setState(() => _startTime = picked);
+                          }
                         },
                         child: _buildFieldContainer(
                           child: Row(

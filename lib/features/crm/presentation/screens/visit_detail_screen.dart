@@ -151,6 +151,7 @@ class _VisitDetailScreenState extends State<VisitDetailScreen> {
           IconButton(
             icon: const Icon(Icons.edit_outlined, color: Colors.white),
             onPressed: () async {
+              final bloc = context.read<LeadDetailBloc>();
               final updatedVisit = await Navigator.push<LeadVisit>(
                 context,
                 MaterialPageRoute(
@@ -158,7 +159,7 @@ class _VisitDetailScreenState extends State<VisitDetailScreen> {
                 ),
               );
               if (updatedVisit != null && mounted) {
-                context.read<LeadDetailBloc>().add(UpdateVisitEvent(updatedVisit));
+                bloc.add(UpdateVisitEvent(updatedVisit));
                 setState(() {
                   _currentVisit = updatedVisit;
                 });
