@@ -185,18 +185,89 @@ class _AddInvoiceScreenState extends State<AddInvoiceScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Lead (Read-only)
-                    _buildLabel('Lead'),
-                    const SizedBox(height: 4),
-                    Text(
-                      widget.lead.name,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF212121),
+                    // Client Summary Card
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEEF2FF),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.business_outlined,
+                              color: _kPrimaryBlue,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        widget.lead.name,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF0F172A),
+                                        ),
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFE0E7FF),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        widget.isProforma
+                                            ? 'PROFORMA'
+                                            : 'INVOICE',
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          color: _kPrimaryBlue,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                if (widget.lead.company.isNotEmpty ||
+                                    widget.lead.phone.isNotEmpty) ...[
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    [widget.lead.company, widget.lead.phone]
+                                        .where((s) => s.isNotEmpty)
+                                        .join(' • '),
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: Color(0xFF64748B),
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
 
                     // Date & Due Date row
                     Row(
@@ -211,27 +282,31 @@ class _AddInvoiceScreenState extends State<AddInvoiceScreen> {
                               GestureDetector(
                                 onTap: _pickDate,
                                 child: Container(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 8),
-                                  decoration: const BoxDecoration(
-                                    border: Border(
-                                      bottom: BorderSide(
-                                          color: Color(0xFFBDBDBD), width: 1),
-                                    ),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 11),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF8FAFC),
+                                    border: Border.all(
+                                        color: const Color(0xFFCBD5E1),
+                                        width: 1.2),
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Row(
                                     children: [
+                                      const Icon(Icons.calendar_today_outlined,
+                                          color: _kPrimaryBlue, size: 18),
+                                      const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
                                           DateFormat('dd-MMM-yyyy')
                                               .format(_selectedDate),
-                                          style: const TextStyle(fontSize: 15),
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                            color: Color(0xFF1E293B),
+                                          ),
                                         ),
                                       ),
-                                      const Icon(
-                                          Icons.calendar_month_outlined,
-                                          color: Colors.grey,
-                                          size: 20),
                                     ],
                                   ),
                                 ),
@@ -239,7 +314,7 @@ class _AddInvoiceScreenState extends State<AddInvoiceScreen> {
                             ],
                           ),
                         ),
-                        const SizedBox(width: 20),
+                        const SizedBox(width: 16),
                         // Due Date
                         Expanded(
                           child: Column(
@@ -250,34 +325,40 @@ class _AddInvoiceScreenState extends State<AddInvoiceScreen> {
                               GestureDetector(
                                 onTap: _pickDueDate,
                                 child: Container(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 8),
-                                  decoration: const BoxDecoration(
-                                    border: Border(
-                                      bottom: BorderSide(
-                                          color: Color(0xFFBDBDBD), width: 1),
-                                    ),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 11),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF8FAFC),
+                                    border: Border.all(
+                                        color: const Color(0xFFCBD5E1),
+                                        width: 1.2),
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Row(
                                     children: [
+                                      Icon(Icons.event_outlined,
+                                          color: _selectedDueDate != null
+                                              ? _kPrimaryBlue
+                                              : const Color(0xFF94A3B8),
+                                          size: 18),
+                                      const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
                                           _selectedDueDate != null
                                               ? DateFormat('dd-MMM-yyyy')
                                                   .format(_selectedDueDate!)
-                                              : 'Please Select',
+                                              : 'Select due date',
                                           style: TextStyle(
-                                            fontSize: 15,
+                                            fontSize: 14,
+                                            fontWeight: _selectedDueDate != null
+                                                ? FontWeight.w500
+                                                : FontWeight.w400,
                                             color: _selectedDueDate != null
-                                                ? const Color(0xFF212121)
-                                                : Colors.grey[500],
+                                                ? const Color(0xFF1E293B)
+                                                : const Color(0xFF94A3B8),
                                           ),
                                         ),
                                       ),
-                                      const Icon(
-                                          Icons.calendar_month_outlined,
-                                          color: Colors.grey,
-                                          size: 20),
                                     ],
                                   ),
                                 ),
@@ -287,7 +368,7 @@ class _AddInvoiceScreenState extends State<AddInvoiceScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
 
                     // Reference
                     _buildLabel('Reference'),
@@ -297,7 +378,8 @@ class _AddInvoiceScreenState extends State<AddInvoiceScreen> {
                           horizontal: 14, vertical: 2),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF8FAFC),
-                        border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
+                        border: Border.all(
+                            color: const Color(0xFFCBD5E1), width: 1.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: DropdownButtonFormField<String>(
@@ -351,43 +433,66 @@ class _AddInvoiceScreenState extends State<AddInvoiceScreen> {
             ),
 
             // ── Items Section Header ─────────────────────────────────────
-            Container(
-              color: const Color(0xFFF8F9FA),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  RichText(
-                    text: const TextSpan(
-                      text: 'Items',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF212121),
+                  Row(
+                    children: [
+                      const Text(
+                        'Items',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF0F172A),
+                        ),
                       ),
-                      children: [
-                        TextSpan(
-                          text: ' *',
-                          style: TextStyle(
-                            color: Colors.red,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                      const Text(
+                        ' *',
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEEF2FF),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${_items.length} added',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: _kPrimaryBlue,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: _navigateToAddItem,
-                    child: Container(
-                      width: 34,
-                      height: 34,
-                      decoration: const BoxDecoration(
-                        color: _kPrimaryBlue,
-                        shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.add,
-                          color: Colors.white, size: 24),
+                    ],
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: _navigateToAddItem,
+                    icon: const Icon(Icons.add, size: 16),
+                    label: const Text(
+                      'Add Item',
+                      style:
+                          TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _kPrimaryBlue,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      visualDensity: VisualDensity.compact,
                     ),
                   ),
                 ],
@@ -397,22 +502,49 @@ class _AddInvoiceScreenState extends State<AddInvoiceScreen> {
             // ── Items List ────────────────────────────────────────────────
             if (_items.isEmpty)
               Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 20, vertical: 16),
-                child: Text(
-                  'No items added yet. Tap + to add item.',
-                  style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(Icons.inventory_2_outlined,
+                          size: 36, color: Colors.grey[400]),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'No items added yet',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF475569),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Tap "+ Add Item" above to add products to this invoice',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
               )
             else
               ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 20, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
                 itemCount: _items.length,
-                separatorBuilder: (_, __) =>
-                    const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 10),
                 itemBuilder: (context, index) {
                   final item = _items[index];
                   final initials = item.product.length >= 2
@@ -427,18 +559,30 @@ class _AddInvoiceScreenState extends State<AddInvoiceScreen> {
                       ? '-${item.discount.toStringAsFixed(0)}%'
                       : null;
 
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  return Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x08000000),
+                          blurRadius: 4,
+                          offset: Offset(0, 1),
+                        ),
+                      ],
+                    ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         // Avatar with initials
                         Container(
-                          width: 44,
-                          height: 44,
+                          width: 42,
+                          height: 42,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE8EAF6),
-                            borderRadius: BorderRadius.circular(6),
+                            color: const Color(0xFFEEF2FF),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           alignment: Alignment.center,
                           child: Text(
@@ -458,20 +602,20 @@ class _AddInvoiceScreenState extends State<AddInvoiceScreen> {
                               Text(
                                 item.product,
                                 style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF212121),
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF0F172A),
                                 ),
                               ),
-                              const SizedBox(height: 2),
-                              // "Qty: 1 | ₹130.50 ₹145 (-10%)"
+                              const SizedBox(height: 4),
                               Row(
                                 children: [
                                   Text(
                                     'Qty: $qtyText | ${currencyFormat.format(item.taxableAmount)}',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey[700],
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: Color(0xFF64748B),
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                   if (hasDiscount) ...[
@@ -487,11 +631,21 @@ class _AddInvoiceScreenState extends State<AddInvoiceScreen> {
                                     ),
                                     if (discPct != null) ...[
                                       const SizedBox(width: 4),
-                                      Text(
-                                        '($discPct)',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey[600],
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 5, vertical: 1),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFFEF3C7),
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                        ),
+                                        child: Text(
+                                          discPct,
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFFB45309),
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -501,25 +655,30 @@ class _AddInvoiceScreenState extends State<AddInvoiceScreen> {
                             ],
                           ),
                         ),
+                        const SizedBox(width: 8),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
                               currencyFormat.format(item.total),
                               style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF212121),
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            InkWell(
+                              onTap: () =>
+                                  setState(() => _items.removeAt(index)),
+                              borderRadius: BorderRadius.circular(4),
+                              child: const Padding(
+                                padding: EdgeInsets.all(4),
+                                child: Icon(Icons.delete_outline,
+                                    color: Color(0xFFEF4444), size: 18),
                               ),
                             ),
                           ],
-                        ),
-                        const SizedBox(width: 8),
-                        GestureDetector(
-                          onTap: () =>
-                              setState(() => _items.removeAt(index)),
-                          child: const Icon(Icons.close,
-                              color: Colors.grey, size: 20),
                         ),
                       ],
                     ),
@@ -528,199 +687,218 @@ class _AddInvoiceScreenState extends State<AddInvoiceScreen> {
               ),
 
             // ── Totals Section ────────────────────────────────────────────
-            Container(
-              color: Colors.white,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Column(
-                children: [
-                  const Divider(color: Color(0xFFEEEEEE), height: 1),
-                  const SizedBox(height: 16),
-
-                  // Taxable Amount
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Taxable Amount',
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                      Text(
-                        currencyFormat.format(_taxableAmount),
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF212121),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Discount Field with ₹/% dropdown
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Discount',
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    // Taxable Amount
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Taxable Amount',
                           style: TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF64748B),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          currencyFormat.format(_taxableAmount),
+                          style: const TextStyle(
                             fontSize: 15,
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w400,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF0F172A),
                           ),
                         ),
-                      ),
-                      Container(
-                        width: 70,
-                        height: 42,
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                              color: const Color(0xFFBDBDBD)),
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(4),
-                            bottomLeft: Radius.circular(4),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Discount Field with unified selector & input
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Discount',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF64748B),
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 8),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: _discountType,
-                            items: const [
-                              DropdownMenuItem(
-                                  value: 'fixed', child: Text('₹')),
-                              DropdownMenuItem(
-                                  value: 'percent', child: Text('%')),
+                        Container(
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                                color: const Color(0xFFCBD5E1), width: 1.2),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8),
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    value: _discountType,
+                                    items: const [
+                                      DropdownMenuItem(
+                                        value: 'fixed',
+                                        child: Text('₹',
+                                            style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w600)),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: 'percent',
+                                        child: Text('%',
+                                            style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w600)),
+                                      ),
+                                    ],
+                                    onChanged: (val) {
+                                      if (val != null) {
+                                        setState(() => _discountType = val);
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                  width: 1,
+                                  height: 24,
+                                  color: const Color(0xFFCBD5E1)),
+                              SizedBox(
+                                width: 90,
+                                child: TextField(
+                                  controller: _discountController,
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                          decimal: true),
+                                  textAlign: TextAlign.end,
+                                  style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500),
+                                  decoration: const InputDecoration(
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 10),
+                                  ),
+                                  onChanged: (_) => setState(() {}),
+                                ),
+                              ),
                             ],
-                            onChanged: (val) {
-                              if (val != null) {
-                                setState(() => _discountType = val);
-                              }
-                            },
                           ),
                         ),
-                      ),
-                      Container(
-                        width: 110,
-                        height: 42,
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                              color: const Color(0xFFBDBDBD)),
-                          borderRadius: const BorderRadius.only(
-                            topRight: Radius.circular(4),
-                            bottomRight: Radius.circular(4),
-                          ),
-                        ),
-                        child: TextField(
-                          controller: _discountController,
-                          keyboardType:
-                              const TextInputType.numberWithOptions(
-                                  decimal: true),
-                          textAlign: TextAlign.end,
-                          decoration: const InputDecoration(
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 10),
-                          ),
-                          onChanged: (_) => setState(() {}),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Total Discount
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Total Discount',
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                      Text(
-                        currencyFormat.format(_totalDiscount),
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF212121),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Round Off Switch
-                  Row(
-                    children: [
-                      Text(
-                        'Round Off',
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Switch(
-                        value: _roundOff,
-                        activeColor: _kPrimaryBlue,
-                        onChanged: (val) =>
-                            setState(() => _roundOff = val),
-                      ),
-                      const Spacer(),
-                      Text(
-                        currencyFormat.format(_roundOff
-                            ? (_calculatedTotal -
-                                    (_taxableAmount -
-                                        _totalDiscount +
-                                        _totalTax))
-                                .abs()
-                            : 0),
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF212121),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            // ── Total Bar ─────────────────────────────────────────────────
-            Container(
-              color: const Color(0xFFF0F2FA),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Total',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF212121),
+                      ],
                     ),
-                  ),
-                  Text(
-                    currencyFormat.format(_calculatedTotal),
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF212121),
+                    const SizedBox(height: 12),
+
+                    // Total Discount
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Total Discount',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF64748B),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          currencyFormat.format(_totalDiscount),
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFFB45309),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 12),
+
+                    // Round Off Switch
+                    Row(
+                      children: [
+                        const Text(
+                          'Round Off',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF64748B),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Switch(
+                          value: _roundOff,
+                          activeColor: _kPrimaryBlue,
+                          onChanged: (val) =>
+                              setState(() => _roundOff = val),
+                        ),
+                        const Spacer(),
+                        Text(
+                          currencyFormat.format(_roundOff
+                              ? (_calculatedTotal -
+                                      (_taxableAmount -
+                                          _totalDiscount +
+                                          _totalTax))
+                                  .abs()
+                              : 0),
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 24, color: Color(0xFFE2E8F0)),
+
+                    // Total Banner inside summary card
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEEF2FF),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Total Amount',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: _kPrimaryBlue,
+                            ),
+                          ),
+                          Text(
+                            currencyFormat.format(_calculatedTotal),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: _kPrimaryBlue,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
 
@@ -773,9 +951,10 @@ class _AddInvoiceScreenState extends State<AddInvoiceScreen> {
     return Text(
       text,
       style: const TextStyle(
-        fontSize: 14,
-        color: Color(0xFF757575),
-        fontWeight: FontWeight.w400,
+        fontSize: 13,
+        color: Color(0xFF475569),
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.2,
       ),
     );
   }

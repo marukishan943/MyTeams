@@ -830,150 +830,278 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ── Radio Options: Customer / Lead ─────────────────────────
-                    Row(
-                      children: [
-                        InkWell(
-                          onTap: () {
-                            if (_partyType != 'Customer') {
-                              setState(() => _partyType = 'Customer');
-                            }
-                          },
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Radio<String>(
-                                value: 'Customer',
-                                groupValue: _partyType,
-                                activeColor: _kPrimaryBlue,
-                                materialTapTargetSize:
-                                    MaterialTapTargetSize.shrinkWrap,
-                                onChanged: (val) {
-                                  if (val != null) {
-                                    setState(() => _partyType = val);
-                                  }
-                                },
-                              ),
-                              const SizedBox(width: 4),
-                              const Text(
-                                'Customer',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF212121),
+                    // ── Segmented Toggle: Customer / Lead ─────────────────────
+                    Container(
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: const EdgeInsets.all(4),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                if (_partyType != 'Customer') {
+                                  setState(() => _partyType = 'Customer');
+                                }
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: _partyType == 'Customer'
+                                      ? Colors.white
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(8),
+                                  boxShadow: _partyType == 'Customer'
+                                      ? const [
+                                          BoxShadow(
+                                            color: Color(0x0A000000),
+                                            blurRadius: 4,
+                                            offset: Offset(0, 1),
+                                          ),
+                                        ]
+                                      : null,
+                                ),
+                                alignment: Alignment.center,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.person_outline_rounded,
+                                      size: 18,
+                                      color: _partyType == 'Customer'
+                                          ? _kPrimaryBlue
+                                          : const Color(0xFF64748B),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Customer',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: _partyType == 'Customer'
+                                            ? FontWeight.w700
+                                            : FontWeight.w500,
+                                        color: _partyType == 'Customer'
+                                            ? _kPrimaryBlue
+                                            : const Color(0xFF64748B),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ],
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 32),
-                        InkWell(
-                          onTap: () {
-                            if (_partyType != 'Lead') {
-                              setState(() => _partyType = 'Lead');
-                            }
-                          },
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Radio<String>(
-                                value: 'Lead',
-                                groupValue: _partyType,
-                                activeColor: _kPrimaryBlue,
-                                materialTapTargetSize:
-                                    MaterialTapTargetSize.shrinkWrap,
-                                onChanged: (val) {
-                                  if (val != null) {
-                                    setState(() => _partyType = val);
-                                  }
-                                },
-                              ),
-                              const SizedBox(width: 4),
-                              const Text(
-                                'Lead',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF212121),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                if (_partyType != 'Lead') {
+                                  setState(() => _partyType = 'Lead');
+                                }
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: _partyType == 'Lead'
+                                      ? Colors.white
+                                      : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(8),
+                                  boxShadow: _partyType == 'Lead'
+                                      ? const [
+                                          BoxShadow(
+                                            color: Color(0x0A000000),
+                                            blurRadius: 4,
+                                            offset: Offset(0, 1),
+                                          ),
+                                        ]
+                                      : null,
+                                ),
+                                alignment: Alignment.center,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.contact_mail_outlined,
+                                      size: 18,
+                                      color: _partyType == 'Lead'
+                                          ? _kPrimaryBlue
+                                          : const Color(0xFF64748B),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Lead',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: _partyType == 'Lead'
+                                            ? FontWeight.w700
+                                            : FontWeight.w500,
+                                        color: _partyType == 'Lead'
+                                            ? _kPrimaryBlue
+                                            : const Color(0xFF64748B),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 18),
 
                     // ── Party Label: Customer * or Lead * ───────────────────────
                     _buildRequiredLabel(
                         _partyType == 'Customer' ? 'Customer' : 'Lead'),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
 
-                    // ── Search & + Add Row ──────────────────────────────────────
-                    GestureDetector(
-                      onTap: _showPartySelectionSheet,
-                      behavior: HitTestBehavior.opaque,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        decoration: const BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(
-                                color: Color(0xFFBDBDBD), width: 1),
-                          ),
+                    // ── Party Selector / Selected Party Card ───────────────────
+                    if ((_partyType == 'Customer' &&
+                            _selectedCustomer != null) ||
+                        (_partyType == 'Lead' && _selectedLead != null))
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                              color: const Color(0xFFCBD5E1), width: 1.2),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.search,
-                                color: Color(0xFF757575), size: 22),
-                            const SizedBox(width: 8),
-                            Expanded(
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEEF2FF),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              alignment: Alignment.center,
                               child: Text(
-                                _partyType == 'Customer'
-                                    ? (_selectedCustomer != null
-                                        ? '${_selectedCustomer!.name}${_selectedCustomer!.company.isNotEmpty ? ' (${_selectedCustomer!.company})' : ''}'
-                                        : 'Search customer...')
-                                    : (_selectedLead != null
-                                        ? '${_selectedLead!.name}${_selectedLead!.company.isNotEmpty ? ' (${_selectedLead!.company})' : ''}'
-                                        : 'Search lead...'),
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  color: (_partyType == 'Customer' &&
-                                              _selectedCustomer != null) ||
-                                          (_partyType == 'Lead' &&
-                                              _selectedLead != null)
-                                      ? const Color(0xFF212121)
-                                      : Colors.grey[500],
-                                  fontWeight: (_partyType == 'Customer' &&
-                                              _selectedCustomer != null) ||
-                                          (_partyType == 'Lead' &&
-                                              _selectedLead != null)
-                                      ? FontWeight.w600
-                                      : FontWeight.w400,
+                                (_partyType == 'Customer'
+                                    ? (_selectedCustomer!.name.isNotEmpty
+                                        ? _selectedCustomer!.name[0]
+                                            .toUpperCase()
+                                        : 'C')
+                                    : (_selectedLead!.name.isNotEmpty
+                                        ? _selectedLead!.name[0].toUpperCase()
+                                        : 'L')),
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: _kPrimaryBlue,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            InkWell(
-                              onTap: _onAddNewParty,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 6, vertical: 2),
-                                child: Text(
-                                  '+ Add',
-                                  style: TextStyle(
-                                    color: _kPrimaryBlue,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _partyType == 'Customer'
+                                        ? _selectedCustomer!.name
+                                        : _selectedLead!.name,
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF0F172A),
+                                    ),
                                   ),
-                                ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    _partyType == 'Customer'
+                                        ? [
+                                            _selectedCustomer!.company,
+                                            _selectedCustomer!.phone
+                                          ]
+                                            .where((s) => s.isNotEmpty)
+                                            .join(' • ')
+                                        : [
+                                            _selectedLead!.company,
+                                            _selectedLead!.phone
+                                          ]
+                                            .where((s) => s.isNotEmpty)
+                                            .join(' • '),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFF64748B),
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
                               ),
+                            ),
+                            TextButton(
+                              onPressed: _showPartySelectionSheet,
+                              style: TextButton.styleFrom(
+                                visualDensity: VisualDensity.compact,
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8),
+                              ),
+                              child: const Text('Change',
+                                  style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: _kPrimaryBlue)),
                             ),
                           ],
                         ),
+                      )
+                    else
+                      GestureDetector(
+                        onTap: _showPartySelectionSheet,
+                        behavior: HitTestBehavior.opaque,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                                color: const Color(0xFFCBD5E1), width: 1.2),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.search,
+                                  color: Color(0xFF64748B), size: 20),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  _partyType == 'Customer'
+                                      ? 'Select customer...'
+                                      : 'Select lead...',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[500],
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              ),
+                              InkWell(
+                                onTap: _onAddNewParty,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEEF2FF),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: const Text(
+                                    '+ Add',
+                                    style: TextStyle(
+                                      color: _kPrimaryBlue,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
 
                     // ── Date & Due Date Row ────────────────────────────────────
                     Row(
@@ -984,33 +1112,35 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               _buildLabel('Date'),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 6),
                               GestureDetector(
                                 onTap: _pickDate,
                                 child: Container(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 8),
-                                  decoration: const BoxDecoration(
-                                    border: Border(
-                                      bottom: BorderSide(
-                                          color: Color(0xFFBDBDBD), width: 1),
-                                    ),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 11),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF8FAFC),
+                                    border: Border.all(
+                                        color: const Color(0xFFCBD5E1),
+                                        width: 1.2),
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Row(
                                     children: [
+                                      const Icon(Icons.calendar_today_outlined,
+                                          color: _kPrimaryBlue, size: 18),
+                                      const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
                                           DateFormat('dd-MMM-yyyy')
                                               .format(_selectedDate),
                                           style: const TextStyle(
-                                            fontSize: 15,
-                                            color: Color(0xFF212121),
+                                            fontSize: 14,
                                             fontWeight: FontWeight.w500,
+                                            color: Color(0xFF1E293B),
                                           ),
                                         ),
                                       ),
-                                      const Icon(Icons.calendar_month_outlined,
-                                          color: Colors.grey, size: 20),
                                     ],
                                   ),
                                 ),
@@ -1018,7 +1148,7 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
                             ],
                           ),
                         ),
-                        const SizedBox(width: 24),
+                        const SizedBox(width: 16),
 
                         // Due Date
                         Expanded(
@@ -1026,39 +1156,44 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               _buildLabel('Due Date'),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 6),
                               GestureDetector(
                                 onTap: _pickDueDate,
                                 child: Container(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 8),
-                                  decoration: const BoxDecoration(
-                                    border: Border(
-                                      bottom: BorderSide(
-                                          color: Color(0xFFBDBDBD), width: 1),
-                                    ),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 11),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF8FAFC),
+                                    border: Border.all(
+                                        color: const Color(0xFFCBD5E1),
+                                        width: 1.2),
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Row(
                                     children: [
+                                      Icon(Icons.event_outlined,
+                                          color: _selectedDueDate != null
+                                              ? _kPrimaryBlue
+                                              : const Color(0xFF94A3B8),
+                                          size: 18),
+                                      const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
                                           _selectedDueDate != null
                                               ? DateFormat('dd-MMM-yyyy')
                                                   .format(_selectedDueDate!)
-                                              : 'Please Select',
+                                              : 'Select due date',
                                           style: TextStyle(
-                                            fontSize: 15,
-                                            color: _selectedDueDate != null
-                                                ? const Color(0xFF212121)
-                                                : Colors.grey[500],
+                                            fontSize: 14,
                                             fontWeight: _selectedDueDate != null
                                                 ? FontWeight.w500
                                                 : FontWeight.w400,
+                                            color: _selectedDueDate != null
+                                                ? const Color(0xFF1E293B)
+                                                : const Color(0xFF94A3B8),
                                           ),
                                         ),
                                       ),
-                                      const Icon(Icons.calendar_month_outlined,
-                                          color: Colors.grey, size: 20),
                                     ],
                                   ),
                                 ),
@@ -1068,7 +1203,7 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
 
                     // ── Reference Dropdown ──────────────────────────────────────
                     _buildLabel('Reference'),
@@ -1078,7 +1213,8 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
                           horizontal: 14, vertical: 2),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF8FAFC),
-                        border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
+                        border: Border.all(
+                            color: const Color(0xFFCBD5E1), width: 1.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: DropdownButtonFormField<String>(
@@ -1088,7 +1224,8 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
                         isExpanded: true,
                         decoration: const InputDecoration(
                           border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                          contentPadding:
+                              EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                         ),
                         icon: const Icon(Icons.keyboard_arrow_down,
                             color: Color(0xFF475569)),
@@ -1130,56 +1267,82 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
               ),
             ),
 
-            // ── Section Divider ───────────────────────────────────────────────
-            Container(height: 12, color: const Color(0xFFF0F2FA)),
-
             // ── Items Section Header ──────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 12),
               child: Row(
                 children: [
-                  RichText(
-                    text: const TextSpan(
-                      text: 'Items',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF212121),
+                  const Text(
+                    'Items',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                  const Text(
+                    ' *',
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEEF2FF),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${_items.length} added',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: _kPrimaryBlue,
                       ),
-                      children: [
-                        TextSpan(
-                          text: ' *',
-                          style: TextStyle(
-                            color: Colors.red,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
                     ),
                   ),
                   const Spacer(),
-                  // Blue Plus Button
-                  GestureDetector(
-                    onTap: _navigateToAddItem,
-                    child: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: const BoxDecoration(
-                        color: _kPrimaryBlue,
-                        shape: BoxShape.circle,
+                  // Add Item Button
+                  ElevatedButton.icon(
+                    onPressed: _navigateToAddItem,
+                    icon: const Icon(Icons.add, size: 16),
+                    label: const Text(
+                      'Add Item',
+                      style:
+                          TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _kPrimaryBlue,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(Icons.add, color: Colors.white, size: 22),
+                      visualDensity: VisualDensity.compact,
                     ),
                   ),
-                  const SizedBox(width: 14),
-                  // Blue Shopping Cart Button
-                  GestureDetector(
+                  const SizedBox(width: 10),
+                  // Shopping Cart Button
+                  InkWell(
                     onTap: _navigateToProductsCart,
-                    child: const Icon(
-                      Icons.shopping_cart,
-                      color: _kPrimaryBlue,
-                      size: 24,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEEF2FF),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.shopping_cart_outlined,
+                        color: _kPrimaryBlue,
+                        size: 20,
+                      ),
                     ),
                   ),
                 ],
@@ -1187,14 +1350,50 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
             ),
 
             // ── Items List ────────────────────────────────────────────────────
-            if (_items.isNotEmpty)
+            if (_items.isEmpty)
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(Icons.inventory_2_outlined,
+                          size: 36, color: Colors.grey[400]),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'No items added yet',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF475569),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Tap "+ Add Item" or the cart icon to add products',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
               ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
                 itemCount: _items.length,
-                separatorBuilder: (_, __) =>
-                    const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                separatorBuilder: (_, __) => const SizedBox(height: 10),
                 itemBuilder: (context, index) {
                   final item = _items[index];
                   final initials = item.product.length >= 2
@@ -1204,9 +1403,25 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
                       item.quantity.truncateToDouble() == item.quantity
                           ? item.quantity.toStringAsFixed(0)
                           : item.quantity.toStringAsFixed(2);
+                  final hasDiscount = item.discount > 0;
+                  final discText = item.isPercentageDiscount
+                      ? '${item.discount}%'
+                      : '₹${item.discount.toStringAsFixed(0)}';
 
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
+                  return Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x08000000),
+                          blurRadius: 4,
+                          offset: Offset(0, 1),
+                        ),
+                      ],
+                    ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
@@ -1215,8 +1430,8 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
                           width: 42,
                           height: 42,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFEEF0FB),
-                            borderRadius: BorderRadius.circular(6),
+                            color: const Color(0xFFEEF2FF),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           alignment: Alignment.center,
                           child: Text(
@@ -1237,36 +1452,70 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
                                 item.product,
                                 style: const TextStyle(
                                   fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF212121),
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF0F172A),
                                 ),
                               ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Qty: $qtyText | Rate: ${currencyFormat.format(item.rate)}',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey[700],
-                                ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Text(
+                                    'Qty: $qtyText | ${currencyFormat.format(item.rate)}',
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: Color(0xFF64748B),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  if (hasDiscount) ...[
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 6, vertical: 1),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFFEF3C7),
+                                        borderRadius:
+                                            BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        'Disc: $discText',
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFFB45309),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
                             ],
                           ),
                         ),
-                        Text(
-                          currencyFormat.format(item.taxableAmount),
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF212121),
-                          ),
-                        ),
                         const SizedBox(width: 8),
-                        IconButton(
-                          icon: const Icon(Icons.delete_outline,
-                              color: Colors.red, size: 20),
-                          onPressed: () {
-                            setState(() => _items.removeAt(index));
-                          },
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              currencyFormat.format(item.taxableAmount),
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            InkWell(
+                              onTap: () =>
+                                  setState(() => _items.removeAt(index)),
+                              borderRadius: BorderRadius.circular(4),
+                              child: const Padding(
+                                padding: EdgeInsets.all(4),
+                                child: Icon(Icons.delete_outline,
+                                    color: Color(0xFFEF4444), size: 18),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -1274,208 +1523,221 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
                 },
               ),
 
-            // ── Section Divider ───────────────────────────────────────────────
-            Container(height: 12, color: const Color(0xFFF0F2FA)),
-
             // ── Financial Calculation Section ─────────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Column(
-                children: [
-                  // Taxable Amount
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Taxable Amount',
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: Colors.grey[700],
-                          fontWeight: FontWeight.w400,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    // Taxable Amount
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Taxable Amount',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF64748B),
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                      Text(
-                        zeroCurrency.format(_taxableAmount),
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF212121),
+                        Text(
+                          zeroCurrency.format(_taxableAmount),
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF0F172A),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
 
-                  // Discount Row
-                  Row(
-                    children: [
-                      Text(
-                        'Discount',
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: Colors.grey[700],
-                          fontWeight: FontWeight.w400,
+                    // Discount Row with unified selector & input
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Discount',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF64748B),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ),
-                      ),
-                      const Spacer(),
-                      // Type dropdown (₹ or %)
-                      Container(
-                        height: 38,
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: const Color(0xFFBDBDBD)),
-                          borderRadius: const BorderRadius.horizontal(
-                              left: Radius.circular(4)),
-                        ),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: _discountType,
-                            items: const [
-                              DropdownMenuItem(value: 'fixed', child: Text('₹')),
-                              DropdownMenuItem(
-                                  value: 'percent', child: Text('%')),
+                        Container(
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                                color: const Color(0xFFCBD5E1), width: 1.2),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 8),
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    value: _discountType,
+                                    items: const [
+                                      DropdownMenuItem(
+                                          value: 'fixed',
+                                          child: Text('₹',
+                                              style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight:
+                                                      FontWeight.w600))),
+                                      DropdownMenuItem(
+                                          value: 'percent',
+                                          child: Text('%',
+                                              style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight:
+                                                      FontWeight.w600))),
+                                    ],
+                                    onChanged: (val) {
+                                      if (val != null) {
+                                        setState(() => _discountType = val);
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                  width: 1,
+                                  height: 24,
+                                  color: const Color(0xFFCBD5E1)),
+                              SizedBox(
+                                width: 90,
+                                child: TextField(
+                                  controller: _discountController,
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                          decimal: true),
+                                  textAlign: TextAlign.end,
+                                  style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500),
+                                  decoration: const InputDecoration(
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 10),
+                                  ),
+                                  onChanged: (_) => setState(() {}),
+                                ),
+                              ),
                             ],
-                            onChanged: (val) {
-                              if (val != null) {
-                                setState(() => _discountType = val);
-                              }
-                            },
                           ),
                         ),
-                      ),
-                      // Value input
-                      Container(
-                        width: 90,
-                        height: 38,
-                        decoration: const BoxDecoration(
-                          border: Border(
-                            top: BorderSide(color: Color(0xFFBDBDBD)),
-                            right: BorderSide(color: Color(0xFFBDBDBD)),
-                            bottom: BorderSide(color: Color(0xFFBDBDBD)),
-                          ),
-                          borderRadius: BorderRadius.horizontal(
-                              right: Radius.circular(4)),
-                        ),
-                        child: TextField(
-                          controller: _discountController,
-                          keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true),
-                          textAlign: TextAlign.right,
-                          style: const TextStyle(fontSize: 15),
-                          decoration: const InputDecoration(
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 8),
-                          ),
-                          onChanged: (_) => setState(() {}),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
 
-                  // Total Discount
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Total Discount',
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: Colors.grey[700],
-                          fontWeight: FontWeight.w400,
+                    // Total Discount
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Total Discount',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF64748B),
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                      Text(
-                        zeroCurrency.format(_totalDiscount),
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF212121),
+                        Text(
+                          zeroCurrency.format(_totalDiscount),
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFFB45309),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
 
-                  // Round Off Toggle
-                  Row(
-                    children: [
-                      Text(
-                        'Round Off',
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: Colors.grey[700],
-                          fontWeight: FontWeight.w400,
+                    // Round Off Toggle
+                    Row(
+                      children: [
+                        const Text(
+                          'Round Off',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF64748B),
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Switch(
-                        value: _roundOff,
-                        activeColor: _kPrimaryBlue,
-                        onChanged: (val) => setState(() => _roundOff = val),
-                      ),
-                      const Spacer(),
-                      Text(
-                        zeroCurrency.format(_roundOffDifference.abs()),
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF212121),
+                        const SizedBox(width: 8),
+                        Switch(
+                          value: _roundOff,
+                          activeColor: _kPrimaryBlue,
+                          onChanged: (val) => setState(() => _roundOff = val),
                         ),
+                        const Spacer(),
+                        Text(
+                          zeroCurrency.format(_roundOffDifference.abs()),
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 24, color: Color(0xFFE2E8F0)),
+
+                    // Total Banner inside summary card
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEEF2FF),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                    ],
-                  ),
-                ],
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Total Amount',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: _kPrimaryBlue,
+                            ),
+                          ),
+                          Text(
+                            zeroCurrency.format(_calculatedTotal),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: _kPrimaryBlue,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
 
-            // ── Total Bar ─────────────────────────────────────────────────────
-            Container(
-              color: const Color(0xFFF0F2FA),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Total',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF212121),
-                    ),
-                  ),
-                  Text(
-                    zeroCurrency.format(_calculatedTotal),
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF212121),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // ── Section Divider ───────────────────────────────────────────────
-            Container(height: 12, color: const Color(0xFFF0F2FA)),
-
-            // ── Referance Section ─────────────────────────────────────────────
+            // ── Reference Section ─────────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'REFERENCE',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
-                      color: Color(0xFF212121),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
                   _buildRequiredLabel('Reference'),
                   const SizedBox(height: 6),
                   Container(
@@ -1483,17 +1745,21 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
                         horizontal: 14, vertical: 2),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF8FAFC),
-                      border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
+                      border: Border.all(
+                          color: const Color(0xFFCBD5E1), width: 1.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: DropdownButtonFormField<String>(
                       value: _referenceList.contains(_selectedReference)
                           ? _selectedReference
-                          : (_referenceList.isNotEmpty ? _referenceList.first : null),
+                          : (_referenceList.isNotEmpty
+                              ? _referenceList.first
+                              : null),
                       isExpanded: true,
                       decoration: const InputDecoration(
                         border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                       ),
                       icon: const Icon(Icons.keyboard_arrow_down,
                           color: Color(0xFF475569)),
@@ -1534,44 +1800,48 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
               ),
             ),
 
-            // ── Section Divider ───────────────────────────────────────────────
-            Container(height: 12, color: const Color(0xFFF0F2FA)),
-
             // ── Note Section ──────────────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'NOTE',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
-                      color: Color(0xFF212121),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  _buildLabel('NOTE'),
-                  const SizedBox(height: 4),
+                  _buildLabel('Note'),
+                  const SizedBox(height: 6),
                   TextField(
                     controller: _noteController,
-                    decoration: const InputDecoration(
-                      hintText: '',
-                      enabledBorder: UnderlineInputBorder(
-                        borderSide: BorderSide(color: Color(0xFFBDBDBD)),
+                    maxLines: 2,
+                    style:
+                        const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
+                    decoration: InputDecoration(
+                      hintText: 'Add an optional note...',
+                      hintStyle: TextStyle(color: Colors.grey[400]),
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(
+                            color: Color(0xFFCBD5E1), width: 1.2),
                       ),
-                      focusedBorder: UnderlineInputBorder(
-                        borderSide: BorderSide(color: _kPrimaryBlue, width: 2),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(
+                            color: Color(0xFFCBD5E1), width: 1.2),
                       ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide:
+                            const BorderSide(color: _kPrimaryBlue, width: 2),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 12),
                     ),
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
             // ── Save Button ───────────────────────────────────────────────────
             Padding(
@@ -1586,7 +1856,7 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
                     foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                   child: _isSaving
@@ -1599,7 +1869,7 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
                           ),
                         )
                       : const Text(
-                          'Save',
+                          'Save Proforma Invoice',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -1621,8 +1891,9 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
       text,
       style: const TextStyle(
         fontSize: 13,
-        color: Color(0xFF757575),
-        fontWeight: FontWeight.w400,
+        color: Color(0xFF475569),
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.2,
       ),
     );
   }
@@ -1633,8 +1904,9 @@ class _AddProformaInvoiceScreenState extends State<AddProformaInvoiceScreen> {
         text: text,
         style: const TextStyle(
           fontSize: 13,
-          color: Color(0xFF757575),
-          fontWeight: FontWeight.w400,
+          color: Color(0xFF475569),
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.2,
         ),
         children: const [
           TextSpan(

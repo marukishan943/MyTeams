@@ -118,38 +118,49 @@ class _AddItemScreenState extends State<AddItemScreen> {
               _buildLabel('Product', required: true),
               const SizedBox(height: 6),
               Container(
-                decoration: const BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(color: Color(0xFFBDBDBD)),
-                  ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
+                  borderRadius: BorderRadius.circular(8),
                 ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
                 child: DropdownButtonFormField<String>(
                   value: _selectedProduct,
                   hint: Text(
-                    'Please Select',
+                    'Select a product or service',
                     style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[600],
+                      fontSize: 15,
+                      color: Colors.grey[500],
                       fontWeight: FontWeight.w400,
                     ),
                   ),
                   isExpanded: true,
                   decoration: const InputDecoration(
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(vertical: 8),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                   ),
                   icon: const Icon(Icons.keyboard_arrow_down,
-                      color: Color(0xFF757575)),
+                      color: Color(0xFF475569)),
                   items: _products.map((p) {
                     return DropdownMenuItem(
                       value: p,
-                      child: Text(
-                        p,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Color(0xFF212121),
-                          fontWeight: FontWeight.w500,
-                        ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.inventory_2_outlined,
+                              size: 18, color: _kPrimaryBlue),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              p,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                color: Color(0xFF0F172A),
+                                fontWeight: FontWeight.w500,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
                     );
                   }).toList(),
@@ -158,29 +169,53 @@ class _AddItemScreenState extends State<AddItemScreen> {
                       val == null || val.isEmpty ? 'Please select a product' : null,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
               // Rate *
               _buildLabel('Rate', required: true),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               TextFormField(
                 controller: _rateController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                style: const TextStyle(fontSize: 16, color: Color(0xFF212121)),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF0F172A),
+                ),
                 onChanged: (_) => setState(() {}),
                 decoration: InputDecoration(
-                  hintText: '',
-                  filled: false,
-                  border: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFFBDBDBD)),
+                  prefixIcon: const Padding(
+                    padding: EdgeInsets.only(left: 14, right: 8),
+                    child: Text(
+                      '₹',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
                   ),
-                  enabledBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFFBDBDBD)),
+                  prefixIconConstraints:
+                      const BoxConstraints(minWidth: 0, minHeight: 0),
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide:
+                        const BorderSide(color: Color(0xFFCBD5E1), width: 1.2),
                   ),
-                  focusedBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: _kPrimaryBlue, width: 2),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide:
+                        const BorderSide(color: Color(0xFFCBD5E1), width: 1.2),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide:
+                        const BorderSide(color: _kPrimaryBlue, width: 2),
+                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 ),
                 validator: (val) {
                   if (val == null || val.trim().isEmpty) {
@@ -194,16 +229,24 @@ class _AddItemScreenState extends State<AddItemScreen> {
               ),
               if (_discountedRateText != null) ...[
                 const SizedBox(height: 6),
-                Text(
-                  _discountedRateText!,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF2E7D32), // Green color matching the screenshot
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDCFCE7),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    _discountedRateText!,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF166534),
+                    ),
                   ),
                 ),
               ],
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
               // Discount field with Dropdown (% / ₹) and Input
               Row(
@@ -213,10 +256,12 @@ class _AddItemScreenState extends State<AddItemScreen> {
                     child: _buildLabel('Discount'),
                   ),
                   Container(
-                    height: 42,
+                    height: 44,
                     decoration: BoxDecoration(
-                      border: Border.all(color: const Color(0xFF9E9E9E)),
-                      borderRadius: BorderRadius.circular(4),
+                      color: const Color(0xFFF8FAFC),
+                      border: Border.all(
+                          color: const Color(0xFFCBD5E1), width: 1.2),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -229,11 +274,17 @@ class _AddItemScreenState extends State<AddItemScreen> {
                               items: const [
                                 DropdownMenuItem(
                                   value: true,
-                                  child: Text('%', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                                  child: Text('%',
+                                      style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600)),
                                 ),
                                 DropdownMenuItem(
                                   value: false,
-                                  child: Text('₹', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                                  child: Text('₹',
+                                      style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600)),
                                 ),
                               ],
                               onChanged: (val) {
@@ -241,27 +292,33 @@ class _AddItemScreenState extends State<AddItemScreen> {
                                   setState(() => _isPercentageDiscount = val);
                                 }
                               },
-                              icon: const Icon(Icons.keyboard_arrow_down, size: 20, color: Color(0xFF616161)),
+                              icon: const Icon(Icons.keyboard_arrow_down,
+                                  size: 18, color: Color(0xFF475569)),
                             ),
                           ),
                         ),
                         Container(
                           width: 1,
-                          height: 42,
-                          color: const Color(0xFF9E9E9E),
+                          height: 26,
+                          color: const Color(0xFFCBD5E1),
                         ),
                         SizedBox(
                           width: 100,
                           child: TextFormField(
                             controller: _discountController,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
                             textAlign: TextAlign.end,
-                            style: const TextStyle(fontSize: 16, color: Color(0xFF212121)),
+                            style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF0F172A)),
                             onChanged: (_) => setState(() {}),
                             decoration: const InputDecoration(
-                              hintText: '',
+                              hintText: '0',
                               border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 10),
                             ),
                           ),
                         ),
@@ -270,28 +327,39 @@ class _AddItemScreenState extends State<AddItemScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
               // Quantity *
               _buildLabel('Quantity', required: true),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               TextFormField(
                 controller: _quantityController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                style: const TextStyle(fontSize: 16, color: Color(0xFF212121)),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF0F172A),
+                ),
                 decoration: InputDecoration(
-                  hintText: '',
-                  filled: false,
-                  border: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFFBDBDBD)),
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide:
+                        const BorderSide(color: Color(0xFFCBD5E1), width: 1.2),
                   ),
-                  enabledBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFFBDBDBD)),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide:
+                        const BorderSide(color: Color(0xFFCBD5E1), width: 1.2),
                   ),
-                  focusedBorder: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: _kPrimaryBlue, width: 2),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide:
+                        const BorderSide(color: _kPrimaryBlue, width: 2),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 ),
                 validator: (val) {
                   if (val == null || val.trim().isEmpty) {
@@ -304,31 +372,55 @@ class _AddItemScreenState extends State<AddItemScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
               // Tax (%)
               _buildLabel('Tax (%)'),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               TextFormField(
                 controller: _taxController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                style: const TextStyle(fontSize: 16, color: Color(0xFF212121)),
-                decoration: const InputDecoration(
-                  hintText: '',
-                  filled: false,
-                  border: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFFBDBDBD)),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF0F172A),
+                ),
+                decoration: InputDecoration(
+                  suffixIcon: const Padding(
+                    padding: EdgeInsets.only(right: 14),
+                    child: Text(
+                      '%',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
                   ),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFFBDBDBD)),
+                  suffixIconConstraints:
+                      const BoxConstraints(minWidth: 0, minHeight: 0),
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide:
+                        const BorderSide(color: Color(0xFFCBD5E1), width: 1.2),
                   ),
-                  focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: _kPrimaryBlue, width: 2),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide:
+                        const BorderSide(color: Color(0xFFCBD5E1), width: 1.2),
                   ),
-                  contentPadding: EdgeInsets.symmetric(vertical: 8),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide:
+                        const BorderSide(color: _kPrimaryBlue, width: 2),
+                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 ),
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 24),
 
               // + Add Description
               GestureDetector(
@@ -339,17 +431,17 @@ class _AddItemScreenState extends State<AddItemScreen> {
                   children: [
                     Icon(
                       _showDescription
-                          ? Icons.remove_circle
-                          : Icons.add_circle,
+                          ? Icons.remove_circle_outline
+                          : Icons.add_circle_outline,
                       color: _kPrimaryBlue,
-                      size: 22,
+                      size: 20,
                     ),
                     const SizedBox(width: 8),
                     Text(
                       _showDescription ? 'Remove Description' : 'Add Description',
                       style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
                         color: _kPrimaryBlue,
                       ),
                     ),
@@ -361,20 +453,28 @@ class _AddItemScreenState extends State<AddItemScreen> {
                 TextFormField(
                   controller: _descriptionController,
                   maxLines: 3,
-                  style: const TextStyle(fontSize: 15),
+                  style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A)),
                   decoration: InputDecoration(
                     hintText: 'Enter item description...',
                     hintStyle: TextStyle(color: Colors.grey[400]),
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: Color(0xFFBDBDBD)),
+                      borderSide: const BorderSide(
+                          color: Color(0xFFCBD5E1), width: 1.2),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(
+                          color: Color(0xFFCBD5E1), width: 1.2),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide:
                           const BorderSide(color: _kPrimaryBlue, width: 2),
                     ),
-                    contentPadding: const EdgeInsets.all(12),
+                    contentPadding: const EdgeInsets.all(14),
                   ),
                 ),
               ],
@@ -419,9 +519,10 @@ class _AddItemScreenState extends State<AddItemScreen> {
       text: TextSpan(
         text: text,
         style: const TextStyle(
-          fontSize: 14,
-          color: Color(0xFF757575),
-          fontWeight: FontWeight.w400,
+          fontSize: 13,
+          color: Color(0xFF475569),
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.2,
         ),
         children: required
             ? [
@@ -429,7 +530,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                   text: ' *',
                   style: TextStyle(
                     color: Colors.red,
-                    fontSize: 15,
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
