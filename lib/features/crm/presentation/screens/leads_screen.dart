@@ -174,43 +174,61 @@ class _LeadsScreenState extends State<LeadsScreen>
       padding: EdgeInsets.symmetric(horizontal: hPadding, vertical: 16),
       child: Column(
         children: [
-          const SizedBox(height: 8),
-          Text(
-            'THIS MONTH',
-            style: TextStyle(
-              fontSize: isSmall ? 14 : 16,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF333333),
-              letterSpacing: 0.5,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE2E8F0),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              'THIS MONTH',
+              style: TextStyle(
+                fontSize: isSmall ? 12 : 13,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF475569),
+                letterSpacing: 0.8,
+              ),
             ),
           ),
-          SizedBox(height: isSmall ? 14 : 20),
+          SizedBox(height: isSmall ? 14 : 18),
           Row(
             children: [
               Expanded(
                 child: _buildStatCard(
-                  'New',
-                  stats.newCount,
-                  const Color(0xFF1565C0),
-                  screenWidth,
+                  label: 'New',
+                  count: stats.newCount,
+                  countColor: const Color(0xFF2563EB),
+                  bgColor: const Color(0xFFEFF6FF),
+                  borderColor: const Color(0xFFBFDBFE),
+                  icon: Icons.fiber_new_outlined,
+                  screenWidth: screenWidth,
+                  onTap: () => _tabController.animateTo(1),
                 ),
               ),
               SizedBox(width: cardSpacing),
               Expanded(
                 child: _buildStatCard(
-                  'Contacted',
-                  stats.contactedCount,
-                  const Color(0xFFF9A825),
-                  screenWidth,
+                  label: 'Contacted',
+                  count: stats.contactedCount,
+                  countColor: const Color(0xFFD97706),
+                  bgColor: const Color(0xFFFFFBEB),
+                  borderColor: const Color(0xFFFDE68A),
+                  icon: Icons.phone_in_talk_outlined,
+                  screenWidth: screenWidth,
+                  onTap: () => _tabController.animateTo(1),
                 ),
               ),
               SizedBox(width: cardSpacing),
               Expanded(
                 child: _buildStatCard(
-                  'Proposal Sent',
-                  stats.proposalSentCount,
-                  const Color(0xFF0097A7),
-                  screenWidth,
+                  label: 'Proposal Sent',
+                  count: stats.proposalSentCount,
+                  countColor: const Color(0xFF0891B2),
+                  bgColor: const Color(0xFFECFEFF),
+                  borderColor: const Color(0xFFA5F3FC),
+                  icon: Icons.send_outlined,
+                  screenWidth: screenWidth,
+                  onTap: () => _tabController.animateTo(1),
                 ),
               ),
             ],
@@ -220,23 +238,42 @@ class _LeadsScreenState extends State<LeadsScreen>
             children: [
               Expanded(
                 child: _buildStatCard(
-                  'Disqualified',
-                  stats.disqualifiedCount,
-                  const Color(0xFFE53935),
-                  screenWidth,
+                  label: 'Disqualified',
+                  count: stats.disqualifiedCount,
+                  countColor: const Color(0xFFDC2626),
+                  bgColor: const Color(0xFFFEF2F2),
+                  borderColor: const Color(0xFFFECACA),
+                  icon: Icons.cancel_outlined,
+                  screenWidth: screenWidth,
+                  onTap: () => _tabController.animateTo(2),
                 ),
               ),
               SizedBox(width: cardSpacing),
               Expanded(
                 child: _buildStatCard(
-                  'Converted',
-                  stats.convertedCount,
-                  const Color(0xFF2E7D32),
-                  screenWidth,
+                  label: 'Converted',
+                  count: stats.convertedCount,
+                  countColor: const Color(0xFF16A34A),
+                  bgColor: const Color(0xFFF0FDF4),
+                  borderColor: const Color(0xFFBBF7D0),
+                  icon: Icons.check_circle_outline,
+                  screenWidth: screenWidth,
+                  onTap: () => _tabController.animateTo(2),
                 ),
               ),
               SizedBox(width: cardSpacing),
-              const Expanded(child: SizedBox()), // Empty placeholder
+              Expanded(
+                child: _buildStatCard(
+                  label: 'Total Leads',
+                  count: stats.total,
+                  countColor: const Color(0xFF475569),
+                  bgColor: const Color(0xFFF8FAFC),
+                  borderColor: const Color(0xFFCBD5E1),
+                  icon: Icons.people_alt_outlined,
+                  screenWidth: screenWidth,
+                  onTap: () => _tabController.animateTo(1),
+                ),
+              ),
             ],
           ),
         ],
@@ -244,55 +281,69 @@ class _LeadsScreenState extends State<LeadsScreen>
     );
   }
 
-  Widget _buildStatCard(
-    String label,
-    int count,
-    Color countColor,
-    double screenWidth,
-  ) {
+  Widget _buildStatCard({
+    required String label,
+    required int count,
+    required Color countColor,
+    required Color bgColor,
+    required Color borderColor,
+    required IconData icon,
+    required double screenWidth,
+    VoidCallback? onTap,
+  }) {
     final isSmall = screenWidth < 360;
     final isTablet = screenWidth >= 600;
 
-    final vPadding = isSmall ? 14.0 : (isTablet ? 24.0 : 20.0);
+    final vPadding = isSmall ? 12.0 : (isTablet ? 20.0 : 16.0);
     final hPadding = isSmall ? 6.0 : (isTablet ? 14.0 : 10.0);
-    final labelSize = isSmall ? 11.0 : (isTablet ? 14.0 : 12.5);
-    final countSize = isSmall ? 22.0 : (isTablet ? 32.0 : 26.0);
+    final labelSize = isSmall ? 10.5 : (isTablet ? 13.5 : 12.0);
+    final countSize = isSmall ? 22.0 : (isTablet ? 30.0 : 25.0);
 
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: vPadding, horizontal: hPadding),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE8EAF6),
+    return Material(
+      color: bgColor,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: labelSize,
-                color: const Color(0xFF9E9E9E),
-                fontWeight: FontWeight.w500,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-            ),
+        child: Container(
+          padding: EdgeInsets.symmetric(vertical: vPadding, horizontal: hPadding),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: borderColor, width: 1.2),
           ),
-          SizedBox(height: isSmall ? 8 : 12),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              count.toString(),
-              style: TextStyle(
-                fontSize: countSize,
-                fontWeight: FontWeight.w700,
-                color: countColor,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: isSmall ? 16 : 18, color: countColor.withValues(alpha: 0.8)),
+              const SizedBox(height: 6),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: labelSize,
+                    color: const Color(0xFF64748B),
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                ),
               ),
-            ),
+              SizedBox(height: isSmall ? 6 : 8),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  count.toString(),
+                  style: TextStyle(
+                    fontSize: countSize,
+                    fontWeight: FontWeight.w800,
+                    color: countColor,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -308,25 +359,39 @@ class _LeadsScreenState extends State<LeadsScreen>
         // Search bar
         Container(
           color: Colors.white,
-          padding: EdgeInsets.fromLTRB(hPadding, 12, hPadding, 12),
-          child: TextField(
-            controller: _searchController,
-            onChanged: (query) {
-              context.read<LeadBloc>().add(SearchLeads(query));
-            },
-            decoration: InputDecoration(
-              hintText: 'Search...',
-              hintStyle: const TextStyle(color: Color(0xFFBDBDBD)),
-              prefixIcon: const Icon(Icons.search, color: Color(0xFFBDBDBD)),
-              filled: true,
-              fillColor: const Color(0xFFF5F5F5),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
+          padding: EdgeInsets.fromLTRB(hPadding, 10, hPadding, 10),
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (query) {
+                context.read<LeadBloc>().add(SearchLeads(query));
+                setState(() {});
+              },
+              style: const TextStyle(fontSize: 14.5, color: Color(0xFF1E293B)),
+              decoration: InputDecoration(
+                hintText: 'Search leads by name, company, city...',
+                hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13.5),
+                prefixIcon: const Icon(Icons.search, color: Color(0xFF64748B), size: 20),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.close, color: Color(0xFF94A3B8), size: 18),
+                        onPressed: () {
+                          _searchController.clear();
+                          context.read<LeadBloc>().add(const SearchLeads(''));
+                          setState(() {});
+                        },
+                      )
+                    : null,
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
               ),
             ),
           ),
@@ -430,146 +495,191 @@ class _LeadsScreenState extends State<LeadsScreen>
     final screenWidth = media.size.width;
     final isSmall = screenWidth < 360;
 
-    final boxSize = (screenWidth * 0.12).clamp(42.0, 52.0);
+    final boxSize = (screenWidth * 0.12).clamp(44.0, 52.0);
     final cardHPadding = (screenWidth * 0.035).clamp(10.0, 16.0);
     final cardHMargin = (screenWidth * 0.03).clamp(8.0, 16.0);
 
-    return GestureDetector(
-      onTap: () async {
-        final leadBloc = context.read<LeadBloc>();
-        await context.push('/leads/${lead.id}');
-        if (mounted) {
-          leadBloc.add(const LoadLeads());
-        }
-      },
-      child: Container(
-        margin: EdgeInsets.symmetric(horizontal: cardHMargin, vertical: 4),
-        padding: EdgeInsets.all(cardHPadding),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: cardHMargin, vertical: 4.5),
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        elevation: 0,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () async {
+            final leadBloc = context.read<LeadBloc>();
+            await context.push('/leads/${lead.id}');
+            if (mounted) {
+              leadBloc.add(const LoadLeads());
+            }
+          },
+          child: Container(
+            padding: EdgeInsets.all(cardHPadding),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE2E8F0), width: 1.1),
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            // Lead number block
-            Container(
-              width: boxSize,
-              height: boxSize,
-              decoration: BoxDecoration(
-                color: _kPrimaryBlue.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Center(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: Text(
-                      lead.leadNumber,
-                      style: TextStyle(
-                        fontSize: isSmall ? 14 : 16,
-                        fontWeight: FontWeight.w700,
-                        color: _kPrimaryBlue,
-                      ),
-                    ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Lead number block with soft blue container
+                Container(
+                  width: boxSize,
+                  height: boxSize,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEEF2FF),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFC7D2FE), width: 0.8),
                   ),
-                ),
-              ),
-            ),
-            SizedBox(width: isSmall ? 10 : 14),
-            // Lead info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    lead.name,
-                    style: TextStyle(
-                      fontSize: isSmall ? 14 : 15,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF212121),
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (lead.city.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      lead.city,
-                      style: TextStyle(
-                        fontSize: isSmall ? 12 : 13,
-                        color: const Color(0xFF757575),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                  const SizedBox(height: 5),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.badge_outlined,
-                          size: 12,
-                          color: Color(0xFF64748B),
-                        ),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            lead.staffName.isNotEmpty ? lead.staffName : 'No Reference',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFF475569),
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                  child: Center(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: Text(
+                          lead.leadNumber,
+                          style: TextStyle(
+                            fontSize: isSmall ? 13 : 15,
+                            fontWeight: FontWeight.w700,
+                            color: _kPrimaryBlue,
                           ),
                         ),
-                      ],
+                      ),
                     ),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            // Stage badge
-            Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: isSmall ? 8 : 12,
-                vertical: 6,
-              ),
-              decoration: BoxDecoration(
-                color: lead.stage.backgroundColor,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  lead.stage.displayName,
-                  style: TextStyle(
-                    fontSize: isSmall ? 11 : 12,
-                    fontWeight: FontWeight.w600,
-                    color: lead.stage.color,
+                ),
+                SizedBox(width: isSmall ? 10 : 12),
+                // Lead info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        lead.name,
+                        style: TextStyle(
+                          fontSize: isSmall ? 14 : 15,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF0F172A),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (lead.company.isNotEmpty && lead.company.toLowerCase() != lead.name.toLowerCase()) ...[
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            const Icon(Icons.business_outlined, size: 12, color: Color(0xFF64748B)),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                lead.company,
+                                style: TextStyle(
+                                  fontSize: isSmall ? 11.5 : 12.5,
+                                  color: const Color(0xFF475569),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      if (lead.city.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            const Icon(Icons.location_on_outlined, size: 12, color: Color(0xFF94A3B8)),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                lead.city,
+                                style: TextStyle(
+                                  fontSize: isSmall ? 11 : 12,
+                                  color: const Color(0xFF64748B),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      const SizedBox(height: 5),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.badge_outlined,
+                              size: 12,
+                              color: Color(0xFF64748B),
+                            ),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                lead.staffName.isNotEmpty ? lead.staffName : 'No Reference',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF475569),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                // Stage badge & star rating indicator
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isSmall ? 8 : 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: lead.stage.backgroundColor,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        lead.stage.displayName,
+                        style: TextStyle(
+                          fontSize: isSmall ? 11 : 12,
+                          fontWeight: FontWeight.w600,
+                          color: lead.stage.color,
+                        ),
+                      ),
+                    ),
+                    if (lead.rating > 0) ...[
+                      const SizedBox(height: 5),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: List.generate(
+                          lead.rating,
+                          (_) => const Icon(Icons.star, size: 12, color: Color(0xFFF59E0B)),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -657,15 +767,15 @@ class _LeadsScreenState extends State<LeadsScreen>
                                 ),
                                 const SizedBox(height: 8),
                                 Container(
-                                  height: 44,
                                   padding:
                                       const EdgeInsets.symmetric(horizontal: 12),
                                   decoration: BoxDecoration(
+                                    color: const Color(0xFFF8FAFC),
                                     border: Border.all(
-                                      color: const Color(0xFFBDBDBD),
-                                      width: 1.0,
+                                      color: const Color(0xFFCBD5E1),
+                                      width: 1.2,
                                     ),
-                                    borderRadius: BorderRadius.circular(4),
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: DropdownButtonHideUnderline(
                                     child: DropdownButton<String>(
@@ -673,25 +783,26 @@ class _LeadsScreenState extends State<LeadsScreen>
                                       isExpanded: true,
                                       icon: const Icon(
                                         Icons.keyboard_arrow_down,
-                                        color: Color(0xFF616161),
-                                        size: 24,
+                                        color: Color(0xFF475569),
+                                        size: 22,
                                       ),
                                       style: const TextStyle(
                                         fontSize: 15,
-                                        color: Color(0xFF212121),
+                                        color: Color(0xFF1E293B),
+                                        fontWeight: FontWeight.w500,
                                       ),
                                       items: const [
                                         DropdownMenuItem(
-                                            value: 'All', child: Text('All')),
+                                            value: 'All', child: Padding(padding: EdgeInsets.symmetric(horizontal: 4), child: Text('All'))),
                                         DropdownMenuItem(
-                                            value: 'Call', child: Text('Call')),
+                                            value: 'Call', child: Padding(padding: EdgeInsets.symmetric(horizontal: 4), child: Text('Call'))),
                                         DropdownMenuItem(
-                                            value: 'Email', child: Text('Email')),
+                                            value: 'Email', child: Padding(padding: EdgeInsets.symmetric(horizontal: 4), child: Text('Email'))),
                                         DropdownMenuItem(
                                             value: 'Website',
-                                            child: Text('Website')),
+                                            child: Padding(padding: EdgeInsets.symmetric(horizontal: 4), child: Text('Website'))),
                                         DropdownMenuItem(
-                                            value: 'Others', child: Text('Others')),
+                                            value: 'Others', child: Padding(padding: EdgeInsets.symmetric(horizontal: 4), child: Text('Others'))),
                                       ],
                                       onChanged: (val) {
                                         if (val != null) {
@@ -721,15 +832,15 @@ class _LeadsScreenState extends State<LeadsScreen>
                                   ),
                                   const SizedBox(height: 8),
                                   Container(
-                                    height: 44,
                                     padding:
                                         const EdgeInsets.symmetric(horizontal: 12),
                                     decoration: BoxDecoration(
+                                      color: const Color(0xFFF8FAFC),
                                       border: Border.all(
-                                        color: const Color(0xFFBDBDBD),
-                                        width: 1.0,
+                                        color: const Color(0xFFCBD5E1),
+                                        width: 1.2,
                                       ),
-                                      borderRadius: BorderRadius.circular(4),
+                                      borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: DropdownButtonHideUnderline(
                                       child: DropdownButton<String>(
@@ -737,20 +848,24 @@ class _LeadsScreenState extends State<LeadsScreen>
                                         isExpanded: true,
                                         icon: const Icon(
                                           Icons.keyboard_arrow_down,
-                                          color: Color(0xFF616161),
-                                          size: 24,
+                                          color: Color(0xFF475569),
+                                          size: 22,
                                         ),
                                         style: const TextStyle(
                                           fontSize: 15,
-                                          color: Color(0xFF212121),
+                                          color: Color(0xFF1E293B),
+                                          fontWeight: FontWeight.w500,
                                         ),
                                         items: [
                                           const DropdownMenuItem(
-                                              value: 'All', child: Text('All')),
+                                              value: 'All', child: Padding(padding: EdgeInsets.symmetric(horizontal: 4), child: Text('All'))),
                                           ...LeadStage.values.map(
                                             (stage) => DropdownMenuItem(
                                               value: stage.displayName,
-                                              child: Text(stage.displayName),
+                                              child: Padding(
+                                                padding: const EdgeInsets.symmetric(horizontal: 4),
+                                                child: Text(stage.displayName),
+                                              ),
                                             ),
                                           ),
                                         ],

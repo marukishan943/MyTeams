@@ -601,6 +601,8 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
                     _buildCircleActionButton(
                       child: Icon(Icons.phone, color: _kPrimaryBlue, size: isSmall ? 20 : 22),
                       tooltip: 'Call',
+                      borderColor: const Color(0xFFC7D2FE),
+                      bgColor: const Color(0xFFEFF6FF),
                       onTap: () => _makeCall(lead.phone),
                       isSmall: isSmall,
                     ),
@@ -608,14 +610,17 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
                     _buildCircleActionButton(
                       child: _buildWhatsAppIcon(size: isSmall ? 20 : 22),
                       tooltip: 'WhatsApp',
-                      borderColor: const Color(0xFF25D366),
+                      borderColor: const Color(0xFFBBF7D0),
+                      bgColor: const Color(0xFFF0FDF4),
                       onTap: () => _openWhatsApp(lead.phone, lead),
                       isSmall: isSmall,
                     ),
                     SizedBox(width: isSmall ? 10 : 14),
                     _buildCircleActionButton(
-                      child: Icon(Icons.email_outlined, color: _kPrimaryBlue, size: isSmall ? 20 : 22),
+                      child: Icon(Icons.email_outlined, color: const Color(0xFF475569), size: isSmall ? 20 : 22),
                       tooltip: 'Mail',
+                      borderColor: const Color(0xFFCBD5E1),
+                      bgColor: const Color(0xFFF8FAFC),
                       onTap: () => _sendEmail(lead.email, lead.name),
                       isSmall: isSmall,
                     ),
@@ -703,31 +708,36 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
     required Widget child,
     required VoidCallback onTap,
     Color? borderColor,
+    Color? bgColor,
     String? tooltip,
     bool isSmall = false,
   }) {
-    final size = isSmall ? 40.0 : 46.0;
-    Widget btn = GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.white,
-          border: Border.all(
-            color: borderColor ?? _kPrimaryBlue,
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+    final size = isSmall ? 42.0 : 46.0;
+    Widget btn = Material(
+      color: bgColor ?? Colors.white,
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: borderColor ?? _kPrimaryBlue,
+              width: 1.2,
             ),
-          ],
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Center(child: child),
         ),
-        child: Center(child: child),
       ),
     );
 
@@ -765,11 +775,22 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
     required String value,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(icon, size: 20, color: Colors.grey[500]),
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Center(
+              child: Icon(icon, size: 18, color: const Color(0xFF64748B)),
+            ),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -777,19 +798,19 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
               children: [
                 Text(
                   label,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 12,
-                    color: Colors.grey[500],
-                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF64748B),
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   value,
                   style: const TextStyle(
-                    fontSize: 15,
+                    fontSize: 14.5,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF212121),
+                    color: Color(0xFF0F172A),
                   ),
                 ),
               ],
@@ -931,15 +952,24 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFEEF2F9),
+        color: const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Text(
         text,
         style: const TextStyle(
           fontSize: 14.5,
-          color: Color(0xFF212121),
-          height: 1.35,
+          color: Color(0xFF1E293B),
+          height: 1.4,
+          fontWeight: FontWeight.w400,
         ),
       ),
     );
@@ -1129,18 +1159,28 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Icon(Icons.person, size: 15, color: Colors.grey[400]),
-                    const SizedBox(width: 4),
-                    Text(
-                      visit.staffName,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[600],
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.badge_outlined, size: 12, color: Color(0xFF64748B)),
+                      const SizedBox(width: 4),
+                      Text(
+                        visit.staffName.isNotEmpty ? visit.staffName : 'No Reference',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF475569),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 if (visit.subject.isNotEmpty) ...[
                   const SizedBox(height: 4),
@@ -1274,18 +1314,28 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Icon(Icons.person, size: 15, color: Colors.grey[400]),
-                    const SizedBox(width: 4),
-                    Text(
-                      task.staffName,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[600],
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.badge_outlined, size: 12, color: Color(0xFF64748B)),
+                      const SizedBox(width: 4),
+                      Text(
+                        task.staffName.isNotEmpty ? task.staffName : 'No Reference',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF475569),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 if (task.subject.isNotEmpty) ...[
                   const SizedBox(height: 4),

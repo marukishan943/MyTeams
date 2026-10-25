@@ -211,20 +211,22 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
     final media = MediaQuery.of(context);
     final screenWidth = media.size.width;
     final stepHPad = (screenWidth * 0.1).clamp(16.0, 50.0);
-    final stepVPad = (media.size.height * 0.02).clamp(14.0, 24.0);
+    final stepVPad = (media.size.height * 0.02).clamp(12.0, 20.0);
 
     return Container(
       color: Colors.white,
       padding: EdgeInsets.symmetric(vertical: stepVPad, horizontal: stepHPad),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildStepCircle(0, 'Contact'),
           Expanded(
             child: Container(
-              height: 3,
+              margin: const EdgeInsets.only(top: 15),
+              height: 2.5,
               color: _currentStep >= 1
                   ? _kPrimaryBlue
-                  : const Color(0xFFDCDCDC),
+                  : const Color(0xFFE2E8F0),
             ),
           ),
           _buildStepCircle(1, 'Lead'),
@@ -234,8 +236,9 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
   }
 
   Widget _buildStepCircle(int step, String label) {
-    final isActive = _currentStep >= step;
+    final isPassed = _currentStep > step;
     final isCurrent = _currentStep == step;
+    final isActive = _currentStep >= step;
     return GestureDetector(
       onTap: () {
         if (step == 0) {
@@ -251,20 +254,22 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
             height: 32,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: isActive ? _kPrimaryBlue : const Color(0xFFBDBDBD),
+              color: isActive ? _kPrimaryBlue : const Color(0xFFE2E8F0),
               border: isCurrent
-                  ? Border.all(color: _kPrimaryBlue.withValues(alpha: 0.3), width: 4)
+                  ? Border.all(color: _kPrimaryBlue.withValues(alpha: 0.25), width: 3.5)
                   : null,
             ),
             child: Center(
-              child: Container(
-                width: 12,
-                height: 12,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white,
-                ),
-              ),
+              child: isPassed
+                  ? const Icon(Icons.check, size: 16, color: Colors.white)
+                  : Text(
+                      '${step + 1}',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: isActive ? Colors.white : const Color(0xFF64748B),
+                      ),
+                    ),
             ),
           ),
           const SizedBox(height: 6),
@@ -273,7 +278,7 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
             style: TextStyle(
               fontSize: 13,
               fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
-              color: isCurrent ? _kPrimaryBlue : const Color(0xFF757575),
+              color: isCurrent ? _kPrimaryBlue : const Color(0xFF64748B),
             ),
           ),
         ],
@@ -711,19 +716,34 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
   }
 
   Widget _buildImagePicker() {
-    return GestureDetector(
-      onTap: _showImageSourceDialog,
-      child: Container(
-        width: 90,
-        height: 90,
-        decoration: BoxDecoration(
-          border: Border.all(color: const Color(0xFFBDBDBD)),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: const Icon(
-          Icons.add_a_photo_outlined,
-          size: 28,
-          color: Color(0xFF757575),
+    return Material(
+      color: const Color(0xFFF8FAFC),
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: _showImageSourceDialog,
+        child: Container(
+          width: 90,
+          height: 90,
+          decoration: BoxDecoration(
+            border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [
+              Icon(
+                Icons.add_a_photo_outlined,
+                size: 26,
+                color: _kPrimaryBlue,
+              ),
+              SizedBox(height: 4),
+              Text(
+                'Add Photo',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF64748B)),
+              ),
+            ],
+          ),
         ),
       ),
     );
