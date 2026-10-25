@@ -334,6 +334,7 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                   value: _selectedTerritory,
                   items: _territoryList,
                   onChanged: (val) => setState(() => _selectedTerritory = val!),
+                  prefixIcon: Icons.public,
                 ),
                 const SizedBox(height: 20),
 
@@ -470,53 +471,13 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
   }
 
   Widget _buildReferenceField() {
-    final effectiveValue = _staffList.contains(_selectedStaff)
-        ? _selectedStaff
-        : (_staffList.isNotEmpty ? _staffList.first : null);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: effectiveValue,
-          isExpanded: true,
-          icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF475569)),
-          items: _staffList
-              .map((item) => DropdownMenuItem(
-                    value: item,
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.badge_outlined,
-                          size: 18,
-                          color: _kPrimaryBlue,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            item,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              color: Color(0xFF1E293B),
-                              fontWeight: FontWeight.w500,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ))
-              .toList(),
-          onChanged: (val) {
-            if (val != null) setState(() => _selectedStaff = val);
-          },
-        ),
-      ),
+    return _buildBoxedDropdown(
+      value: _selectedStaff,
+      items: _staffList,
+      onChanged: (val) {
+        if (val != null) setState(() => _selectedStaff = val);
+      },
+      prefixIcon: Icons.badge_outlined,
     );
   }
 
@@ -557,9 +518,12 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
     required String value,
     required List<String> items,
     required ValueChanged<String?> onChanged,
+    IconData? prefixIcon,
   }) {
+    final effectiveValue = items.contains(value) ? value : (items.isNotEmpty ? items.first : null);
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       decoration: BoxDecoration(
         color: const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(8),
@@ -567,16 +531,34 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
-          value: items.contains(value) ? value : items.first,
+          value: effectiveValue,
           isExpanded: true,
-          icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF757575)),
-          style: const TextStyle(fontSize: 15, color: Color(0xFF212121)),
+          icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF475569)),
           items: items.map((item) {
             return DropdownMenuItem<String>(
               value: item,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Text(item),
+              child: Row(
+                children: [
+                  if (prefixIcon != null) ...[
+                    Icon(
+                      prefixIcon,
+                      size: 18,
+                      color: _kPrimaryBlue,
+                    ),
+                    const SizedBox(width: 10),
+                  ],
+                  Expanded(
+                    child: Text(
+                      item,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: Color(0xFF1E293B),
+                        fontWeight: FontWeight.w500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
             );
           }).toList(),

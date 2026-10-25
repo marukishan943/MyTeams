@@ -1,3 +1,4 @@
+import '../../../../core/services/role_permission_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -165,25 +166,27 @@ class _LeadDetailScreenState extends State<LeadDetailScreen>
         ),
         actions: _tabController.index == 0
             ? [
-                // Lead tab — Edit + Delete
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined, color: Colors.white),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => BlocProvider.value(
-                          value: context.read<LeadDetailBloc>(),
-                          child: EditLeadScreen(lead: lead),
+                // Lead tab — Edit + Delete (Role controlled)
+                if (RolePermissionService.instance.canEditLead)
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined, color: Colors.white),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => BlocProvider.value(
+                            value: context.read<LeadDetailBloc>(),
+                            child: EditLeadScreen(lead: lead),
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline, color: Colors.white),
-                  onPressed: () => _showDeleteDialog(context, lead),
-                ),
+                      );
+                    },
+                  ),
+                if (RolePermissionService.instance.canDeleteLead)
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, color: Colors.white),
+                    onPressed: () => _showDeleteDialog(context, lead),
+                  ),
               ]
             : [
                 // All other tabs (Notes, Visits, Tasks, Sales) — Refresh icon

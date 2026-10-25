@@ -1,3 +1,4 @@
+import '../../../../core/services/role_permission_service.dart';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -154,6 +155,28 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (!RolePermissionService.instance.canAddLead) {
+      return Scaffold(
+        appBar: AppBar(
+          backgroundColor: _kPrimaryBlue,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => context.pop(),
+          ),
+          title: const Text('Add Lead', style: TextStyle(color: Colors.white)),
+        ),
+        body: const Center(
+          child: Padding(
+            padding: EdgeInsets.all(24.0),
+            child: Text(
+              'Permission Restricted: You do not have permission to add new leads. Contact your administrator.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: Colors.black54, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ),
+      );
+    }
     return BlocListener<LeadBloc, LeadState>(
       listener: (context, state) {
         if (state is LeadOperationSuccess) {
@@ -362,6 +385,7 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
             value: _selectedTerritory,
             items: _territoryList,
             onChanged: (val) => setState(() => _selectedTerritory = val!),
+            prefixIcon: Icons.public,
           ),
           const SizedBox(height: 24),
 
@@ -891,6 +915,20 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
     required List<String> items,
     required ValueChanged<String?> onChanged,
   }) {
+    return _buildDropdown(
+      value: value,
+      items: items,
+      onChanged: onChanged,
+      prefixIcon: Icons.badge_outlined,
+    );
+  }
+
+  Widget _buildDropdown({
+    required String value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+    IconData? prefixIcon,
+  }) {
     final effectiveValue = items.contains(value) ? value : (items.isNotEmpty ? items.first : null);
 
     return Container(
@@ -910,12 +948,14 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
                     value: item,
                     child: Row(
                       children: [
-                        const Icon(
-                          Icons.badge_outlined,
-                          size: 18,
-                          color: _kPrimaryBlue,
-                        ),
-                        const SizedBox(width: 10),
+                        if (prefixIcon != null) ...[
+                          Icon(
+                            prefixIcon,
+                            size: 18,
+                            color: _kPrimaryBlue,
+                          ),
+                          const SizedBox(width: 10),
+                        ],
                         Expanded(
                           child: Text(
                             item,
@@ -933,48 +973,6 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
               .toList(),
           onChanged: onChanged,
         ),
-      ),
-    );
-  }
-
-  Widget _buildDropdown({
-    required String value,
-    required List<String> items,
-    required ValueChanged<String?> onChanged,
-  }) {
-    final effectiveValue = items.contains(value) ? value : (items.isNotEmpty ? items.first : null);
-
-    return Container(
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Color(0xFFE0E0E0)),
-        ),
-      ),
-      child: DropdownButtonFormField<String>(
-        value: effectiveValue,
-        isExpanded: true,
-        items: items
-            .map((item) => DropdownMenuItem(
-                  value: item,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 6),
-                    child: Text(
-                      item,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF212121),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ))
-            .toList(),
-        onChanged: onChanged,
-        decoration: const InputDecoration(
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-        ),
-        icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF757575)),
       ),
     );
   }

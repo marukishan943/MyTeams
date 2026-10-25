@@ -1,3 +1,4 @@
+import '../../../../core/services/role_permission_service.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -35,6 +36,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _fetchModuleVisibility() async {
+    // Sync current role permissions
+    await RolePermissionService.instance.syncPermissions();
+
     // 1. Try company_settings table
     try {
       final res = await Supabase.instance.client
@@ -81,13 +85,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final config = raw;
         if (config != null && mounted) {
           setState(() {
+            final perm = RolePermissionService.instance;
             _moduleVisibility = {
-              'leads': config['leads'] != false,
-              'customers': config['customers'] != false,
-              'sales': config['sales'] != false,
-              'expenses': config['expenses'] != false,
+              'leads': config['leads'] != false && perm.canViewModule('leads'),
+              'customers': config['customers'] != false && perm.canViewModule('customers'),
+              'sales': config['sales'] != false && perm.canViewModule('sales'),
+              'expenses': config['expenses'] != false && perm.canViewModule('expenses'),
               'reports': config['reports'] != false,
-              'settings': config['settings'] != false,
+              'settings': config['settings'] != false && (perm.isAdmin || perm.isManager),
             };
           });
         }

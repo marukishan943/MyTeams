@@ -20,99 +20,101 @@ ALTER TABLE public.roles ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Allow all on roles" ON public.roles;
 CREATE POLICY "Allow all on roles" ON public.roles FOR ALL USING (true) WITH CHECK (true);
 
--- 2. INSERT DEFAULT ROLES (Admin, Manager, Staff) IF NOT PRESENT
+-- 2. INSERT DEFAULT ROLES (Admin, Manager, Staff) USING NATIVE jsonb_build_object
+-- (Native function avoids all string escaping and JSON parser syntax issues)
+
+-- ADMIN ROLE
 INSERT INTO public.roles (id, name, access, users_count, is_system, permissions)
-VALUES 
-(
+VALUES (
     '00000000-0000-0000-0000-000000000010'::uuid,
     'Admin',
     'Admin',
     1,
     TRUE,
-    '{
-        "location_tracking": false,
-        "visits": false,
-        "tasks": true,
-        "leads": {"enabled": true, "add": true, "edit": true, "delete": true, "reports": true},
-        "customers": {"enabled": true, "add": true, "edit": true, "delete": true},
-        "quotations": true,
-        "proforma_invoices": {"enabled": true, "add": true, "edit": true, "delete": true},
-        "invoices": {"enabled": true, "add": true, "edit": true, "delete": true, "reports": true},
-        "orders": true,
-        "inventory": {"enabled": true, "add": true},
-        "payments": true,
-        "attendance": false,
-        "leaves": true,
-        "expenses": {"enabled": true, "add": true, "edit": true, "decision": true, "delete": true, "reports": true},
-        "forms": true,
-        "pms": false,
-        "payroll": false,
-        "users": {"enabled": true, "add": true, "edit": true, "delete": true}
-    }'::jsonb
+    jsonb_build_object(
+        'location_tracking', false,
+        'visits', false,
+        'tasks', true,
+        'leads', jsonb_build_object('enabled', true, 'add', true, 'edit', true, 'delete', true, 'reports', true),
+        'customers', jsonb_build_object('enabled', true, 'add', true, 'edit', true, 'delete', true),
+        'quotations', true,
+        'proforma_invoices', jsonb_build_object('enabled', true, 'add', true, 'edit', true, 'delete', true),
+        'invoices', jsonb_build_object('enabled', true, 'add', true, 'edit', true, 'delete', true, 'reports', true),
+        'orders', true,
+        'inventory', jsonb_build_object('enabled', true, 'add', true),
+        'payments', true,
+        'attendance', false,
+        'leaves', true,
+        'expenses', jsonb_build_object('enabled', true, 'add', true, 'edit', true, 'decision', true, 'delete', true, 'reports', true),
+        'forms', true,
+        'pms', false,
+        'payroll', false,
+        'users', jsonb_build_object('enabled', true, 'add', true, 'edit', true, 'delete', true)
+    )
 )
 ON CONFLICT (name) DO UPDATE 
 SET permissions = EXCLUDED.permissions, updated_at = NOW();
 
+-- MANAGER ROLE
 INSERT INTO public.roles (id, name, access, users_count, is_system, permissions)
-VALUES 
-(
+VALUES (
     '00000000-0000-0000-0000-000000000020'::uuid,
     'Manager',
     'Manager',
     1,
     TRUE,
-    '{
-        "location_tracking": false,
-        "visits": false,
-        "tasks": true,
-        "leads": {"enabled": true, "add": true, "edit": true, "delete": false, "reports": true},
-        "customers": {"enabled": true, "add": true, "edit": true, "delete": false},
-        "quotations": true,
-        "proforma_invoices": {"enabled": true, "add": true, "edit": true, "delete": false},
-        "invoices": {"enabled": true, "add": true, "edit": true, "delete": false, "reports": true},
-        "orders": true,
-        "inventory": {"enabled": true, "add": false},
-        "payments": false,
-        "attendance": false,
-        "leaves": false,
-        "expenses": {"enabled": true, "add": true, "edit": true, "decision": true, "delete": false, "reports": true},
-        "forms": false,
-        "pms": false,
-        "payroll": false,
-        "users": {"enabled": false, "add": false, "edit": false, "delete": false}
-    }'::jsonb
+    jsonb_build_object(
+        'location_tracking', false,
+        'visits', false,
+        'tasks', true,
+        'leads', jsonb_build_object('enabled', true, 'add', true, 'edit', true, 'delete', false, 'reports', true),
+        'customers', jsonb_build_object('enabled', true, 'add', true, 'edit', true, 'delete', false),
+        'quotations', true,
+        'proforma_invoices', jsonb_build_object('enabled', true, 'add', true, 'edit', true, 'delete', false),
+        'invoices', jsonb_build_object('enabled', true, 'add', true, 'edit', true, 'delete', false, 'reports', true),
+        'orders', true,
+        'inventory', jsonb_build_object('enabled', true, 'add', false),
+        'payments', false,
+        'attendance', false,
+        'leaves', false,
+        'expenses', jsonb_build_object('enabled', true, 'add', true, 'edit', true, 'decision', true, 'delete', false, 'reports', true),
+        'forms', false,
+        'pms', false,
+        'payroll', false,
+        'users', jsonb_build_object('enabled', false, 'add', false, 'edit', false, 'delete', false)
+    )
 )
 ON CONFLICT (name) DO UPDATE 
 SET permissions = EXCLUDED.permissions, updated_at = NOW();
 
+-- STAFF ROLE
 INSERT INTO public.roles (id, name, access, users_count, is_system, permissions)
-VALUES 
-(
+VALUES (
     '00000000-0000-0000-0000-000000000030'::uuid,
     'Staff',
     'Staff',
     3,
     TRUE,
-    '{
-        "location_tracking": true,
-        "visits": true,
-        "tasks": true,
-        "leads": {"enabled": true, "add": true, "edit": true, "delete": false, "reports": false},
-        "customers": {"enabled": true, "add": true, "edit": false, "delete": false},
-        "quotations": true,
-        "proforma_invoices": {"enabled": true, "add": true, "edit": false, "delete": false},
-        "invoices": {"enabled": false, "add": false, "edit": false, "delete": false, "reports": false},
-        "orders": true,
-        "inventory": {"enabled": true, "add": false},
-        "payments": false,
-        "attendance": true,
-        "leaves": true,
-        "expenses": {"enabled": true, "add": true, "edit": false, "decision": false, "delete": false, "reports": false},
-        "forms": true,
-        "pms": false,
-        "payroll": false,
-        "users": {"enabled": false, "add": false, "edit": false, "delete": false}
-    }'::jsonb
+    jsonb_build_object(
+        'location_tracking', true,
+        'visits', true,
+        'tasks', true,
+        'leads', jsonb_build_object('enabled', true, 'add', true, 'edit', true, 'delete', false, 'reports', false),
+        'customers', jsonb_build_object('enabled', true, 'add', true, 'edit', false, 'delete', false),
+        'quotations', true,
+        'proforma_invoices', jsonb_build_object('enabled', true, 'add', true, 'edit', false, 'delete', false),
+        'invoices', jsonb_build_object('enabled', false, 'add', false, 'edit', false, 'delete', false, 'reports', false),
+        'orders', true,
+        'inventory', jsonb_build_object('enabled', true, 'add', false),
+        'payments', false,
+        'attendance', true,
+        'leaves', true,
+        'expenses', jsonb_build_object('enabled', true, 'add', true, 'edit', false, 'decision', false, 'delete', false, 'reports', false),
+        'forms', true,
+        'pms', false,
+        'payroll', false,
+        'users', jsonb_build_object('enabled', false, 'add', false, 'edit', false, 'delete', false)
+    )
 )
 ON CONFLICT (name) DO UPDATE 
 SET permissions = EXCLUDED.permissions, updated_at = NOW();

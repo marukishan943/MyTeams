@@ -1,3 +1,4 @@
+import '../../../../core/services/role_permission_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -278,7 +279,7 @@ class _SalesScreenState extends State<SalesScreen>
             }
             return const SizedBox.shrink();
           }(),
-          floatingActionButton: (_tabController.index == 1 || _tabController.index == 2)
+          floatingActionButton: ((_tabController.index == 1 || _tabController.index == 2) && RolePermissionService.instance.canAddSales)
               ? FloatingActionButton(
                   backgroundColor: _kPrimaryBlue,
                   foregroundColor: Colors.white,

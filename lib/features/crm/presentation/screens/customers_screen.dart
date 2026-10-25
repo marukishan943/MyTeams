@@ -1,3 +1,4 @@
+import '../../../../core/services/role_permission_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -540,12 +541,14 @@ class _CustomersScreenState extends State<CustomersScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: _kPrimaryBlue,
-        elevation: 4,
-        onPressed: () => context.push('/customers/add'),
-        child: const Icon(Icons.add, color: Colors.white, size: 32),
-      ),
+      floatingActionButton: RolePermissionService.instance.canAddCustomer
+          ? FloatingActionButton(
+              backgroundColor: _kPrimaryBlue,
+              elevation: 4,
+              onPressed: () => context.push('/customers/add'),
+              child: const Icon(Icons.add, color: Colors.white, size: 32),
+            )
+          : null,
     );
   }
 
