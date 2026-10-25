@@ -176,6 +176,19 @@ export interface TeamUser {
   permissions?: UserModulePermissions;
 }
 
+export interface CompanyOffice {
+  id: string;
+  name: string;
+  address: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  country?: string;
+  location?: string;
+  users_count: number;
+  is_default: boolean;
+}
+
 export interface CompanyConfig {
   company_name: string;
   brand_name: string;
@@ -183,6 +196,8 @@ export interface CompanyConfig {
   email: string;
   website: string;
   gstin: string;
+  billing_address?: string;
+  logo_url?: string;
   timezone: string;
   currency: string;
   is_dsr_email: boolean;

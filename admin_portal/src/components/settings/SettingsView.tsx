@@ -1,8 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
-  Building2,
   Users,
-  Settings as SettingsIcon,
   MessageSquare,
   Plus,
   CheckCircle,
@@ -31,17 +29,30 @@ import {
   Clock,
   Lock,
   Star,
+  User,
+  Building,
+  Globe,
+  Layers as LayersIcon,
+  MoreHorizontal,
+  UploadCloud,
+  HelpCircle,
+  Send,
+  ShoppingCart,
+  Navigation,
+  ArrowUpDown,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import type {
   TeamUser,
   UserModulePermissions,
   CompanyConfig,
+  CompanyOffice,
   ModuleVisibilityConfig,
   DashboardCardsConfig,
   MessageTemplate,
 } from '../../types/crm';
 import { templateService } from '../../services/templateService';
+import { officeService } from '../../services/officeService';
 
 interface SettingsViewProps {
   users: TeamUser[];
@@ -166,11 +177,67 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onResetDefaults,
   isSaving = false,
 }) => {
+  // Navigation State
   const [activeTab, setActiveTab] = useState<
-    'company' | 'users' | 'sales_settings' | 'templates' | 'modules'
+    'profile' | 'company' | 'sales_settings' | 'templates' | 'users' | 'modules'
   >('company');
 
-  // Company Profile state
+  const [companySubTab, setCompanySubTab] = useState<'profile' | 'offices' | 'settings' | 'reminders'>('profile');
+
+  // ========================================================
+  // 1. MY PROFILE STATE (Screenshot 2026-10-25 153809.png)
+  // ========================================================
+  const [profileFirstName, setProfileFirstName] = useState(() => {
+    return localStorage.getItem('myteams_user_first_name') || 'ADMIN';
+  });
+  const [profileLastName, setProfileLastName] = useState(() => {
+    return localStorage.getItem('myteams_user_last_name') || 'ADMIN';
+  });
+  const [profileMobile, setProfileMobile] = useState(() => {
+    return localStorage.getItem('myteams_user_mobile') || '9999999999';
+  });
+  const [profileEmail] = useState(() => {
+    return localStorage.getItem('myteams_user_email') || 'ivsquarestructure@gmail.com';
+  });
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(() => {
+    return localStorage.getItem('myteams_user_photo') || null;
+  });
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [profileSavedSuccess, setProfileSavedSuccess] = useState(false);
+
+  const handleSaveMyProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword && newPassword !== confirmPassword) {
+      alert('New password and confirmation password do not match.');
+      return;
+    }
+    localStorage.setItem('myteams_user_first_name', profileFirstName);
+    localStorage.setItem('myteams_user_last_name', profileLastName);
+    localStorage.setItem('myteams_user_mobile', profileMobile);
+    if (profilePhoto) {
+      localStorage.setItem('myteams_user_photo', profilePhoto);
+    }
+    setProfileSavedSuccess(true);
+    setNewPassword('');
+    setConfirmPassword('');
+    setTimeout(() => setProfileSavedSuccess(false), 3000);
+  };
+
+  const handleProfilePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setProfilePhoto(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // ========================================================
+  // 2. COMPANY PROFILE STATE (Screenshots 154110 & 154203)
+  // ========================================================
   const [company, setCompany] = useState<CompanyConfig>(() => {
     const saved = localStorage.getItem('myteams_company_config');
     if (saved) {
@@ -181,14 +248,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       }
     }
     return {
-      company_name: 'IV SQUARE STRUCTURE INDIA PVT LTD',
-      brand_name: 'IV SQUARE STRUCTURE INDIA PVT LTD',
+      company_name: 'IV SQUARE STRUCTURE  INDIA PVT LTD',
+      brand_name: 'IV SQUARE STRUCTURE  INDIA PVT LTD',
       phone: '9723793492',
       email: 'ivsquarestructure@gmail.com',
       website: 'https://ivsquarestructure.com/',
       gstin: '24AAFCI9953E1ZF',
-      timezone: 'GMT+5:30',
-      currency: 'INR',
+      billing_address:
+        '1103, R K World Tower , Near Shitalpark , Nr. Ayodhyachowk , 150ft Ring Road, RAJKOT, GUJARAT, India - 360006.',
+      timezone: 'Asia/Kolkata (GMT+5:30)',
+      currency: 'India Rupee',
       is_dsr_email: true,
       invoice_prefix: 'INV-',
       proforma_prefix: 'PFI-',
@@ -201,9 +270,459 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     };
   });
 
-  const [savedSuccess, setSavedSuccess] = useState(false);
+  const [companySavedSuccess, setCompanySavedSuccess] = useState(false);
+  const [isEditingBillingAddress, setIsEditingBillingAddress] = useState(false);
+  const [tempBillingAddress, setTempBillingAddress] = useState(company.billing_address || '');
 
-  // Message Templates State
+  const handleSaveCompany = (e: React.FormEvent) => {
+    e.preventDefault();
+    localStorage.setItem('myteams_company_config', JSON.stringify(company));
+    setCompanySavedSuccess(true);
+    setTimeout(() => setCompanySavedSuccess(false), 3000);
+  };
+
+  const handleSaveBillingAddress = () => {
+    const updated = { ...company, billing_address: tempBillingAddress.trim() };
+    setCompany(updated);
+    localStorage.setItem('myteams_company_config', JSON.stringify(updated));
+    setIsEditingBillingAddress(false);
+  };
+
+  // ========================================================
+  // 3. OFFICES STATE (Screenshots 154128 & 154139)
+  // ========================================================
+  const [offices, setOffices] = useState<CompanyOffice[]>([]);
+  const [isOfficeModalOpen, setIsOfficeModalOpen] = useState(false);
+  const [editingOffice, setEditingOffice] = useState<CompanyOffice | null>(null);
+  const [officeName, setOfficeName] = useState('');
+  const [officeLocation, setOfficeLocation] = useState('22.3039, 70.8022');
+  const [officeAddress, setOfficeAddress] = useState('');
+  const [officeCity, setOfficeCity] = useState('');
+  const [officeState, setOfficeState] = useState('');
+  const [officePincode, setOfficePincode] = useState('');
+  const [officeCountry, setOfficeCountry] = useState('India');
+  const [activeOfficeMenuId, setActiveOfficeMenuId] = useState<string | null>(null);
+
+  // Map Modal for Office Location (opens when map icon is tapped)
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
+  const [mapPickerLat, setMapPickerLat] = useState(22.3039);
+  const [mapPickerLng, setMapPickerLng] = useState(70.8022);
+  const [mapLocationSource, setMapLocationSource] = useState<'form' | 'table'>('form');
+  const [viewingOfficeOnMap, setViewingOfficeOnMap] = useState<CompanyOffice | null>(null);
+  const [isGettingCurrentLocation, setIsGettingCurrentLocation] = useState(false);
+
+  useEffect(() => {
+    officeService.fetchOffices().then(setOffices);
+  }, []);
+
+  const handleOpenAddOffice = () => {
+    setEditingOffice(null);
+    setOfficeName('');
+    setOfficeLocation('22.3039, 70.8022');
+    setOfficeAddress('');
+    setOfficeCity('Rajkot');
+    setOfficeState('Gujarat');
+    setOfficePincode('360006');
+    setOfficeCountry('India');
+    setIsOfficeModalOpen(true);
+  };
+
+  const handleOpenEditOffice = (off: CompanyOffice) => {
+    setEditingOffice(off);
+    setOfficeName(off.name);
+    setOfficeLocation(off.location || '22.3039, 70.8022');
+    setOfficeAddress(off.address);
+    setOfficeCity(off.city || '');
+    setOfficeState(off.state || '');
+    setOfficePincode(off.pincode || '');
+    setOfficeCountry(off.country || 'India');
+    setActiveOfficeMenuId(null);
+    setIsOfficeModalOpen(true);
+  };
+
+  const handleSaveOffice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!officeName.trim()) return;
+
+    let updated: CompanyOffice[];
+    if (editingOffice) {
+      updated = offices.map((o) =>
+        o.id === editingOffice.id
+          ? {
+              ...o,
+              name: officeName.trim(),
+              location: officeLocation.trim(),
+              address: officeAddress.trim(),
+              city: officeCity.trim(),
+              state: officeState.trim(),
+              pincode: officePincode.trim(),
+              country: officeCountry,
+            }
+          : o
+      );
+    } else {
+      const newOffice: CompanyOffice = {
+        id: `off-${Date.now()}`,
+        name: officeName.trim(),
+        location: officeLocation.trim(),
+        address: officeAddress.trim(),
+        city: officeCity.trim(),
+        state: officeState.trim(),
+        pincode: officePincode.trim(),
+        country: officeCountry,
+        users_count: 0,
+        is_default: offices.length === 0,
+      };
+      updated = [...offices, newOffice];
+    }
+
+    setOffices(updated);
+    await officeService.saveOffices(updated);
+    setIsOfficeModalOpen(false);
+    setEditingOffice(null);
+  };
+
+  const handleDeleteOffice = async (off: CompanyOffice) => {
+    if (!window.confirm(`Are you sure you want to delete office "${off.name}"?`)) return;
+    const updated = offices.filter((o) => o.id !== off.id);
+    setOffices(updated);
+    await officeService.saveOffices(updated);
+    setActiveOfficeMenuId(null);
+  };
+
+  const handleSetDefaultOffice = async (offId: string) => {
+    const updated = offices.map((o) => ({
+      ...o,
+      is_default: o.id === offId,
+    }));
+    setOffices(updated);
+    await officeService.saveOffices(updated);
+    setActiveOfficeMenuId(null);
+  };
+
+  // Open map from Add/Edit Office Form
+  const handleOpenMapFromForm = () => {
+    setMapLocationSource('form');
+    setViewingOfficeOnMap(null);
+    if (officeLocation.includes(',')) {
+      const [latStr, lngStr] = officeLocation.split(',');
+      const parsedLat = parseFloat(latStr.trim());
+      const parsedLng = parseFloat(lngStr.trim());
+      if (!isNaN(parsedLat) && !isNaN(parsedLng)) {
+        setMapPickerLat(parsedLat);
+        setMapPickerLng(parsedLng);
+      }
+    }
+    setIsMapModalOpen(true);
+  };
+
+  // Open map from table row Location icon
+  const handleOpenMapFromRow = (off: CompanyOffice) => {
+    setMapLocationSource('table');
+    setViewingOfficeOnMap(off);
+    if (off.location && off.location.includes(',')) {
+      const [latStr, lngStr] = off.location.split(',');
+      const parsedLat = parseFloat(latStr.trim());
+      const parsedLng = parseFloat(lngStr.trim());
+      if (!isNaN(parsedLat) && !isNaN(parsedLng)) {
+        setMapPickerLat(parsedLat);
+        setMapPickerLng(parsedLng);
+      }
+    } else {
+      setMapPickerLat(22.3039);
+      setMapPickerLng(70.8022);
+    }
+    setIsMapModalOpen(true);
+  };
+
+  const handleUseCurrentGPSLocation = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser.');
+      return;
+    }
+    setIsGettingCurrentLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setIsGettingCurrentLocation(false);
+        setMapPickerLat(pos.coords.latitude);
+        setMapPickerLng(pos.coords.longitude);
+      },
+      (err) => {
+        setIsGettingCurrentLocation(false);
+        alert(`Unable to retrieve GPS location: ${err.message}`);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  const handleConfirmMapLocation = () => {
+    const coords = `${mapPickerLat.toFixed(4)}, ${mapPickerLng.toFixed(4)}`;
+    if (mapLocationSource === 'form') {
+      setOfficeLocation(coords);
+    }
+    setIsMapModalOpen(false);
+  };
+
+  // ========================================================
+  // 4. USERS & TEAM STATE (Parity features retained)
+  // ========================================================
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'Admin' | 'Manager' | 'Staff'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [trackingFilter, setTrackingFilter] = useState<'all' | 'active' | 'disabled'>('all');
+
+  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(() => {
+    const saved = localStorage.getItem('myteams_users_visible_columns');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        // ignore
+      }
+    }
+    return {
+      user_code: true,
+      name: true,
+      mobile: true,
+      email: true,
+      role: true,
+      reporting_head: true,
+      location_tracking: true,
+      last_login: true,
+      status: true,
+      actions: true,
+    };
+  });
+  const [isColumnsDropdownOpen, setIsColumnsDropdownOpen] = useState(false);
+  const columnsDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (columnsDropdownRef.current && !columnsDropdownRef.current.contains(e.target as Node)) {
+        setIsColumnsDropdownOpen(false);
+      }
+    };
+    if (isColumnsDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isColumnsDropdownOpen]);
+
+  const toggleColumnVisibility = (key: string) => {
+    const updated = { ...visibleColumns, [key]: !visibleColumns[key] };
+    setVisibleColumns(updated);
+    localStorage.setItem('myteams_users_visible_columns', JSON.stringify(updated));
+  };
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [selectedLocationUser, setSelectedLocationUser] = useState<TeamUser | null>(null);
+
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<TeamUser | null>(null);
+  const [userModalTab, setUserModalTab] = useState<'profile' | 'permissions'>('profile');
+  const [isSubmittingUser, setIsSubmittingUser] = useState(false);
+  const [newFirstName, setNewFirstName] = useState('');
+  const [newLastName, setNewLastName] = useState('');
+  const [newMobile, setNewMobile] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [newRole, setNewRole] = useState<'Admin' | 'Manager' | 'Staff'>('Staff');
+  const [newReportingHead, setNewReportingHead] = useState('ADMIN ADMIN');
+  const [newLocationTracking, setNewLocationTracking] = useState(true);
+  const [newIsActive, setNewIsActive] = useState(true);
+  const [newPermissions, setNewPermissions] = useState<UserModulePermissions>(() =>
+    getDefaultPermissions('Staff')
+  );
+
+  const handleOpenAddUser = () => {
+    setEditingUser(null);
+    setUserModalTab('profile');
+    setNewFirstName('');
+    setNewLastName('');
+    setNewMobile('');
+    setNewEmail('');
+    setNewRole('Staff');
+    setNewReportingHead('ADMIN ADMIN');
+    setNewLocationTracking(true);
+    setNewIsActive(true);
+    setNewPermissions(getDefaultPermissions('Staff'));
+    setIsUserModalOpen(true);
+  };
+
+  const handleOpenEditUser = (u: TeamUser) => {
+    setEditingUser(u);
+    setUserModalTab('profile');
+    setNewFirstName(u.first_name);
+    setNewLastName(u.last_name);
+    setNewMobile(u.mobile);
+    setNewEmail(u.email);
+    setNewRole(u.role);
+    setNewReportingHead(u.reporting_head || 'ADMIN ADMIN');
+    setNewLocationTracking(u.location_tracking ?? true);
+    setNewIsActive(u.is_active ?? true);
+    setNewPermissions(u.permissions || getDefaultPermissions(u.role));
+    setIsUserModalOpen(true);
+  };
+
+  const handleRoleChangeInModal = (role: 'Admin' | 'Manager' | 'Staff') => {
+    setNewRole(role);
+    setNewPermissions(getDefaultPermissions(role));
+  };
+
+  const handleDeleteUser = async (u: TeamUser) => {
+    if (!onDeleteUser) return;
+    const confirmDelete = window.confirm(
+      `Are you sure you want to remove team member ${u.first_name} ${u.last_name}?`
+    );
+    if (confirmDelete) {
+      await onDeleteUser(u.id);
+    }
+  };
+
+  const handleSaveUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newFirstName.trim() || !newMobile.trim()) return;
+
+    setIsSubmittingUser(true);
+    try {
+      if (editingUser) {
+        if (onUpdateUser) {
+          await onUpdateUser(editingUser.id, {
+            first_name: newFirstName.trim(),
+            last_name: newLastName.trim(),
+            mobile: newMobile.trim(),
+            email: newEmail.trim(),
+            role: newRole,
+            reporting_head: newReportingHead,
+            location_tracking: newLocationTracking,
+            is_active: newIsActive,
+            permissions: newPermissions,
+          });
+        }
+      } else {
+        await onAddUser({
+          first_name: newFirstName.trim(),
+          last_name: newLastName.trim(),
+          mobile: newMobile.trim(),
+          email: newEmail.trim(),
+          role: newRole,
+          reporting_head: newReportingHead,
+          location_tracking: newLocationTracking,
+          is_active: newIsActive,
+          permissions: newPermissions,
+        });
+      }
+      setIsUserModalOpen(false);
+      setEditingUser(null);
+    } finally {
+      setIsSubmittingUser(false);
+    }
+  };
+
+  const reportingHeadOptions = useMemo(() => {
+    return Array.from(
+      new Set([
+        'ADMIN ADMIN',
+        'JITESHBHAI VASANIYA',
+        '-',
+        ...users
+          .filter((u) => !editingUser || u.id !== editingUser.id)
+          .map((u) => `${u.first_name} ${u.last_name}`.trim())
+          .filter(Boolean),
+      ])
+    );
+  }, [users, editingUser]);
+
+  const filteredUsers = useMemo(() => {
+    return users.filter((u) => {
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const fullName = `${u.first_name} ${u.last_name}`.toLowerCase();
+        const code = (u.user_code || '').toLowerCase();
+        const mobile = (u.mobile || '').toLowerCase();
+        const email = (u.email || '').toLowerCase();
+        const head = (u.reporting_head || '').toLowerCase();
+        if (
+          !fullName.includes(q) &&
+          !code.includes(q) &&
+          !mobile.includes(q) &&
+          !email.includes(q) &&
+          !head.includes(q)
+        ) {
+          return false;
+        }
+      }
+
+      if (roleFilter !== 'all' && u.role !== roleFilter) return false;
+      if (statusFilter === 'active' && !u.is_active) return false;
+      if (statusFilter === 'inactive' && u.is_active) return false;
+      if (trackingFilter === 'active' && !u.location_tracking) return false;
+      if (trackingFilter === 'disabled' && u.location_tracking) return false;
+
+      return true;
+    });
+  }, [users, searchQuery, roleFilter, statusFilter, trackingFilter]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, roleFilter, statusFilter, trackingFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / itemsPerPage));
+  const paginatedUsers = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredUsers.slice(start, start + itemsPerPage);
+  }, [filteredUsers, currentPage, itemsPerPage]);
+
+  const activeUsersCount = useMemo(() => users.filter((u) => u.is_active).length, [users]);
+  const totalLicenseCount = Math.max(10, users.length + 5);
+
+  const hasActiveFilters =
+    searchQuery.trim() !== '' ||
+    roleFilter !== 'all' ||
+    statusFilter !== 'all' ||
+    trackingFilter !== 'all';
+
+  const resetAllFilters = () => {
+    setSearchQuery('');
+    setRoleFilter('all');
+    setStatusFilter('all');
+    setTrackingFilter('all');
+  };
+
+  const handleDownloadAllUsers = () => {
+    if (filteredUsers.length === 0) {
+      alert('No users available to export.');
+      return;
+    }
+
+    const exportRows = filteredUsers.map((u) => ({
+      'Staff Code': `#${u.user_code}`,
+      'Full Name': `${u.first_name} ${u.last_name}`,
+      'Mobile Number': u.mobile,
+      'Email Address': u.email || 'N/A',
+      'Role': u.role,
+      'Reporting Head': u.reporting_head || '-',
+      'GPS Location Tracking': u.location_tracking ? 'Active' : 'Disabled',
+      'Account Status': u.is_active ? 'Active' : 'Inactive',
+      'Last Login': u.last_login || 'N/A',
+      'App / Device': u.device_info || 'Mobile App',
+      'Leads Visibility': u.permissions?.leads_view === 'own' ? 'Own Assigned' : 'All Leads',
+      'Customers Visibility': u.permissions?.customers_view === 'own' ? 'Own Assigned' : 'All Customers',
+      'Sales Invoicing': u.permissions?.sales_invoice ? 'Allowed' : 'Restricted',
+      'Member Since': u.created_at ? new Date(u.created_at).toLocaleDateString('en-GB') : 'N/A',
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportRows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Users');
+
+    const dateStr = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(workbook, `Users_${dateStr}.xlsx`);
+  };
+
+  // ========================================================
+  // 5. MESSAGE TEMPLATES STATE (Preserved)
+  // ========================================================
   const [templates, setTemplates] = useState<MessageTemplate[]>([]);
   const [templateFilter, setTemplateFilter] = useState<
     'All' | 'Leads' | 'Customers' | 'Invoices' | 'Proforma Invoices' | 'General'
@@ -321,1318 +840,1825 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     return templates.filter((t) => t.module === templateFilter);
   }, [templates, templateFilter]);
 
-  // Users Filters & Search State
-  const [searchQuery, setSearchQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState<'all' | 'Admin' | 'Manager' | 'Staff'>('all');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
-  const [trackingFilter, setTrackingFilter] = useState<'all' | 'active' | 'disabled'>('all');
-
-  // Column Visibility State
-  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(() => {
-    const saved = localStorage.getItem('myteams_users_visible_columns');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        // ignore
-      }
-    }
-    return {
-      user_code: true,
-      name: true,
-      mobile: true,
-      email: true,
-      role: true,
-      reporting_head: true,
-      location_tracking: true,
-      last_login: true,
-      status: true,
-      actions: true,
-    };
-  });
-  const [isColumnsDropdownOpen, setIsColumnsDropdownOpen] = useState(false);
-  const columnsDropdownRef = useRef<HTMLDivElement>(null);
-
-  // Close columns dropdown on outside click
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (columnsDropdownRef.current && !columnsDropdownRef.current.contains(e.target as Node)) {
-        setIsColumnsDropdownOpen(false);
-      }
-    };
-    if (isColumnsDropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isColumnsDropdownOpen]);
-
-  const toggleColumnVisibility = (key: string) => {
-    const updated = { ...visibleColumns, [key]: !visibleColumns[key] };
-    setVisibleColumns(updated);
-    localStorage.setItem('myteams_users_visible_columns', JSON.stringify(updated));
-  };
-
-  // Pagination State
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-
-  // Live Location Preview Modal State
-  const [selectedLocationUser, setSelectedLocationUser] = useState<TeamUser | null>(null);
-
-  // User Modal state (Add & Edit)
-  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<TeamUser | null>(null);
-  const [userModalTab, setUserModalTab] = useState<'profile' | 'permissions'>('profile');
-  const [isSubmittingUser, setIsSubmittingUser] = useState(false);
-  const [newFirstName, setNewFirstName] = useState('');
-  const [newLastName, setNewLastName] = useState('');
-  const [newMobile, setNewMobile] = useState('');
-  const [newEmail, setNewEmail] = useState('');
-  const [newRole, setNewRole] = useState<'Admin' | 'Manager' | 'Staff'>('Staff');
-  const [newReportingHead, setNewReportingHead] = useState('ADMIN ADMIN');
-  const [newLocationTracking, setNewLocationTracking] = useState(true);
-  const [newIsActive, setNewIsActive] = useState(true);
-  const [newPermissions, setNewPermissions] = useState<UserModulePermissions>(() =>
-    getDefaultPermissions('Staff')
-  );
-
-  const handleSaveCompany = (e: React.FormEvent) => {
-    e.preventDefault();
-    localStorage.setItem('myteams_company_config', JSON.stringify(company));
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3000);
-  };
-
-  const handleOpenAddUser = () => {
-    setEditingUser(null);
-    setUserModalTab('profile');
-    setNewFirstName('');
-    setNewLastName('');
-    setNewMobile('');
-    setNewEmail('');
-    setNewRole('Staff');
-    setNewReportingHead('ADMIN ADMIN');
-    setNewLocationTracking(true);
-    setNewIsActive(true);
-    setNewPermissions(getDefaultPermissions('Staff'));
-    setIsUserModalOpen(true);
-  };
-
-  const handleOpenEditUser = (u: TeamUser) => {
-    setEditingUser(u);
-    setUserModalTab('profile');
-    setNewFirstName(u.first_name);
-    setNewLastName(u.last_name);
-    setNewMobile(u.mobile);
-    setNewEmail(u.email);
-    setNewRole(u.role);
-    setNewReportingHead(u.reporting_head || 'ADMIN ADMIN');
-    setNewLocationTracking(u.location_tracking ?? true);
-    setNewIsActive(u.is_active ?? true);
-    setNewPermissions(u.permissions || getDefaultPermissions(u.role));
-    setIsUserModalOpen(true);
-  };
-
-  const handleRoleChangeInModal = (role: 'Admin' | 'Manager' | 'Staff') => {
-    setNewRole(role);
-    setNewPermissions(getDefaultPermissions(role));
-  };
-
-  const handleDeleteUser = async (u: TeamUser) => {
-    if (!onDeleteUser) return;
-    const confirmDelete = window.confirm(
-      `Are you sure you want to remove team member ${u.first_name} ${u.last_name}?`
-    );
-    if (confirmDelete) {
-      await onDeleteUser(u.id);
-    }
-  };
-
-  const handleSaveUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newFirstName.trim() || !newMobile.trim()) return;
-
-    setIsSubmittingUser(true);
-    try {
-      if (editingUser) {
-        if (onUpdateUser) {
-          await onUpdateUser(editingUser.id, {
-            first_name: newFirstName.trim(),
-            last_name: newLastName.trim(),
-            mobile: newMobile.trim(),
-            email: newEmail.trim(),
-            role: newRole,
-            reporting_head: newReportingHead,
-            location_tracking: newLocationTracking,
-            is_active: newIsActive,
-            permissions: newPermissions,
-          });
-        }
-      } else {
-        await onAddUser({
-          first_name: newFirstName.trim(),
-          last_name: newLastName.trim(),
-          mobile: newMobile.trim(),
-          email: newEmail.trim(),
-          role: newRole,
-          reporting_head: newReportingHead,
-          location_tracking: newLocationTracking,
-          is_active: newIsActive,
-          permissions: newPermissions,
-        });
-      }
-      setIsUserModalOpen(false);
-      setEditingUser(null);
-    } finally {
-      setIsSubmittingUser(false);
-    }
-  };
-
-  const reportingHeadOptions = useMemo(() => {
-    return Array.from(
-      new Set([
-        'ADMIN ADMIN',
-        'JITESHBHAI VASANIYA',
-        '-',
-        ...users
-          .filter((u) => !editingUser || u.id !== editingUser.id)
-          .map((u) => `${u.first_name} ${u.last_name}`.trim())
-          .filter(Boolean),
-      ])
-    );
-  }, [users, editingUser]);
-
-  // Filtered Users List
-  const filteredUsers = useMemo(() => {
-    return users.filter((u) => {
-      // Text Search
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim();
-        const fullName = `${u.first_name} ${u.last_name}`.toLowerCase();
-        const code = (u.user_code || '').toLowerCase();
-        const mobile = (u.mobile || '').toLowerCase();
-        const email = (u.email || '').toLowerCase();
-        const head = (u.reporting_head || '').toLowerCase();
-        if (
-          !fullName.includes(q) &&
-          !code.includes(q) &&
-          !mobile.includes(q) &&
-          !email.includes(q) &&
-          !head.includes(q)
-        ) {
-          return false;
-        }
-      }
-
-      // Role Filter
-      if (roleFilter !== 'all' && u.role !== roleFilter) {
-        return false;
-      }
-
-      // Status Filter
-      if (statusFilter === 'active' && !u.is_active) return false;
-      if (statusFilter === 'inactive' && u.is_active) return false;
-
-      // Tracking Filter
-      if (trackingFilter === 'active' && !u.location_tracking) return false;
-      if (trackingFilter === 'disabled' && u.location_tracking) return false;
-
-      return true;
-    });
-  }, [users, searchQuery, roleFilter, statusFilter, trackingFilter]);
-
-  // Reset to page 1 on filter changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, roleFilter, statusFilter, trackingFilter]);
-
-  // Pagination slice
-  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / itemsPerPage));
-  const paginatedUsers = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredUsers.slice(start, start + itemsPerPage);
-  }, [filteredUsers, currentPage, itemsPerPage]);
-
-  const activeUsersCount = useMemo(() => users.filter((u) => u.is_active).length, [users]);
-  const totalLicenseCount = Math.max(10, users.length + 5);
-
-  const hasActiveFilters =
-    searchQuery.trim() !== '' ||
-    roleFilter !== 'all' ||
-    statusFilter !== 'all' ||
-    trackingFilter !== 'all';
-
-  const resetAllFilters = () => {
-    setSearchQuery('');
-    setRoleFilter('all');
-    setStatusFilter('all');
-    setTrackingFilter('all');
-  };
-
-  // Download All Users to Excel
-  const handleDownloadAllUsers = () => {
-    if (filteredUsers.length === 0) {
-      alert('No users available to export.');
-      return;
-    }
-
-    const exportRows = filteredUsers.map((u) => ({
-      'Staff Code': `#${u.user_code}`,
-      'Full Name': `${u.first_name} ${u.last_name}`,
-      'Mobile Number': u.mobile,
-      'Email Address': u.email || 'N/A',
-      'Role': u.role,
-      'Reporting Head': u.reporting_head || '-',
-      'GPS Location Tracking': u.location_tracking ? 'Active' : 'Disabled',
-      'Account Status': u.is_active ? 'Active' : 'Inactive',
-      'Last Login': u.last_login || 'N/A',
-      'App / Device': u.device_info || 'Mobile App',
-      'Leads Visibility': u.permissions?.leads_view === 'own' ? 'Own Assigned' : 'All Leads',
-      'Customers Visibility': u.permissions?.customers_view === 'own' ? 'Own Assigned' : 'All Customers',
-      'Sales Invoicing': u.permissions?.sales_invoice ? 'Allowed' : 'Restricted',
-      'Member Since': u.created_at ? new Date(u.created_at).toLocaleDateString('en-GB') : 'N/A',
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(exportRows);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Users');
-
-    const dateStr = new Date().toISOString().split('T')[0];
-    XLSX.writeFile(workbook, `Users_${dateStr}.xlsx`);
-  };
-
   return (
     <div className="space-y-4">
-      {/* Settings Sub-Tabs */}
-      <div className="bg-white p-2 rounded-xl border border-gray-200 shadow-2xs flex items-center space-x-1 overflow-x-auto">
-        {[
-          { id: 'company', label: 'Company Profile', icon: Building2 },
-          { id: 'users', label: 'Users & Team Hierarchy', icon: Users },
-          { id: 'sales_settings', label: 'Sales & Invoicing Rules', icon: SettingsIcon },
-          { id: 'templates', label: 'Message Templates', icon: MessageSquare },
-          { id: 'modules', label: 'Modules & Cards Visibility', icon: SlidersHorizontal },
-        ].map((tab) => {
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'bg-[#3949ab] text-white shadow-xs'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* TAB 1: COMPANY PROFILE */}
-      {activeTab === 'company' && (
-        <form onSubmit={handleSaveCompany} className="bg-white p-6 rounded-xl border border-gray-200 shadow-2xs space-y-4 text-xs">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-            <div>
-              <h3 className="font-bold text-sm text-gray-900">Organization & Profile Configuration</h3>
-              <p className="text-gray-500 text-[11px]">Workspace branding and legal information</p>
-            </div>
-            {savedSuccess && (
-              <span className="text-emerald-600 font-semibold flex items-center gap-1">
-                <CheckCircle className="w-4 h-4" /> Saved Successfully!
-              </span>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block font-semibold text-gray-700 mb-1">Company Registered Name</label>
-              <input
-                type="text"
-                value={company.company_name}
-                onChange={(e) => setCompany({ ...company, company_name: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg p-2"
-              />
-            </div>
-            <div>
-              <label className="block font-semibold text-gray-700 mb-1">Brand Name</label>
-              <input
-                type="text"
-                value={company.brand_name}
-                onChange={(e) => setCompany({ ...company, brand_name: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg p-2"
-              />
-            </div>
-            <div>
-              <label className="block font-semibold text-gray-700 mb-1">GSTIN Number</label>
-              <input
-                type="text"
-                value={company.gstin}
-                onChange={(e) => setCompany({ ...company, gstin: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg p-2 font-mono uppercase"
-              />
-            </div>
-            <div>
-              <label className="block font-semibold text-gray-700 mb-1">Official Mobile / Support Phone</label>
-              <input
-                type="text"
-                value={company.phone}
-                onChange={(e) => setCompany({ ...company, phone: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg p-2"
-              />
-            </div>
-            <div>
-              <label className="block font-semibold text-gray-700 mb-1">Official Email Address</label>
-              <input
-                type="email"
-                value={company.email}
-                onChange={(e) => setCompany({ ...company, email: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg p-2"
-              />
-            </div>
-            <div>
-              <label className="block font-semibold text-gray-700 mb-1">Website URL</label>
-              <input
-                type="text"
-                value={company.website}
-                onChange={(e) => setCompany({ ...company, website: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg p-2"
-              />
-            </div>
-            <div>
-              <label className="block font-semibold text-gray-700 mb-1">Timezone</label>
-              <select
-                value={company.timezone}
-                onChange={(e) => setCompany({ ...company, timezone: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg p-2"
+      {/* Settings Container Layout matching Screenshot 2026-10-25 153809.png */}
+      <div className="flex flex-col lg:flex-row gap-5 items-start">
+        {/* Left Settings Navigation Menu */}
+        <div className="w-full lg:w-56 shrink-0 bg-white rounded-xl border border-gray-200 shadow-2xs p-3 space-y-4">
+          <div>
+            <h3 className="font-bold text-sm text-gray-900 px-3 py-1 mb-1">Settings</h3>
+            <div className="space-y-0.5">
+              <button
+                type="button"
+                onClick={() => setActiveTab('profile')}
+                className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === 'profile'
+                    ? 'bg-[#1a237e] text-white shadow-xs'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
               >
-                <option value="GMT+5:30">GMT+5:30 (India Standard Time)</option>
-                <option value="UTC">UTC</option>
-              </select>
-            </div>
-            <div>
-              <label className="block font-semibold text-gray-700 mb-1">Currency</label>
-              <select
-                value={company.currency}
-                onChange={(e) => setCompany({ ...company, currency: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg p-2"
+                <User className="w-4 h-4" />
+                <span>My Profile</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('company')}
+                className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === 'company'
+                    ? 'bg-[#1a237e] text-white shadow-xs'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
               >
-                <option value="INR">INR (₹ Indian Rupee)</option>
-                <option value="USD">USD ($)</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="pt-2">
-            <label className="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={company.is_dsr_email}
-                onChange={(e) => setCompany({ ...company, is_dsr_email: e.target.checked })}
-                className="rounded-sm text-[#3949ab] focus:ring-[#3949ab]"
-              />
-              <span className="font-semibold text-gray-800">
-                Send Daily Automated DSR (Daily Status Report) Email Digest to Administrators
-              </span>
-            </label>
-          </div>
-
-          <div className="pt-3 border-t border-gray-100 flex justify-end">
-            <button
-              type="submit"
-              className="inline-flex items-center space-x-1.5 px-5 py-2 bg-[#3949ab] hover:bg-[#303f9f] text-white rounded-lg font-semibold shadow-xs cursor-pointer"
-            >
-              <Save className="w-4 h-4" />
-              <span>Save Company Profile</span>
-            </button>
-          </div>
-        </form>
-      )}
-
-      {/* TAB 2: USERS & TEAM HIERARCHY */}
-      {activeTab === 'users' && (
-        <div className="space-y-3">
-          {/* A. LICENSE COUNTER ALERT BANNER (.user-max-license-alert) */}
-          <div className="bg-gradient-to-r from-blue-50/90 via-indigo-50/70 to-blue-50/90 border border-blue-200/80 rounded-xl p-3.5 shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs">
-            <div className="flex items-center space-x-3">
-              <div className="w-9 h-9 rounded-lg bg-[#3949ab] text-white flex items-center justify-center shrink-0 shadow-xs">
-                <ShieldCheck className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <div className="flex items-center space-x-2">
-                  <span className="font-bold text-gray-900 text-sm">Workspace License Allocation</span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#3949ab] text-white">
-                    Enterprise Workspace
-                  </span>
-                </div>
-                <p className="text-gray-600 text-[11px] mt-0.5">
-                  Real-time GPS tracking, attendance geo-fencing, and granular role permissions enabled.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-3">
-              <div className="text-right">
-                <div className="text-xs font-bold text-gray-800">
-                  Active Users: <span className="text-[#3949ab] font-extrabold">{activeUsersCount}</span> / {totalLicenseCount} Licenses
-                </div>
-                <div className="w-32 bg-gray-200 h-1.5 rounded-full overflow-hidden mt-1">
-                  <div
-                    className="bg-[#3949ab] h-full rounded-full transition-all duration-300"
-                    style={{ width: `${Math.min(100, (activeUsersCount / totalLicenseCount) * 100)}%` }}
-                  />
-                </div>
-              </div>
-              <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-[11px] font-bold rounded-lg border border-emerald-200">
-                {totalLicenseCount - activeUsersCount} Free Seats
-              </span>
-            </div>
-          </div>
-
-          {/* B. USERS FILTER BLOCK & ACTIONS (.users-filter-block) */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-2xs p-3.5 space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2.5">
-              {/* Left: Search & Filter inputs */}
-              <div className="flex flex-wrap items-center gap-2 flex-1 min-w-[280px]">
-                {/* Search Bar */}
-                <div className="relative flex-1 min-w-[200px] max-w-sm">
-                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search by name, mobile, email, code..."
-                    className="w-full pl-8 pr-7 py-1.5 text-xs border border-gray-200 rounded-lg bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#3949ab] focus:border-[#3949ab] transition-colors"
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery('')}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-
-                {/* Role Filter */}
-                <select
-                  value={roleFilter}
-                  onChange={(e) => setRoleFilter(e.target.value as typeof roleFilter)}
-                  className="px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#3949ab] cursor-pointer"
-                >
-                  <option value="all">All Roles</option>
-                  <option value="Admin">Admin</option>
-                  <option value="Manager">Manager</option>
-                  <option value="Staff">Field Staff</option>
-                </select>
-
-                {/* Status Filter */}
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-                  className="px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#3949ab] cursor-pointer"
-                >
-                  <option value="all">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-
-                {/* GPS Tracking Filter */}
-                <select
-                  value={trackingFilter}
-                  onChange={(e) => setTrackingFilter(e.target.value as typeof trackingFilter)}
-                  className="px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#3949ab] cursor-pointer"
-                >
-                  <option value="all">All GPS Tracking</option>
-                  <option value="active">GPS Enabled</option>
-                  <option value="disabled">GPS Disabled</option>
-                </select>
-
-                {/* Reset Filters */}
-                {hasActiveFilters && (
-                  <button
-                    onClick={resetAllFilters}
-                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-600 hover:text-rose-700 px-2 py-1 rounded-md hover:bg-rose-50 transition-colors cursor-pointer"
-                    title="Reset all filters"
-                  >
-                    <RotateCcw className="w-3 h-3" />
-                    <span>Clear</span>
-                  </button>
-                )}
-              </div>
-
-              {/* Right: Column Selector Popover & Add User Button */}
-              <div className="flex items-center gap-2">
-                {/* Columns Visibility Popover (#settingColumns) */}
-                <div className="relative" ref={columnsDropdownRef}>
-                  <button
-                    type="button"
-                    onClick={() => setIsColumnsDropdownOpen((v) => !v)}
-                    className="inline-flex items-center space-x-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 transition-colors cursor-pointer shadow-2xs"
-                    title="Customize visible columns"
-                  >
-                    <SlidersHorizontal className="w-3.5 h-3.5 text-[#3949ab]" />
-                    <span>Columns</span>
-                  </button>
-
-                  {isColumnsDropdownOpen && (
-                    <div className="absolute right-0 top-9 z-50 w-52 bg-white rounded-xl shadow-xl border border-gray-200 p-2 text-xs space-y-1 animate-in fade-in zoom-in-95">
-                      <div className="px-2 py-1 text-[11px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-100 flex items-center justify-between">
-                        <span>Show/Hide Columns</span>
-                        <button
-                          onClick={() => setIsColumnsDropdownOpen(false)}
-                          className="text-gray-400 hover:text-gray-600"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                      <div className="max-h-60 overflow-y-auto space-y-0.5 pt-1">
-                        {AVAILABLE_COLUMNS.map((col) => {
-                          const isChecked = visibleColumns[col.key] ?? true;
-                          return (
-                            <label
-                              key={col.key}
-                              className={`flex items-center space-x-2 px-2 py-1.5 rounded-md hover:bg-gray-50 cursor-pointer ${
-                                col.locked ? 'opacity-60 cursor-not-allowed' : ''
-                              }`}
-                            >
-                              <input
-                                type="checkbox"
-                                disabled={col.locked}
-                                checked={isChecked}
-                                onChange={() => !col.locked && toggleColumnVisibility(col.key)}
-                                className="rounded text-[#3949ab] focus:ring-[#3949ab]"
-                              />
-                              <span className="text-gray-700 text-xs font-medium">{col.label}</span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Primary Action: Add User */}
-                <button
-                  onClick={handleOpenAddUser}
-                  className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 bg-[#3949ab] hover:bg-[#303f9f] text-white rounded-lg text-xs font-semibold shadow-xs cursor-pointer transition-colors"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add User</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* C. USERS TABLE */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-2xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-gray-700">
-                <thead className="bg-gray-50 text-gray-500 font-semibold uppercase text-[11px] border-b border-gray-200">
-                  <tr>
-                    {visibleColumns.user_code && <th className="px-4 py-3">ID</th>}
-                    {visibleColumns.name && <th className="px-4 py-3">Member Name</th>}
-                    {visibleColumns.mobile && <th className="px-4 py-3">Mobile</th>}
-                    {visibleColumns.email && <th className="px-4 py-3">Email</th>}
-                    {visibleColumns.role && <th className="px-4 py-3">Role</th>}
-                    {visibleColumns.reporting_head && <th className="px-4 py-3">Reporting Head</th>}
-                    {visibleColumns.location_tracking && <th className="px-4 py-3 text-center">GPS Tracking & Live Map</th>}
-                    {visibleColumns.last_login && <th className="px-4 py-3">Last Login / Device</th>}
-                    {visibleColumns.status && <th className="px-4 py-3 text-center">Status</th>}
-                    {visibleColumns.actions && <th className="px-4 py-3 text-right">Actions</th>}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {paginatedUsers.map((u) => (
-                    <tr key={u.id} className="hover:bg-gray-50/80 transition-colors">
-                      {/* ID / Code */}
-                      {visibleColumns.user_code && (
-                        <td className="px-4 py-3 font-mono font-bold text-gray-900">
-                          #{u.user_code}
-                        </td>
-                      )}
-
-                      {/* Name & Avatar */}
-                      {visibleColumns.name && (
-                        <td className="px-4 py-3">
-                          <div className="flex items-center space-x-2.5">
-                            <div className="relative">
-                              <div className="w-7 h-7 rounded-full bg-[#3949ab] text-white font-bold flex items-center justify-center text-[10px] shadow-2xs">
-                                {u.first_name[0]}{u.last_name[0]}
-                              </div>
-                              <span
-                                className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white ${
-                                  u.is_active ? 'bg-emerald-500' : 'bg-gray-300'
-                                }`}
-                                title={u.is_active ? 'Online / Active' : 'Inactive'}
-                              />
-                            </div>
-                            <div>
-                              <button
-                                type="button"
-                                onClick={() => handleOpenEditUser(u)}
-                                className="font-bold text-gray-900 hover:text-[#3949ab] hover:underline text-left cursor-pointer flex items-center gap-1.5"
-                                title="Click to edit member details"
-                              >
-                                <span>{u.first_name} {u.last_name}</span>
-                              </button>
-                              <div className="text-[10px] text-gray-400">
-                                {u.role === 'Admin' ? 'System Administrator' : u.role === 'Manager' ? 'Branch / Team Manager' : 'Field Sales Executive'}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                      )}
-
-                      {/* Mobile */}
-                      {visibleColumns.mobile && (
-                        <td className="px-4 py-3">
-                          <a
-                            href={`tel:${u.mobile}`}
-                            className="inline-flex items-center gap-1 text-gray-800 hover:text-[#3949ab] font-medium"
-                          >
-                            <Phone className="w-3 h-3 text-gray-400" />
-                            <span>{u.mobile}</span>
-                          </a>
-                        </td>
-                      )}
-
-                      {/* Email */}
-                      {visibleColumns.email && (
-                        <td className="px-4 py-3">
-                          {u.email ? (
-                            <a
-                              href={`mailto:${u.email}`}
-                              className="inline-flex items-center gap-1 text-gray-600 hover:text-[#3949ab]"
-                            >
-                              <Mail className="w-3 h-3 text-gray-400" />
-                              <span className="truncate max-w-[150px]">{u.email}</span>
-                            </a>
-                          ) : (
-                            <span className="text-gray-400">—</span>
-                          )}
-                        </td>
-                      )}
-
-                      {/* Role */}
-                      {visibleColumns.role && (
-                        <td className="px-4 py-3">
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${
-                              u.role === 'Admin'
-                                ? 'bg-purple-50 text-purple-700 border border-purple-200'
-                                : u.role === 'Manager'
-                                ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                                : 'bg-gray-100 text-gray-700 border border-gray-200'
-                            }`}
-                          >
-                            {u.role}
-                          </span>
-                        </td>
-                      )}
-
-                      {/* Reporting Head */}
-                      {visibleColumns.reporting_head && (
-                        <td className="px-4 py-3 text-gray-600 font-medium">
-                          {u.reporting_head || '—'}
-                        </td>
-                      )}
-
-                      {/* GPS Location Tracking & Live Map View (#UserLocationMapView) */}
-                      {visibleColumns.location_tracking && (
-                        <td className="px-4 py-3 text-center">
-                          <div className="inline-flex items-center gap-1.5 justify-center">
-                            <button
-                              onClick={() => onToggleTracking(u.id)}
-                              className="cursor-pointer inline-flex items-center gap-1 font-semibold text-xs transition-colors"
-                              title="Toggle GPS tracking"
-                            >
-                              {u.location_tracking ? (
-                                <span className="text-emerald-600 flex items-center gap-1">
-                                  <ToggleRight className="w-5 h-5 text-emerald-600" /> Active
-                                </span>
-                              ) : (
-                                <span className="text-gray-400 flex items-center gap-1">
-                                  <ToggleLeft className="w-5 h-5 text-gray-400" /> Disabled
-                                </span>
-                              )}
-                            </button>
-
-                            {/* Live Map Button */}
-                            <button
-                              type="button"
-                              onClick={() => setSelectedLocationUser(u)}
-                              className="p-1 rounded-md text-[#3949ab] hover:bg-[#3949ab]/10 hover:text-[#303f9f] transition-colors cursor-pointer"
-                              title="View latest GPS coordinates & map location"
-                            >
-                              <MapPin className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      )}
-
-                      {/* Last Login & Device */}
-                      {visibleColumns.last_login && (
-                        <td className="px-4 py-3">
-                          <div className="space-y-0.5">
-                            <div className="flex items-center gap-1 text-gray-800 font-medium">
-                              <Clock className="w-3 h-3 text-gray-400" />
-                              <span>{u.last_login || 'Today, 10:45 AM'}</span>
-                            </div>
-                            <div className="flex items-center gap-1 text-[10px] text-gray-500">
-                              <Smartphone className="w-2.5 h-2.5 text-gray-400" />
-                              <span>{u.device_info || 'Android 14 (MyTeams v2.4)'}</span>
-                            </div>
-                          </div>
-                        </td>
-                      )}
-
-                      {/* Status */}
-                      {visibleColumns.status && (
-                        <td className="px-4 py-3 text-center">
-                          <button
-                            onClick={() => onToggleActive(u.id)}
-                            className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold cursor-pointer transition-colors ${
-                              u.is_active
-                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
-                                : 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100'
-                            }`}
-                            title="Toggle active / inactive status"
-                          >
-                            {u.is_active ? 'Active' : 'Inactive'}
-                          </button>
-                        </td>
-                      )}
-
-                      {/* Actions */}
-                      {visibleColumns.actions && (
-                        <td className="px-4 py-3 text-right">
-                          <div className="flex items-center justify-end space-x-1">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenEditUser(u)}
-                              className="p-1.5 text-gray-500 hover:text-[#3949ab] hover:bg-[#3949ab]/10 rounded-lg transition-colors cursor-pointer"
-                              title="Edit user details and permissions"
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </button>
-                            {onDeleteUser && (
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteUser(u)}
-                                className="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                                title="Delete User"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      )}
-                    </tr>
-                  ))}
-
-                  {paginatedUsers.length === 0 && (
-                    <tr>
-                      <td colSpan={10} className="text-center py-12 text-gray-400 text-xs">
-                        No team members match your current search or filters.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* D. BOTTOM BAR: DOWNLOAD ALL & PAGINATION (MATCHING LEADS, CUSTOMERS, SALES) */}
-            <div className="w-full px-4 py-3 border-t border-gray-200 flex flex-wrap items-center justify-between gap-3 text-xs text-gray-500 bg-white">
-              {/* Left: Download All Button */}
-              <div>
-                <button
-                  onClick={handleDownloadAllUsers}
-                  title="Download all users in Excel format"
-                  className="inline-flex items-center gap-2 px-3.5 py-2 bg-[#3949ab] hover:bg-[#303f9f] text-white text-xs font-semibold rounded shadow-xs transition-colors cursor-pointer"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>Download All</span>
-                </button>
-              </div>
-
-              {/* Right: Showing text, Page size dropdown, Page navigation */}
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="text-gray-500 text-xs">
-                  Showing {filteredUsers.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} -{' '}
-                  {Math.min(currentPage * itemsPerPage, filteredUsers.length)} of{' '}
-                  {filteredUsers.length.toLocaleString()}
-                </span>
-
-                {/* Page size dropdown */}
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => {
-                    setItemsPerPage(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="border border-gray-300 rounded px-2 py-1 text-xs text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-[#3949ab] cursor-pointer"
-                >
-                  <option value={10}>10</option>
-                  <option value={25}>25</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
-                </select>
-
-                {/* Page navigation buttons */}
-                <div className="flex items-center gap-1">
-                  <button
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    className="min-w-[28px] h-7 px-1.5 rounded flex items-center justify-center text-[#3949ab] hover:bg-gray-100 disabled:text-gray-300 disabled:hover:bg-transparent disabled:cursor-not-allowed cursor-pointer transition-colors"
-                    title="Previous page"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-
-                  {getPageNumbers(currentPage, totalPages).map((p, idx) => {
-                    if (typeof p === 'string') {
-                      return (
-                        <span
-                          key={`ellipsis-${idx}`}
-                          className="px-1 text-gray-400 select-none flex items-center justify-center text-xs"
-                        >
-                          ...
-                        </span>
-                      );
-                    }
-                    const isActive = p === currentPage;
-                    return (
-                      <button
-                        key={`page-${p}`}
-                        onClick={() => setCurrentPage(p)}
-                        className={`min-w-[28px] h-7 px-2 rounded flex items-center justify-center text-xs transition-colors cursor-pointer ${
-                          isActive
-                            ? 'bg-[#3949ab] text-white font-semibold shadow-xs'
-                            : 'text-[#3949ab] hover:bg-gray-100 font-normal'
-                        }`}
-                      >
-                        {p}
-                      </button>
-                    );
-                  })}
-
-                  <button
-                    disabled={currentPage === totalPages || filteredUsers.length === 0}
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    className="min-w-[28px] h-7 px-1.5 rounded flex items-center justify-center text-[#3949ab] hover:bg-gray-100 disabled:text-gray-300 disabled:hover:bg-transparent disabled:cursor-not-allowed cursor-pointer transition-colors"
-                    title="Next page"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* TAB 3: SALES & DOCUMENT SETTINGS */}
-      {activeTab === 'sales_settings' && (
-        <form onSubmit={handleSaveCompany} className="bg-white p-6 rounded-xl border border-gray-200 shadow-2xs space-y-4 text-xs">
-          <h3 className="font-bold text-sm text-gray-900 border-b border-gray-100 pb-2">
-            Invoicing Rules, Prefixes & Banking Configuration
-          </h3>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="block font-semibold text-gray-700 mb-1">Tax Invoice Prefix</label>
-              <input
-                type="text"
-                value={company.invoice_prefix}
-                onChange={(e) => setCompany({ ...company, invoice_prefix: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg p-2 font-mono uppercase"
-              />
-            </div>
-            <div>
-              <label className="block font-semibold text-gray-700 mb-1">Proforma Invoice Prefix</label>
-              <input
-                type="text"
-                value={company.proforma_prefix}
-                onChange={(e) => setCompany({ ...company, proforma_prefix: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg p-2 font-mono uppercase"
-              />
-            </div>
-            <div>
-              <label className="block font-semibold text-gray-700 mb-1">Order Prefix</label>
-              <input
-                type="text"
-                value={company.order_prefix}
-                onChange={(e) => setCompany({ ...company, order_prefix: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg p-2 font-mono uppercase"
-              />
-            </div>
-          </div>
-
-          <h4 className="font-bold text-gray-800 pt-2 text-xs uppercase tracking-wider">
-            Bank Account Details (Printed on Invoices & Proforma)
-          </h4>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block font-semibold text-gray-700 mb-1">Bank Name</label>
-              <input
-                type="text"
-                value={company.bank_name}
-                onChange={(e) => setCompany({ ...company, bank_name: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg p-2"
-              />
-            </div>
-            <div>
-              <label className="block font-semibold text-gray-700 mb-1">Account Number</label>
-              <input
-                type="text"
-                value={company.bank_account_no}
-                onChange={(e) => setCompany({ ...company, bank_account_no: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg p-2 font-mono"
-              />
-            </div>
-            <div>
-              <label className="block font-semibold text-gray-700 mb-1">IFSC Code</label>
-              <input
-                type="text"
-                value={company.bank_ifsc}
-                onChange={(e) => setCompany({ ...company, bank_ifsc: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg p-2 font-mono uppercase"
-              />
-            </div>
-            <div>
-              <label className="block font-semibold text-gray-700 mb-1">UPI ID (QR Payment)</label>
-              <input
-                type="text"
-                value={company.upi_id}
-                onChange={(e) => setCompany({ ...company, upi_id: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg p-2 font-mono"
-              />
+                <Building className="w-4 h-4" />
+                <span>Company Profile</span>
+              </button>
             </div>
           </div>
 
           <div>
-            <label className="block font-semibold text-gray-700 mb-1">Default Terms & Conditions</label>
-            <textarea
-              rows={3}
-              value={company.terms}
-              onChange={(e) => setCompany({ ...company, terms: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg p-2"
-            />
-          </div>
-
-          <div className="pt-3 border-t border-gray-100 flex justify-end">
-            <button
-              type="submit"
-              className="inline-flex items-center space-x-1.5 px-5 py-2 bg-[#3949ab] hover:bg-[#303f9f] text-white rounded-lg font-semibold shadow-xs cursor-pointer"
-            >
-              <Save className="w-4 h-4" />
-              <span>Save Invoicing Settings</span>
-            </button>
-          </div>
-        </form>
-      )}
-
-      {/* TAB 4: MESSAGE TEMPLATES */}
-      {activeTab === 'templates' && (
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-2xs space-y-5 text-xs">
-          {/* Header & Primary Action */}
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-3">
-            <div>
-              <h3 className="font-bold text-sm text-gray-900 flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-[#3949ab]" />
-                <span>WhatsApp & Notification Templates</span>
-              </h3>
-              <p className="text-gray-500 text-[11px] mt-0.5">
-                Manage message templates and set the default template automatically used when contacting leads on WhatsApp.
-              </p>
+            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-3 mb-1">CRM</div>
+            <div className="space-y-0.5">
+              <button
+                type="button"
+                onClick={() => setActiveTab('sales_settings')}
+                className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === 'sales_settings'
+                    ? 'bg-[#1a237e] text-white shadow-xs'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <ShoppingCart className="w-4 h-4" />
+                <span>Sales Settings</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('templates')}
+                className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === 'templates'
+                    ? 'bg-[#1a237e] text-white shadow-xs'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <Send className="w-4 h-4" />
+                <span>Templates</span>
+              </button>
             </div>
-            <button
-              onClick={handleOpenAddTemplate}
-              className="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-[#3949ab] hover:bg-[#303f9f] text-white rounded-lg text-xs font-semibold shadow-xs cursor-pointer transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Add Template</span>
-            </button>
           </div>
 
-          {/* Module Filter Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-            {(['All', 'Leads', 'Customers', 'Invoices', 'Proforma Invoices', 'General'] as const).map((mod) => {
-              const isActive = templateFilter === mod;
-              const count = mod === 'All' ? templates.length : templates.filter((t) => t.module === mod).length;
-              return (
-                <button
-                  key={mod}
-                  onClick={() => setTemplateFilter(mod)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                    isActive
-                      ? 'bg-[#3949ab] text-white shadow-xs'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  <span>{mod}</span>
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isActive ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-700'}`}>
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
+          <div>
+            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-3 mb-1">Organization</div>
+            <div className="space-y-0.5">
+              <button
+                type="button"
+                onClick={() => setActiveTab('users')}
+                className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === 'users'
+                    ? 'bg-[#1a237e] text-white shadow-xs'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <Users className="w-4 h-4" />
+                <span>Users</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('modules')}
+                className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === 'modules'
+                    ? 'bg-[#1a237e] text-white shadow-xs'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <SlidersHorizontal className="w-4 h-4" />
+                <span>Modules & Cards</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Content Panel */}
+        <div className="flex-1 w-full min-w-0 space-y-4">
+          {/* Breadcrumb matching screenshots */}
+          <div className="flex items-center text-xs text-gray-500 space-x-1.5 font-medium">
+            <span className="text-[#1a237e] hover:underline cursor-pointer">Dashboard</span>
+            <span>&gt;</span>
+            <span className="text-[#1a237e] hover:underline cursor-pointer">Settings</span>
+            <span>&gt;</span>
+            <span className="text-gray-700 font-bold">
+              {activeTab === 'profile'
+                ? 'My Profile'
+                : activeTab === 'company'
+                ? 'Company Profile'
+                : activeTab === 'sales_settings'
+                ? 'Sales Settings'
+                : activeTab === 'templates'
+                ? 'Templates'
+                : activeTab === 'users'
+                ? 'Users & Team Hierarchy'
+                : 'Modules & Cards'}
+            </span>
           </div>
 
-          {/* Template Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredTemplates.map((tmpl) => {
-              const samplePreview = templateService.formatMessage(tmpl.content, {
-                name: 'Rajesh Patel',
-                companyName: 'Shreeji Enterprise',
-                brand_name: company.brand_name || 'IV SQUARE STRUCTURE INDIA PVT LTD',
-                phone: '9876543210',
-                stage: 'Contacted',
-                id: 'INV-2026-081',
-                total: '₹45,000',
-              });
+          {/* SCREEN 1: MY PROFILE (Screenshot 2026-10-25 153809.png) */}
+          {activeTab === 'profile' && (
+            <div className="space-y-3">
+              <h2 className="text-base font-bold text-gray-900">My Profile</h2>
+              <form onSubmit={handleSaveMyProfile} className="bg-white p-6 rounded-xl border border-gray-200 shadow-2xs space-y-4 text-xs">
+                {profileSavedSuccess && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 font-semibold flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-emerald-600" />
+                    <span>Profile updated successfully!</span>
+                  </div>
+                )}
 
-              return (
-                <div
-                  key={tmpl.id}
-                  className={`p-4 rounded-xl border transition-all flex flex-col justify-between space-y-3 ${
-                    tmpl.is_default
-                      ? 'border-emerald-300 bg-emerald-50/20 shadow-2xs'
-                      : 'border-gray-200 bg-white hover:border-gray-300'
-                  }`}
-                >
-                  {/* Card Header */}
+                {/* Row 1: First Name & Last Name */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="space-y-1">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-bold text-gray-900 text-sm">{tmpl.name}</span>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                            {tmpl.module}
-                          </span>
-                        </div>
-                      </div>
+                    <label className="block font-semibold text-gray-700 mb-1">
+                      First Name <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={profileFirstName}
+                      onChange={(e) => setProfileFirstName(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:border-[#1a237e] focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">
+                      Last Name <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={profileLastName}
+                      onChange={(e) => setProfileLastName(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:border-[#1a237e] focus:outline-none"
+                    />
+                  </div>
+                </div>
 
-                      {/* Edit & Delete Action Icons */}
-                      <div className="flex items-center space-x-1 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenEditTemplate(tmpl)}
-                          className="p-1.5 text-gray-500 hover:text-[#3949ab] hover:bg-[#3949ab]/10 rounded-lg transition-colors cursor-pointer"
-                          title="Edit Template"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteTemplate(tmpl)}
-                          className="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                          title="Delete Template"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Default Status Badge / Action */}
-                    <div className="mt-2 flex items-center justify-between">
-                      {tmpl.is_default ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                          <Star className="w-3 h-3 fill-emerald-600 text-emerald-600" />
-                          <span>Default WhatsApp Message</span>
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleToggleDefaultTemplate(tmpl.id, tmpl.module)}
-                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-gray-500 hover:text-emerald-700 hover:bg-emerald-50 px-2 py-0.5 rounded-md border border-gray-200 transition-colors cursor-pointer"
-                          title="Click to set this as the default message for this module"
-                        >
-                          <Star className="w-3 h-3 text-gray-400" />
-                          <span>Set as Default</span>
-                        </button>
-                      )}
-                      <span className="text-[10px] text-gray-400">
-                        {tmpl.module === 'Leads' ? 'Used in Lead Detail WhatsApp' : ''}
+                {/* Row 2: Mobile & Email (Username) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">Mobile</label>
+                    <div className="flex rounded-lg border border-gray-300 overflow-hidden focus-within:border-[#1a237e]">
+                      <span className="bg-gray-50 px-3 flex items-center justify-center border-r border-gray-300 text-gray-400">
+                        <Phone className="w-4 h-4" />
                       </span>
+                      <input
+                        type="text"
+                        value={profileMobile}
+                        onChange={(e) => setProfileMobile(e.target.value)}
+                        className="w-full p-2.5 focus:outline-none"
+                      />
                     </div>
                   </div>
-
-                  {/* Template Raw Text */}
-                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-100 font-mono text-[11px] text-gray-700 whitespace-pre-wrap leading-relaxed">
-                    {tmpl.content}
-                  </div>
-
-                  {/* Live Rendered Preview */}
-                  <div className="pt-2 border-t border-gray-100 space-y-1">
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
-                      Live Lead Preview (Rajesh Patel):
-                    </span>
-                    <div className="p-2.5 bg-emerald-50/70 rounded-lg border border-emerald-100 text-[11px] text-emerald-900 font-sans leading-relaxed">
-                      💬 &ldquo;{samplePreview}&rdquo;
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">
+                      Email (Username) <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="flex rounded-lg border border-gray-200 overflow-hidden bg-gray-100">
+                      <span className="bg-gray-100 px-3 flex items-center justify-center border-r border-gray-200 text-gray-400">
+                        <Mail className="w-4 h-4" />
+                      </span>
+                      <input
+                        type="email"
+                        disabled
+                        value={profileEmail}
+                        className="w-full p-2.5 bg-gray-100 text-gray-500 cursor-not-allowed focus:outline-none"
+                      />
                     </div>
                   </div>
                 </div>
-              );
-            })}
 
-            {filteredTemplates.length === 0 && (
-              <div className="col-span-2 text-center py-12 text-gray-400 text-xs bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                No templates configured for {templateFilter}. Click &quot;Add Template&quot; above to create one.
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+                {/* Row 3: Photo Upload Box */}
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1">Photo</label>
+                  <label className="border-2 border-dashed border-gray-200 hover:border-gray-300 rounded-xl h-32 flex flex-col items-center justify-center cursor-pointer transition-colors bg-gray-50/50 hover:bg-gray-50">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleProfilePhotoUpload}
+                      className="hidden"
+                    />
+                    {profilePhoto ? (
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={profilePhoto}
+                          alt="Profile Preview"
+                          className="w-16 h-16 rounded-full object-cover border border-gray-200 shadow-xs"
+                        />
+                        <span className="text-xs text-gray-600 font-semibold underline">Click to change photo</span>
+                      </div>
+                    ) : (
+                      <div className="text-center space-y-1">
+                        <UploadCloud className="w-6 h-6 text-gray-400 mx-auto" />
+                        <span className="text-xs text-gray-500 font-medium block">Drop files here to upload</span>
+                      </div>
+                    )}
+                  </label>
+                </div>
 
-      {/* TAB 5: MODULES & CARDS VISIBILITY */}
-      {activeTab === 'modules' && (
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-2xs space-y-6 text-xs">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-3 flex-wrap gap-2">
-            <div>
-              <h3 className="font-bold text-sm text-gray-900 flex items-center gap-2">
-                <span>Modules & Dashboard Cards Visibility Control</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#3949ab]/10 text-[#3949ab] font-bold">
-                  Dashboard Customizer
-                </span>
-                {isSaving && (
-                  <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#3949ab] bg-[#3949ab]/10 px-2 py-0.5 rounded-full">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    Saving to cloud...
-                  </span>
-                )}
-              </h3>
-              <p className="text-gray-500 text-[11px]">
-                Enable or disable system modules and dashboard widgets for your workspace.
-              </p>
+                {/* Row 4: New Password & Confirm New Password */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">New Password</label>
+                    <input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Leave blank to keep current password"
+                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:border-[#1a237e] focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">Confirm New Password</label>
+                    <input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm new password"
+                      className="w-full border border-gray-300 rounded-lg p-2.5 focus:border-[#1a237e] focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Save & Cancel Buttons */}
+                <div className="pt-3 border-t border-gray-100 flex items-center space-x-2">
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-[#1a237e] hover:bg-[#283593] text-white rounded-md font-semibold shadow-xs cursor-pointer transition-colors"
+                  >
+                    Save
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewPassword('');
+                      setConfirmPassword('');
+                    }}
+                    className="px-4 py-2 border border-gray-300 hover:bg-gray-100 text-gray-700 rounded-md font-semibold cursor-pointer transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
             </div>
-            {onResetDefaults && (
+          )}
+
+          {/* SCREEN 2: COMPANY PROFILE (Screenshots 154110, 154128, 154139, 154203) */}
+          {activeTab === 'company' && (
+            <div className="space-y-4">
+              <h2 className="text-base font-bold text-gray-900">Company Profile</h2>
+
+              {/* Sub-Tabs: Profile | Offices | Settings | Reminders (exact match to Screenshot 154110) */}
+              <div className="border-b border-gray-200 flex items-center space-x-6 text-xs font-bold bg-white px-4 pt-3 rounded-t-xl">
+                <button
+                  type="button"
+                  onClick={() => setCompanySubTab('profile')}
+                  className={`pb-2.5 transition-all cursor-pointer ${
+                    companySubTab === 'profile'
+                      ? 'text-[#1a237e] border-b-2 border-[#1a237e]'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  Profile
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCompanySubTab('offices')}
+                  className={`pb-2.5 transition-all cursor-pointer ${
+                    companySubTab === 'offices'
+                      ? 'text-[#1a237e] border-b-2 border-[#1a237e]'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  Offices
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCompanySubTab('settings')}
+                  className={`pb-2.5 transition-all cursor-pointer ${
+                    companySubTab === 'settings'
+                      ? 'text-[#1a237e] border-b-2 border-[#1a237e]'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  Settings
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCompanySubTab('reminders')}
+                  className={`pb-2.5 transition-all cursor-pointer ${
+                    companySubTab === 'reminders'
+                      ? 'text-[#1a237e] border-b-2 border-[#1a237e]'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  Reminders
+                </button>
+              </div>
+
+              {/* SUB-TAB A: PROFILE & BILLING DETAILS (Screenshot 154110) */}
+              {companySubTab === 'profile' && (
+                <form onSubmit={handleSaveCompany} className="space-y-4 text-xs">
+                  {companySavedSuccess && (
+                    <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 font-semibold flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-emerald-600" />
+                      <span>Company profile saved successfully!</span>
+                    </div>
+                  )}
+
+                  {/* Card 1: Top Brand, Phone, Logo, Email, Website */}
+                  <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-2xs space-y-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                      {/* Left Column */}
+                      <div className="space-y-4">
+                        {/* Brand */}
+                        <div>
+                          <label className="block font-semibold text-gray-700 mb-1 flex items-center gap-1">
+                            <span>Brand</span>
+                            <span title="Your public registered brand name" className="text-gray-400 cursor-help">
+                              <HelpCircle className="w-3.5 h-3.5" />
+                            </span>
+                          </label>
+                          <div className="flex rounded-lg border border-gray-300 overflow-hidden focus-within:border-[#1a237e]">
+                            <span className="bg-gray-50 px-3 flex items-center justify-center border-r border-gray-300 text-gray-400">
+                              <LayersIcon className="w-4 h-4" />
+                            </span>
+                            <input
+                              type="text"
+                              value={company.brand_name}
+                              onChange={(e) => setCompany({ ...company, brand_name: e.target.value })}
+                              className="w-full p-2.5 focus:outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Logo Upload Box */}
+                        <div>
+                          <label className="block font-semibold text-gray-700 mb-1">Logo</label>
+                          <div className="border border-gray-200 hover:border-gray-300 rounded-xl h-32 flex flex-col items-center justify-center cursor-pointer transition-colors bg-white">
+                            <span className="text-xs text-gray-500 font-medium">Drop files here to upload</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right Column */}
+                      <div className="space-y-4">
+                        {/* Phone */}
+                        <div>
+                          <label className="block font-semibold text-gray-700 mb-1">Phone</label>
+                          <div className="flex rounded-lg border border-gray-300 overflow-hidden focus-within:border-[#1a237e]">
+                            <span className="bg-gray-50 px-3 flex items-center justify-center border-r border-gray-300 text-gray-600 font-semibold text-xs">
+                              +91
+                            </span>
+                            <input
+                              type="text"
+                              value={company.phone}
+                              onChange={(e) => setCompany({ ...company, phone: e.target.value })}
+                              className="w-full p-2.5 focus:outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Email */}
+                        <div>
+                          <label className="block font-semibold text-gray-700 mb-1">Email</label>
+                          <div className="flex rounded-lg border border-gray-300 overflow-hidden focus-within:border-[#1a237e]">
+                            <span className="bg-gray-50 px-3 flex items-center justify-center border-r border-gray-300 text-gray-400">
+                              <Mail className="w-4 h-4" />
+                            </span>
+                            <input
+                              type="email"
+                              value={company.email}
+                              onChange={(e) => setCompany({ ...company, email: e.target.value })}
+                              className="w-full p-2.5 focus:outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Website */}
+                        <div>
+                          <label className="block font-semibold text-gray-700 mb-1">Website</label>
+                          <div className="flex rounded-lg border border-gray-300 overflow-hidden focus-within:border-[#1a237e]">
+                            <span className="bg-gray-50 px-3 flex items-center justify-center border-r border-gray-300 text-gray-400">
+                              <Globe className="w-4 h-4" />
+                            </span>
+                            <input
+                              type="text"
+                              value={company.website}
+                              onChange={(e) => setCompany({ ...company, website: e.target.value })}
+                              className="w-full p-2.5 focus:outline-none"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 2: Billing Details */}
+                  <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-2xs space-y-4">
+                    <h3 className="font-bold text-sm text-gray-900 border-b border-gray-100 pb-2">
+                      Billing Details
+                    </h3>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+                      {/* Left: Company & GST */}
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block font-semibold text-gray-700 mb-1 flex items-center gap-1">
+                            <span>Company</span> <span className="text-rose-500">*</span>
+                            <span title="Your legal registered business name" className="text-gray-400 cursor-help">
+                              <HelpCircle className="w-3.5 h-3.5" />
+                            </span>
+                          </label>
+                          <div className="flex rounded-lg border border-gray-300 overflow-hidden focus-within:border-[#1a237e]">
+                            <span className="bg-gray-50 px-3 flex items-center justify-center border-r border-gray-300 text-gray-400">
+                              <Building className="w-4 h-4" />
+                            </span>
+                            <input
+                              type="text"
+                              required
+                              value={company.company_name}
+                              onChange={(e) => setCompany({ ...company, company_name: e.target.value })}
+                              className="w-full p-2.5 focus:outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block font-semibold text-gray-700 mb-1">GST</label>
+                          <input
+                            type="text"
+                            value={company.gstin}
+                            onChange={(e) => setCompany({ ...company, gstin: e.target.value })}
+                            className="w-full border border-gray-300 rounded-lg p-2.5 font-mono uppercase focus:border-[#1a237e] focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Right: Address with pencil icon */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="font-semibold text-gray-700 flex items-center gap-1">
+                            <span>Address</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setTempBillingAddress(company.billing_address || '');
+                                setIsEditingBillingAddress(true);
+                              }}
+                              className="text-[#1a237e] hover:text-[#283593] p-1 cursor-pointer"
+                              title="Edit address"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                          </label>
+                        </div>
+
+                        {isEditingBillingAddress ? (
+                          <div className="space-y-2">
+                            <textarea
+                              rows={4}
+                              value={tempBillingAddress}
+                              onChange={(e) => setTempBillingAddress(e.target.value)}
+                              className="w-full border border-[#1a237e] rounded-lg p-3 text-xs focus:outline-none"
+                            />
+                            <div className="flex justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setIsEditingBillingAddress(false)}
+                                className="px-3 py-1 border border-gray-300 rounded text-xs hover:bg-gray-50 cursor-pointer"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleSaveBillingAddress}
+                                className="px-3 py-1 bg-[#1a237e] text-white rounded text-xs font-semibold cursor-pointer"
+                              >
+                                Update Address
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="p-4 rounded-xl border border-gray-200 bg-gray-50/50 flex items-start space-x-3 min-h-[110px]">
+                            <MapPin className="w-4 h-4 text-gray-500 shrink-0 mt-0.5" />
+                            <p className="text-gray-700 leading-relaxed font-medium">
+                              {company.billing_address || '1103, R K World Tower , Near Shitalpark , Nr. Ayodhyachowk , 150ft Ring Road, RAJKOT, GUJARAT, India - 360006.'}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Save & Cancel Buttons */}
+                  <div className="pt-2 flex items-center space-x-2">
+                    <button
+                      type="submit"
+                      className="px-5 py-2 bg-[#1a237e] hover:bg-[#283593] text-white rounded-md font-semibold shadow-xs cursor-pointer transition-colors"
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {}}
+                      className="px-4 py-2 border border-gray-300 hover:bg-gray-100 text-gray-700 rounded-md font-semibold cursor-pointer transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* SUB-TAB B: OFFICES TABLE (Screenshot 154128) */}
+              {companySubTab === 'offices' && (
+                <div className="bg-white rounded-xl border border-gray-200 shadow-2xs overflow-hidden space-y-4 text-xs">
+                  {/* Top Header Bar with Add Office */}
+                  <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                    <div>
+                      <h3 className="font-bold text-sm text-gray-900">Branch & Registered Offices</h3>
+                      <p className="text-gray-500 text-[11px]">Geo-fenced office locations for employee check-in and attendance</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleOpenAddOffice}
+                      className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 bg-[#1a237e] hover:bg-[#283593] text-white rounded-md text-xs font-semibold shadow-xs cursor-pointer transition-colors"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Add Office</span>
+                    </button>
+                  </div>
+
+                  {/* Offices Table */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs text-gray-700">
+                      <thead className="bg-gray-50 text-gray-500 font-semibold text-[11px] border-b border-gray-200">
+                        <tr>
+                          <th className="px-4 py-3">
+                            <div className="flex items-center space-x-1 cursor-pointer">
+                              <span>Name</span>
+                              <ArrowUpDown className="w-3 h-3 text-gray-400" />
+                            </div>
+                          </th>
+                          <th className="px-4 py-3">Address</th>
+                          <th className="px-4 py-3 text-center">Location</th>
+                          <th className="px-4 py-3 text-center">Users</th>
+                          <th className="px-4 py-3 text-right"></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {offices.map((off) => (
+                          <tr key={off.id} className="hover:bg-gray-50/70 transition-colors">
+                            <td className="px-4 py-3.5 font-bold text-gray-900">
+                              <div className="flex items-center space-x-2">
+                                <span>{off.name}</span>
+                                {off.is_default && (
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#1a237e]/10 text-[#1a237e]">
+                                    Default
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3.5 text-gray-700 max-w-md">
+                              {off.address}
+                            </td>
+                            <td className="px-4 py-3.5 text-center">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenMapFromRow(off)}
+                                className="p-1 text-[#1a237e] hover:bg-[#1a237e]/10 rounded-md transition-colors cursor-pointer"
+                                title="View Location on Map"
+                              >
+                                <MapPin className="w-4 h-4" />
+                              </button>
+                            </td>
+                            <td className="px-4 py-3.5 text-center font-bold text-gray-800">
+                              {off.users_count || 5}
+                            </td>
+                            <td className="px-4 py-3.5 text-right relative">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setActiveOfficeMenuId(activeOfficeMenuId === off.id ? null : off.id)
+                                }
+                                className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md cursor-pointer"
+                              >
+                                <MoreHorizontal className="w-4 h-4" />
+                              </button>
+
+                              {activeOfficeMenuId === off.id && (
+                                <div className="absolute right-4 top-10 z-50 w-36 bg-white rounded-lg shadow-xl border border-gray-200 py-1 text-xs animate-in fade-in">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenEditOffice(off)}
+                                    className="w-full text-left px-3 py-1.5 hover:bg-gray-50 flex items-center space-x-2 text-gray-700 cursor-pointer"
+                                  >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                    <span>Edit</span>
+                                  </button>
+                                  {!off.is_default && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSetDefaultOffice(off.id)}
+                                      className="w-full text-left px-3 py-1.5 hover:bg-gray-50 flex items-center space-x-2 text-gray-700 cursor-pointer"
+                                    >
+                                      <Star className="w-3.5 h-3.5 text-emerald-600" />
+                                      <span>Set Default</span>
+                                    </button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteOffice(off)}
+                                    className="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center space-x-2 cursor-pointer"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <span>Delete</span>
+                                  </button>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Pagination matching Screenshot 154128 */}
+                  <div className="p-4 border-t border-gray-100 flex items-center justify-end space-x-3 text-xs text-gray-500">
+                    <span>Showing 1 - {offices.length} of {offices.length}</span>
+                    <select
+                      className="border border-gray-300 rounded px-2 py-1 text-xs bg-white text-gray-700"
+                      defaultValue={10}
+                    >
+                      <option value={10}>10</option>
+                      <option value={25}>25</option>
+                    </select>
+                    <div className="flex items-center space-x-1">
+                      <button disabled className="p-1 rounded text-gray-300 cursor-not-allowed">
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <button className="w-6 h-6 rounded bg-[#1a237e] text-white font-bold flex items-center justify-center">
+                        1
+                      </button>
+                      <button disabled className="p-1 rounded text-gray-300 cursor-not-allowed">
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* SUB-TAB C: SETTINGS (Screenshot 154203) */}
+              {companySubTab === 'settings' && (
+                <form onSubmit={handleSaveCompany} className="bg-white p-6 rounded-xl border border-gray-200 shadow-2xs space-y-4 text-xs">
+                  {companySavedSuccess && (
+                    <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 font-semibold flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-emerald-600" />
+                      <span>Company settings saved successfully!</span>
+                    </div>
+                  )}
+
+                  {/* Timezone */}
+                  <div className="max-w-xl">
+                    <label className="block font-semibold text-gray-700 mb-1">
+                      Timezone <span className="text-rose-500">*</span>
+                    </label>
+                    <select
+                      value={company.timezone}
+                      onChange={(e) => setCompany({ ...company, timezone: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg p-2.5 bg-white text-gray-700 focus:border-[#1a237e] focus:outline-none"
+                    >
+                      <option value="Asia/Kolkata (GMT+5:30)">Asia/Kolkata (GMT+5:30)</option>
+                      <option value="GMT+5:30">GMT+5:30 (India Standard Time)</option>
+                      <option value="UTC">UTC</option>
+                    </select>
+                  </div>
+
+                  {/* Currency */}
+                  <div className="max-w-xl">
+                    <label className="block font-semibold text-gray-700 mb-1">
+                      Currency <span className="text-rose-500">*</span>
+                    </label>
+                    <select
+                      value={company.currency}
+                      onChange={(e) => setCompany({ ...company, currency: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg p-2.5 bg-white text-gray-700 focus:border-[#1a237e] focus:outline-none"
+                    >
+                      <option value="India Rupee">India Rupee (₹)</option>
+                      <option value="INR">INR (₹)</option>
+                      <option value="USD">USD ($)</option>
+                    </select>
+                  </div>
+
+                  {/* DSR Email Checkbox */}
+                  <div className="pt-1">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={company.is_dsr_email}
+                        onChange={(e) => setCompany({ ...company, is_dsr_email: e.target.checked })}
+                        className="rounded text-[#1a237e] focus:ring-[#1a237e]"
+                      />
+                      <span className="font-semibold text-gray-700">DSR Email</span>
+                    </label>
+                  </div>
+
+                  {/* Save & Cancel */}
+                  <div className="pt-3 border-t border-gray-100 flex items-center space-x-2">
+                    <button
+                      type="submit"
+                      className="px-5 py-2 bg-[#1a237e] hover:bg-[#283593] text-white rounded-md font-semibold shadow-xs cursor-pointer transition-colors"
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {}}
+                      className="px-4 py-2 border border-gray-300 hover:bg-gray-100 text-gray-700 rounded-md font-semibold cursor-pointer transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* SUB-TAB D: REMINDERS */}
+              {companySubTab === 'reminders' && (
+                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-2xs space-y-4 text-xs">
+                  <h3 className="font-bold text-sm text-gray-900 border-b border-gray-100 pb-2">
+                    Automated Notifications & Reminders
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block font-semibold text-gray-700 mb-1">
+                        Daily Follow-Up Digest Time
+                      </label>
+                      <input
+                        type="text"
+                        defaultValue="10:00 AM"
+                        className="w-full border border-gray-300 rounded-lg p-2.5"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-semibold text-gray-700 mb-1">
+                        Invoice Due Date Advance Notice (Days)
+                      </label>
+                      <input
+                        type="number"
+                        defaultValue={3}
+                        className="w-full border border-gray-300 rounded-lg p-2.5"
+                      />
+                    </div>
+                  </div>
+                  <div className="pt-2 flex items-center space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => alert('Reminder configurations saved.')}
+                      className="px-5 py-2 bg-[#1a237e] hover:bg-[#283593] text-white rounded-md font-semibold shadow-xs cursor-pointer"
+                    >
+                      Save
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* SCREEN 3: USERS & TEAM (Parity retained) */}
+          {activeTab === 'users' && (
+            <div className="space-y-3">
+              {/* License Alert Banner */}
+              <div className="bg-gradient-to-r from-blue-50/90 via-indigo-50/70 to-blue-50/90 border border-blue-200/80 rounded-xl p-3.5 shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div className="flex items-center space-x-3">
+                  <div className="w-9 h-9 rounded-lg bg-[#3949ab] text-white flex items-center justify-center shrink-0 shadow-xs">
+                    <ShieldCheck className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <span className="font-bold text-gray-900 text-sm">Workspace License Allocation</span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#3949ab] text-white">
+                        Enterprise Workspace
+                      </span>
+                    </div>
+                    <p className="text-gray-600 text-[11px] mt-0.5">
+                      Real-time GPS tracking, attendance geo-fencing, and granular role permissions enabled.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <div className="text-right">
+                    <div className="text-xs font-bold text-gray-800">
+                      Active Users: <span className="text-[#3949ab] font-extrabold">{activeUsersCount}</span> / {totalLicenseCount} Licenses
+                    </div>
+                    <div className="w-32 bg-gray-200 h-1.5 rounded-full overflow-hidden mt-1">
+                      <div
+                        className="bg-[#3949ab] h-full rounded-full transition-all duration-300"
+                        style={{ width: `${Math.min(100, (activeUsersCount / totalLicenseCount) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-[11px] font-bold rounded-lg border border-emerald-200">
+                    {totalLicenseCount - activeUsersCount} Free Seats
+                  </span>
+                </div>
+              </div>
+
+              {/* Users Filter Block */}
+              <div className="bg-white rounded-xl border border-gray-200 shadow-2xs p-3.5 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2.5">
+                  <div className="flex flex-wrap items-center gap-2 flex-1 min-w-[280px]">
+                    <div className="relative flex-1 min-w-[200px] max-w-sm">
+                      <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search by name, mobile, email, code..."
+                        className="w-full pl-8 pr-7 py-1.5 text-xs border border-gray-200 rounded-lg bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#3949ab] focus:border-[#3949ab] transition-colors"
+                      />
+                      {searchQuery && (
+                        <button
+                          onClick={() => setSearchQuery('')}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+
+                    <select
+                      value={roleFilter}
+                      onChange={(e) => setRoleFilter(e.target.value as typeof roleFilter)}
+                      className="px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#3949ab] cursor-pointer"
+                    >
+                      <option value="all">All Roles</option>
+                      <option value="Admin">Admin</option>
+                      <option value="Manager">Manager</option>
+                      <option value="Staff">Field Staff</option>
+                    </select>
+
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+                      className="px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#3949ab] cursor-pointer"
+                    >
+                      <option value="all">All Status</option>
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+
+                    <select
+                      value={trackingFilter}
+                      onChange={(e) => setTrackingFilter(e.target.value as typeof trackingFilter)}
+                      className="px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#3949ab] cursor-pointer"
+                    >
+                      <option value="all">All GPS Tracking</option>
+                      <option value="active">GPS Enabled</option>
+                      <option value="disabled">GPS Disabled</option>
+                    </select>
+
+                    {hasActiveFilters && (
+                      <button
+                        onClick={resetAllFilters}
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-600 hover:text-rose-700 px-2 py-1 rounded-md hover:bg-rose-50 transition-colors cursor-pointer"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        <span>Clear</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <div className="relative" ref={columnsDropdownRef}>
+                      <button
+                        type="button"
+                        onClick={() => setIsColumnsDropdownOpen((v) => !v)}
+                        className="inline-flex items-center space-x-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 transition-colors cursor-pointer shadow-2xs"
+                      >
+                        <SlidersHorizontal className="w-3.5 h-3.5 text-[#3949ab]" />
+                        <span>Columns</span>
+                      </button>
+
+                      {isColumnsDropdownOpen && (
+                        <div className="absolute right-0 top-9 z-50 w-52 bg-white rounded-xl shadow-xl border border-gray-200 p-2 text-xs space-y-1 animate-in fade-in zoom-in-95">
+                          <div className="px-2 py-1 text-[11px] font-bold text-gray-500 uppercase tracking-wider border-b border-gray-100 flex items-center justify-between">
+                            <span>Show/Hide Columns</span>
+                            <button
+                              onClick={() => setIsColumnsDropdownOpen(false)}
+                              className="text-gray-400 hover:text-gray-600"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                          <div className="max-h-60 overflow-y-auto space-y-0.5 pt-1">
+                            {AVAILABLE_COLUMNS.map((col) => {
+                              const isChecked = visibleColumns[col.key] ?? true;
+                              return (
+                                <label
+                                  key={col.key}
+                                  className={`flex items-center space-x-2 px-2 py-1.5 rounded-md hover:bg-gray-50 cursor-pointer ${
+                                    col.locked ? 'opacity-60 cursor-not-allowed' : ''
+                                  }`}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    disabled={col.locked}
+                                    checked={isChecked}
+                                    onChange={() => !col.locked && toggleColumnVisibility(col.key)}
+                                    className="rounded text-[#3949ab] focus:ring-[#3949ab]"
+                                  />
+                                  <span className="text-gray-700 text-xs font-medium">{col.label}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      onClick={handleOpenAddUser}
+                      className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 bg-[#3949ab] hover:bg-[#303f9f] text-white rounded-lg text-xs font-semibold shadow-xs cursor-pointer transition-colors"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Add User</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Users Table */}
+              <div className="bg-white rounded-xl border border-gray-200 shadow-2xs overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs text-gray-700">
+                    <thead className="bg-gray-50 text-gray-500 font-semibold uppercase text-[11px] border-b border-gray-200">
+                      <tr>
+                        {visibleColumns.user_code && <th className="px-4 py-3">ID</th>}
+                        {visibleColumns.name && <th className="px-4 py-3">Member Name</th>}
+                        {visibleColumns.mobile && <th className="px-4 py-3">Mobile</th>}
+                        {visibleColumns.email && <th className="px-4 py-3">Email</th>}
+                        {visibleColumns.role && <th className="px-4 py-3">Role</th>}
+                        {visibleColumns.reporting_head && <th className="px-4 py-3">Reporting Head</th>}
+                        {visibleColumns.location_tracking && <th className="px-4 py-3 text-center">GPS Tracking & Live Map</th>}
+                        {visibleColumns.last_login && <th className="px-4 py-3">Last Login / Device</th>}
+                        {visibleColumns.status && <th className="px-4 py-3 text-center">Status</th>}
+                        {visibleColumns.actions && <th className="px-4 py-3 text-right">Actions</th>}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {paginatedUsers.map((u) => (
+                        <tr key={u.id} className="hover:bg-gray-50/80 transition-colors">
+                          {visibleColumns.user_code && (
+                            <td className="px-4 py-3 font-mono font-bold text-gray-900">#{u.user_code}</td>
+                          )}
+                          {visibleColumns.name && (
+                            <td className="px-4 py-3">
+                              <div className="flex items-center space-x-2.5">
+                                <div className="relative">
+                                  <div className="w-7 h-7 rounded-full bg-[#3949ab] text-white font-bold flex items-center justify-center text-[10px] shadow-2xs">
+                                    {u.first_name[0]}{u.last_name[0]}
+                                  </div>
+                                  <span
+                                    className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white ${
+                                      u.is_active ? 'bg-emerald-500' : 'bg-gray-300'
+                                    }`}
+                                  />
+                                </div>
+                                <div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenEditUser(u)}
+                                    className="font-bold text-gray-900 hover:text-[#3949ab] hover:underline text-left cursor-pointer"
+                                  >
+                                    {u.first_name} {u.last_name}
+                                  </button>
+                                  <div className="text-[10px] text-gray-400">
+                                    {u.role === 'Admin' ? 'System Administrator' : u.role === 'Manager' ? 'Branch / Team Manager' : 'Field Sales Executive'}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                          )}
+                          {visibleColumns.mobile && (
+                            <td className="px-4 py-3">
+                              <a href={`tel:${u.mobile}`} className="inline-flex items-center gap-1 text-gray-800 hover:text-[#3949ab] font-medium">
+                                <Phone className="w-3 h-3 text-gray-400" />
+                                <span>{u.mobile}</span>
+                              </a>
+                            </td>
+                          )}
+                          {visibleColumns.email && (
+                            <td className="px-4 py-3">
+                              {u.email ? (
+                                <a href={`mailto:${u.email}`} className="inline-flex items-center gap-1 text-gray-600 hover:text-[#3949ab]">
+                                  <Mail className="w-3 h-3 text-gray-400" />
+                                  <span className="truncate max-w-[150px]">{u.email}</span>
+                                </a>
+                              ) : (
+                                <span className="text-gray-400">—</span>
+                              )}
+                            </td>
+                          )}
+                          {visibleColumns.role && (
+                            <td className="px-4 py-3">
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                                  u.role === 'Admin'
+                                    ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                                    : u.role === 'Manager'
+                                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                    : 'bg-gray-100 text-gray-700 border border-gray-200'
+                                }`}
+                              >
+                                {u.role}
+                              </span>
+                            </td>
+                          )}
+                          {visibleColumns.reporting_head && (
+                            <td className="px-4 py-3 text-gray-600 font-medium">{u.reporting_head || '—'}</td>
+                          )}
+                          {visibleColumns.location_tracking && (
+                            <td className="px-4 py-3 text-center">
+                              <div className="inline-flex items-center gap-1.5 justify-center">
+                                <button
+                                  onClick={() => onToggleTracking(u.id)}
+                                  className="cursor-pointer inline-flex items-center gap-1 font-semibold text-xs transition-colors"
+                                >
+                                  {u.location_tracking ? (
+                                    <span className="text-emerald-600 flex items-center gap-1">
+                                      <ToggleRight className="w-5 h-5 text-emerald-600" /> Active
+                                    </span>
+                                  ) : (
+                                    <span className="text-gray-400 flex items-center gap-1">
+                                      <ToggleLeft className="w-5 h-5 text-gray-400" /> Disabled
+                                    </span>
+                                  )}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedLocationUser(u)}
+                                  className="p-1 rounded-md text-[#3949ab] hover:bg-[#3949ab]/10 transition-colors cursor-pointer"
+                                  title="View GPS location"
+                                >
+                                  <MapPin className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          )}
+                          {visibleColumns.last_login && (
+                            <td className="px-4 py-3">
+                              <div className="space-y-0.5">
+                                <div className="flex items-center gap-1 text-gray-800 font-medium">
+                                  <Clock className="w-3 h-3 text-gray-400" />
+                                  <span>{u.last_login || 'Today, 10:45 AM'}</span>
+                                </div>
+                                <div className="flex items-center gap-1 text-[10px] text-gray-500">
+                                  <Smartphone className="w-2.5 h-2.5 text-gray-400" />
+                                  <span>{u.device_info || 'Android 14 (MyTeams v2.4)'}</span>
+                                </div>
+                              </div>
+                            </td>
+                          )}
+                          {visibleColumns.status && (
+                            <td className="px-4 py-3 text-center">
+                              <button
+                                onClick={() => onToggleActive(u.id)}
+                                className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold cursor-pointer transition-colors ${
+                                  u.is_active
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                    : 'bg-rose-50 text-rose-700 border border-rose-200'
+                                }`}
+                              >
+                                {u.is_active ? 'Active' : 'Inactive'}
+                              </button>
+                            </td>
+                          )}
+                          {visibleColumns.actions && (
+                            <td className="px-4 py-3 text-right">
+                              <div className="flex items-center justify-end space-x-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEditUser(u)}
+                                  className="p-1.5 text-gray-500 hover:text-[#3949ab] hover:bg-[#3949ab]/10 rounded-lg transition-colors cursor-pointer"
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                </button>
+                                {onDeleteUser && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteUser(u)}
+                                    className="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Bottom Bar: Download All & Pagination */}
+                <div className="w-full px-4 py-3 border-t border-gray-200 flex flex-wrap items-center justify-between gap-3 text-xs text-gray-500 bg-white">
+                  <div>
+                    <button
+                      onClick={handleDownloadAllUsers}
+                      className="inline-flex items-center gap-2 px-3.5 py-2 bg-[#3949ab] hover:bg-[#303f9f] text-white text-xs font-semibold rounded shadow-xs transition-colors cursor-pointer"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>Download All</span>
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="text-gray-500 text-xs">
+                      Showing {filteredUsers.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} -{' '}
+                      {Math.min(currentPage * itemsPerPage, filteredUsers.length)} of {filteredUsers.length.toLocaleString()}
+                    </span>
+                    <select
+                      value={itemsPerPage}
+                      onChange={(e) => {
+                        setItemsPerPage(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                      className="border border-gray-300 rounded px-2 py-1 text-xs text-gray-700 bg-white"
+                    >
+                      <option value={10}>10</option>
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                    </select>
+                    <div className="flex items-center gap-1">
+                      <button
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        className="min-w-[28px] h-7 px-1.5 rounded flex items-center justify-center text-[#3949ab] hover:bg-gray-100 disabled:text-gray-300 cursor-pointer"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      {getPageNumbers(currentPage, totalPages).map((p, idx) => {
+                        if (typeof p === 'string') {
+                          return <span key={`ellipsis-${idx}`} className="px-1 text-gray-400">...</span>;
+                        }
+                        const isActive = p === currentPage;
+                        return (
+                          <button
+                            key={`page-${p}`}
+                            onClick={() => setCurrentPage(p)}
+                            className={`min-w-[28px] h-7 px-2 rounded flex items-center justify-center text-xs cursor-pointer ${
+                              isActive ? 'bg-[#3949ab] text-white font-semibold' : 'text-[#3949ab] hover:bg-gray-100'
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        );
+                      })}
+                      <button
+                        disabled={currentPage === totalPages || filteredUsers.length === 0}
+                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                        className="min-w-[28px] h-7 px-1.5 rounded flex items-center justify-center text-[#3949ab] hover:bg-gray-100 disabled:text-gray-300 cursor-pointer"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* SCREEN 4: SALES & DOCUMENT SETTINGS */}
+          {activeTab === 'sales_settings' && (
+            <div className="space-y-3">
+              <h2 className="text-base font-bold text-gray-900">Sales Settings</h2>
+              <form onSubmit={handleSaveCompany} className="bg-white p-6 rounded-xl border border-gray-200 shadow-2xs space-y-4 text-xs">
+                <h3 className="font-bold text-sm text-gray-900 border-b border-gray-100 pb-2">
+                  Invoicing Rules, Prefixes & Banking Configuration
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">Tax Invoice Prefix</label>
+                    <input
+                      type="text"
+                      value={company.invoice_prefix}
+                      onChange={(e) => setCompany({ ...company, invoice_prefix: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg p-2 font-mono uppercase"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">Proforma Invoice Prefix</label>
+                    <input
+                      type="text"
+                      value={company.proforma_prefix}
+                      onChange={(e) => setCompany({ ...company, proforma_prefix: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg p-2 font-mono uppercase"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">Order Prefix</label>
+                    <input
+                      type="text"
+                      value={company.order_prefix}
+                      onChange={(e) => setCompany({ ...company, order_prefix: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg p-2 font-mono uppercase"
+                    />
+                  </div>
+                </div>
+
+                <h4 className="font-bold text-gray-800 pt-2 text-xs uppercase tracking-wider">
+                  Bank Account Details (Printed on Invoices & Proforma)
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">Bank Name</label>
+                    <input
+                      type="text"
+                      value={company.bank_name}
+                      onChange={(e) => setCompany({ ...company, bank_name: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg p-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">Account Number</label>
+                    <input
+                      type="text"
+                      value={company.bank_account_no}
+                      onChange={(e) => setCompany({ ...company, bank_account_no: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg p-2 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">IFSC Code</label>
+                    <input
+                      type="text"
+                      value={company.bank_ifsc}
+                      onChange={(e) => setCompany({ ...company, bank_ifsc: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg p-2 font-mono uppercase"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">UPI ID (QR Payment)</label>
+                    <input
+                      type="text"
+                      value={company.upi_id}
+                      onChange={(e) => setCompany({ ...company, upi_id: e.target.value })}
+                      className="w-full border border-gray-300 rounded-lg p-2 font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1">Default Terms & Conditions</label>
+                  <textarea
+                    rows={3}
+                    value={company.terms}
+                    onChange={(e) => setCompany({ ...company, terms: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg p-2"
+                  />
+                </div>
+
+                <div className="pt-3 border-t border-gray-100 flex justify-end">
+                  <button
+                    type="submit"
+                    className="inline-flex items-center space-x-1.5 px-5 py-2 bg-[#1a237e] hover:bg-[#283593] text-white rounded-lg font-semibold shadow-xs cursor-pointer"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>Save Invoicing Settings</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* SCREEN 5: MESSAGE TEMPLATES */}
+          {activeTab === 'templates' && (
+            <div className="space-y-4">
+              <h2 className="text-base font-bold text-gray-900">Message Templates</h2>
+              <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-2xs space-y-5 text-xs">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-3">
+                  <div>
+                    <h3 className="font-bold text-sm text-gray-900 flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4 text-[#1a237e]" />
+                      <span>WhatsApp & Notification Templates</span>
+                    </h3>
+                    <p className="text-gray-500 text-[11px] mt-0.5">
+                      Configure message templates and set the default template automatically used when contacting leads on WhatsApp.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleOpenAddTemplate}
+                    className="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-[#1a237e] hover:bg-[#283593] text-white rounded-lg text-xs font-semibold shadow-xs cursor-pointer transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add Template</span>
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                  {(['All', 'Leads', 'Customers', 'Invoices', 'Proforma Invoices', 'General'] as const).map((mod) => {
+                    const isActive = templateFilter === mod;
+                    const count = mod === 'All' ? templates.length : templates.filter((t) => t.module === mod).length;
+                    return (
+                      <button
+                        key={mod}
+                        onClick={() => setTemplateFilter(mod)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                          isActive
+                            ? 'bg-[#1a237e] text-white shadow-xs'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        <span>{mod}</span>
+                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isActive ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-700'}`}>
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {filteredTemplates.map((tmpl) => {
+                    const samplePreview = templateService.formatMessage(tmpl.content, {
+                      name: 'Rajesh Patel',
+                      companyName: 'Shreeji Enterprise',
+                      brand_name: company.brand_name || 'IV SQUARE STRUCTURE INDIA PVT LTD',
+                      phone: '9876543210',
+                      stage: 'Contacted',
+                      id: 'INV-2026-081',
+                      total: '₹45,000',
+                    });
+
+                    return (
+                      <div
+                        key={tmpl.id}
+                        className={`p-4 rounded-xl border transition-all flex flex-col justify-between space-y-3 ${
+                          tmpl.is_default
+                            ? 'border-emerald-300 bg-emerald-50/20 shadow-2xs'
+                            : 'border-gray-200 bg-white hover:border-gray-300'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="space-y-1">
+                              <div className="flex items-center space-x-2">
+                                <span className="font-bold text-gray-900 text-sm">{tmpl.name}</span>
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                  {tmpl.module}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center space-x-1 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditTemplate(tmpl)}
+                                className="p-1.5 text-gray-500 hover:text-[#1a237e] hover:bg-[#1a237e]/10 rounded-lg transition-colors cursor-pointer"
+                                title="Edit Template"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteTemplate(tmpl)}
+                                className="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                title="Delete Template"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="mt-2 flex items-center justify-between">
+                            {tmpl.is_default ? (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                <Star className="w-3 h-3 fill-emerald-600 text-emerald-600" />
+                                <span>Default WhatsApp Message</span>
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleToggleDefaultTemplate(tmpl.id, tmpl.module)}
+                                className="inline-flex items-center gap-1 text-[11px] font-semibold text-gray-500 hover:text-emerald-700 hover:bg-emerald-50 px-2 py-0.5 rounded-md border border-gray-200 transition-colors cursor-pointer"
+                              >
+                                <Star className="w-3 h-3 text-gray-400" />
+                                <span>Set as Default</span>
+                              </button>
+                            )}
+                            <span className="text-[10px] text-gray-400">
+                              {tmpl.module === 'Leads' ? 'Used in Lead Detail WhatsApp' : ''}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="p-3 bg-gray-50 rounded-lg border border-gray-100 font-mono text-[11px] text-gray-700 whitespace-pre-wrap leading-relaxed">
+                          {tmpl.content}
+                        </div>
+
+                        <div className="pt-2 border-t border-gray-100 space-y-1">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                            Live Lead Preview (Rajesh Patel):
+                          </span>
+                          <div className="p-2.5 bg-emerald-50/70 rounded-lg border border-emerald-100 text-[11px] text-emerald-900 font-sans leading-relaxed">
+                            💬 &ldquo;{samplePreview}&rdquo;
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* SCREEN 6: MODULES & CARDS VISIBILITY */}
+          {activeTab === 'modules' && (
+            <div className="space-y-4">
+              <h2 className="text-base font-bold text-gray-900">Modules & Cards Visibility</h2>
+              <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-2xs space-y-6 text-xs">
+                <div className="flex items-center justify-between border-b border-gray-100 pb-3 flex-wrap gap-2">
+                  <div>
+                    <h3 className="font-bold text-sm text-gray-900 flex items-center gap-2">
+                      <span>Modules & Dashboard Cards Visibility Control</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#1a237e]/10 text-[#1a237e] font-bold">
+                        Dashboard Customizer
+                      </span>
+                      {isSaving && (
+                        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#1a237e] bg-[#1a237e]/10 px-2 py-0.5 rounded-full">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          Saving to cloud...
+                        </span>
+                      )}
+                    </h3>
+                    <p className="text-gray-500 text-[11px]">
+                      Enable or disable system modules and dashboard widgets for your workspace.
+                    </p>
+                  </div>
+                  {onResetDefaults && (
+                    <button
+                      type="button"
+                      onClick={() => !isSaving && onResetDefaults()}
+                      disabled={isSaving}
+                      className="inline-flex items-center space-x-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Reset All Defaults</span>
+                    </button>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="font-bold text-xs text-gray-800 uppercase tracking-wider flex items-center gap-2">
+                    <LayoutDashboard className="w-4 h-4 text-[#1a237e]" />
+                    <span>Main Navigation Modules</span>
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {[
+                      { key: 'leads' as const, label: 'Leads Management', desc: 'Inquiries, stages, scoring, WhatsApp chat, and conversion to customer' },
+                      { key: 'customers' as const, label: 'Customers Directory', desc: 'Customer accounts, tiers (Gold/Silver), and purchase history' },
+                      { key: 'sales' as const, label: 'Sales & Invoices Suite', desc: 'Proforma Invoices, Tax Invoices, Orders, Payments, and Stock Inventory' },
+                      { key: 'expenses' as const, label: 'Field Expenses Claims', desc: 'Staff reimbursement claims, travel distance, receipt audit, and approvals' },
+                      { key: 'reports' as const, label: 'Reports & DSR Analytics', desc: 'Daily Status Reports, staff scorecards, and conversion funnel' },
+                      { key: 'settings' as const, label: 'Workspace Settings', desc: 'Company profile, team hierarchy, GPS tracking toggles, and templates' },
+                    ].map((m) => {
+                      const isVisible = moduleVisibility ? moduleVisibility[m.key] : true;
+                      return (
+                        <div
+                          key={m.key}
+                          onClick={() => !isSaving && onToggleModule && onToggleModule(m.key)}
+                          className="p-3.5 rounded-xl border border-gray-200 transition-all flex items-center justify-between cursor-pointer bg-gray-50/50 hover:bg-white hover:border-[#1a237e]/40"
+                        >
+                          <div className="min-w-0 pr-3">
+                            <div className="flex items-center space-x-2">
+                              <span className="font-bold text-gray-900">{m.label}</span>
+                              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${
+                                isVisible ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-gray-200 text-gray-600'
+                              }`}>
+                                {isVisible ? 'Active' : 'Hidden'}
+                              </span>
+                            </div>
+                            <p className="text-gray-500 text-[11px] mt-0.5">{m.desc}</p>
+                          </div>
+                          <div className="shrink-0">
+                            {isVisible ? (
+                              <ToggleRight className="w-6 h-6 text-[#1a237e]" />
+                            ) : (
+                              <ToggleLeft className="w-6 h-6 text-gray-300" />
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="space-y-3 pt-3 border-t border-gray-100">
+                  <h4 className="font-bold text-xs text-gray-800 uppercase tracking-wider flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-[#1a237e]" />
+                    <span>Dashboard Cards & Widgets</span>
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {[
+                      { key: 'quickStats' as const, label: 'Metric KPI Counters' },
+                      { key: 'leadsChart' as const, label: 'Leads Pipeline Funnel' },
+                      { key: 'attendanceChart' as const, label: 'Attendance & Punch Status' },
+                      { key: 'visitsChart' as const, label: 'Field Client Visits' },
+                      { key: 'tasksChart' as const, label: 'Field Tasks Breakdown' },
+                      { key: 'callsSummary' as const, label: 'Calls Summary Log' },
+                      { key: 'visitsList' as const, label: 'Recent Leads Feed' },
+                      { key: 'ordersList' as const, label: 'Recent Invoices & Orders' },
+                      { key: 'customerReminders' as const, label: 'Customer Reminders' },
+                    ].map((c) => {
+                      const isVisible = dashboardCards ? dashboardCards[c.key] : true;
+                      return (
+                        <div
+                          key={c.key}
+                          onClick={() => !isSaving && onToggleCard && onToggleCard(c.key)}
+                          className="p-3 rounded-lg border border-gray-200 transition-all flex items-center justify-between cursor-pointer bg-gray-50/50 hover:bg-white hover:border-[#1a237e]/40"
+                        >
+                          <span className={`font-semibold ${isVisible ? 'text-gray-900' : 'text-gray-400'}`}>
+                            {c.label}
+                          </span>
+                          <div className="shrink-0">
+                            {isVisible ? (
+                              <ToggleRight className="w-5 h-5 text-[#1a237e]" />
+                            ) : (
+                              <ToggleLeft className="w-5 h-5 text-gray-300" />
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ======================================================== */}
+      {/* MODAL 1: ADD / EDIT OFFICE (Screenshot 154139)           */}
+      {/* ======================================================== */}
+      {isOfficeModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden text-xs animate-in fade-in zoom-in-95">
+            <div className="bg-[#1a237e] text-white px-4 py-3 flex items-center justify-between font-bold text-sm">
+              <span>{editingOffice ? 'Edit Office' : 'Add Office'}</span>
               <button
                 type="button"
-                onClick={() => !isSaving && onResetDefaults()}
-                disabled={isSaving}
-                className={`inline-flex items-center space-x-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-semibold transition-colors ${
-                  isSaving
-                    ? 'text-gray-400 bg-gray-50 cursor-not-allowed'
-                    : 'text-gray-700 hover:bg-gray-50 cursor-pointer'
-                }`}
+                onClick={() => {
+                  setIsOfficeModalOpen(false);
+                  setEditingOffice(null);
+                }}
+                className="text-white/80 hover:text-white cursor-pointer"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Reset All Defaults</span>
+                <X className="w-5 h-5" />
               </button>
-            )}
-          </div>
-
-          {/* 1. Main Navigation Modules */}
-          <div className="space-y-3">
-            <h4 className="font-bold text-xs text-gray-800 uppercase tracking-wider flex items-center gap-2">
-              <LayoutDashboard className="w-4 h-4 text-[#3949ab]" />
-              <span>Main Navigation Modules</span>
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {[
-                { key: 'leads' as const, label: 'Leads Management', desc: 'Inquiries, stages, scoring, WhatsApp chat, and conversion to customer' },
-                { key: 'customers' as const, label: 'Customers Directory', desc: 'Customer accounts, tiers (Gold/Silver), and purchase history' },
-                { key: 'sales' as const, label: 'Sales & Invoices Suite', desc: 'Proforma Invoices, Tax Invoices, Orders, Payments, and Stock Inventory' },
-                { key: 'expenses' as const, label: 'Field Expenses Claims', desc: 'Staff reimbursement claims, travel distance, receipt audit, and approvals' },
-                { key: 'reports' as const, label: 'Reports & DSR Analytics', desc: 'Daily Status Reports, staff scorecards, and conversion funnel' },
-                { key: 'settings' as const, label: 'Workspace Settings', desc: 'Company profile, team hierarchy, GPS tracking toggles, and templates' },
-              ].map((m) => {
-                const isVisible = moduleVisibility ? moduleVisibility[m.key] : true;
-                return (
-                  <div
-                    key={m.key}
-                    onClick={() => !isSaving && onToggleModule && onToggleModule(m.key)}
-                    className={`p-3.5 rounded-xl border border-gray-200 transition-all flex items-center justify-between ${
-                      isSaving
-                        ? 'cursor-not-allowed opacity-70 bg-gray-50'
-                        : 'cursor-pointer bg-gray-50/50 hover:bg-white hover:border-[#3949ab]/40'
-                    }`}
-                  >
-                    <div className="min-w-0 pr-3">
-                      <div className="flex items-center space-x-2">
-                        <span className="font-bold text-gray-900">{m.label}</span>
-                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${
-                          isVisible ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-gray-200 text-gray-600'
-                        }`}>
-                          {isVisible ? 'Active' : 'Hidden'}
-                        </span>
-                      </div>
-                      <p className="text-gray-500 text-[11px] mt-0.5">{m.desc}</p>
-                    </div>
-                    <div className="shrink-0">
-                      {isSaving ? (
-                        <Loader2 className="w-5 h-5 text-[#3949ab] animate-spin" />
-                      ) : isVisible ? (
-                        <ToggleRight className="w-6 h-6 text-[#3949ab]" />
-                      ) : (
-                        <ToggleLeft className="w-6 h-6 text-gray-300" />
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
             </div>
-          </div>
 
-          {/* 2. Dashboard Cards */}
-          <div className="space-y-3 pt-3 border-t border-gray-100">
-            <h4 className="font-bold text-xs text-gray-800 uppercase tracking-wider flex items-center gap-2">
-              <Layers className="w-4 h-4 text-[#3949ab]" />
-              <span>Dashboard Cards & Widgets</span>
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {[
-                { key: 'quickStats' as const, label: 'Metric KPI Counters' },
-                { key: 'leadsChart' as const, label: 'Leads Pipeline Funnel' },
-                { key: 'attendanceChart' as const, label: 'Attendance & Punch Status' },
-                { key: 'visitsChart' as const, label: 'Field Client Visits' },
-                { key: 'tasksChart' as const, label: 'Field Tasks Breakdown' },
-                { key: 'callsSummary' as const, label: 'Calls Summary Log' },
-                { key: 'visitsList' as const, label: 'Recent Leads Feed' },
-                { key: 'ordersList' as const, label: 'Recent Invoices & Orders' },
-                { key: 'customerReminders' as const, label: 'Customer Reminders' },
-              ].map((c) => {
-                const isVisible = dashboardCards ? dashboardCards[c.key] : true;
-                return (
-                  <div
-                    key={c.key}
-                    onClick={() => !isSaving && onToggleCard && onToggleCard(c.key)}
-                    className={`p-3 rounded-lg border border-gray-200 transition-all flex items-center justify-between ${
-                      isSaving
-                        ? 'cursor-not-allowed opacity-70 bg-gray-50'
-                        : 'cursor-pointer bg-gray-50/50 hover:bg-white hover:border-[#3949ab]/40'
-                    }`}
+            <form onSubmit={handleSaveOffice} className="p-5 space-y-3.5">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1">
+                    Name <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={officeName}
+                    onChange={(e) => setOfficeName(e.target.value)}
+                    placeholder="e.g. Head Office"
+                    className="w-full border border-gray-300 rounded-lg p-2 focus:border-[#1a237e] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1">
+                    Location <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="text"
+                      readOnly
+                      value={officeLocation}
+                      className="w-full border border-gray-200 bg-gray-100 rounded-lg p-2 font-mono text-[11px] text-gray-600 focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleOpenMapFromForm}
+                      className="p-2 bg-[#1a237e] hover:bg-[#283593] text-white rounded-lg cursor-pointer transition-colors shrink-0"
+                      title="Tap location icon to open map and pick coordinates"
+                    >
+                      <MapPin className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-gray-700 mb-1">Address</label>
+                <textarea
+                  rows={3}
+                  value={officeAddress}
+                  onChange={(e) => setOfficeAddress(e.target.value)}
+                  placeholder="Street address, building, landmark..."
+                  className="w-full border border-gray-300 rounded-lg p-2 focus:border-[#1a237e] focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1">City</label>
+                  <input
+                    type="text"
+                    value={officeCity}
+                    onChange={(e) => setOfficeCity(e.target.value)}
+                    placeholder="e.g. Rajkot"
+                    className="w-full border border-gray-300 rounded-lg p-2 focus:border-[#1a237e] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1">State</label>
+                  <input
+                    type="text"
+                    value={officeState}
+                    onChange={(e) => setOfficeState(e.target.value)}
+                    placeholder="e.g. Gujarat"
+                    className="w-full border border-gray-300 rounded-lg p-2 focus:border-[#1a237e] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1">Pincode</label>
+                  <input
+                    type="text"
+                    value={officePincode}
+                    onChange={(e) => setOfficePincode(e.target.value)}
+                    placeholder="e.g. 360006"
+                    className="w-full border border-gray-300 rounded-lg p-2 focus:border-[#1a237e] focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1">Country</label>
+                  <select
+                    value={officeCountry}
+                    onChange={(e) => setOfficeCountry(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg p-2 bg-white text-gray-700 focus:border-[#1a237e] focus:outline-none"
                   >
-                    <span className={`font-semibold ${isVisible ? 'text-gray-900' : 'text-gray-400'}`}>
-                      {c.label}
-                    </span>
-                    <div className="shrink-0">
-                      {isSaving ? (
-                        <Loader2 className="w-4 h-4 text-[#3949ab] animate-spin" />
-                      ) : isVisible ? (
-                        <ToggleRight className="w-5 h-5 text-[#3949ab]" />
-                      ) : (
-                        <ToggleLeft className="w-5 h-5 text-gray-300" />
-                      )}
+                    <option value="India">India</option>
+                    <option value="United States">United States</option>
+                    <option value="UAE">United Arab Emirates</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-gray-100 flex items-center space-x-2">
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-[#1a237e] hover:bg-[#283593] text-white rounded-md font-semibold cursor-pointer transition-colors"
+                >
+                  Save
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsOfficeModalOpen(false);
+                    setEditingOffice(null);
+                  }}
+                  className="px-4 py-2 border border-gray-300 hover:bg-gray-100 text-gray-700 rounded-md font-semibold cursor-pointer transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL 2: INTERACTIVE MAP MODAL (when location icon tapped)*/}
+      {/* ======================================================== */}
+      {isMapModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden border border-gray-100 text-xs animate-in fade-in zoom-in-95">
+            <div className="bg-[#1a237e] text-white px-5 py-3.5 flex items-center justify-between font-bold text-sm">
+              <div className="flex items-center space-x-2">
+                <MapPin className="w-4 h-4 text-white" />
+                <span>
+                  {viewingOfficeOnMap ? `Office Location: ${viewingOfficeOnMap.name}` : 'Select Office Location on Map'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsMapModalOpen(false)}
+                className="text-white/80 hover:text-white cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              {/* Coordinates Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl bg-gray-50 border border-gray-200">
+                <div className="flex items-center space-x-2">
+                  <span className="font-semibold text-gray-600 text-xs">GPS Coordinates:</span>
+                  <span className="font-mono font-bold text-gray-900 text-xs">
+                    {mapPickerLat.toFixed(4)}, {mapPickerLng.toFixed(4)}
+                  </span>
+                </div>
+                {mapLocationSource === 'form' && (
+                  <button
+                    type="button"
+                    onClick={handleUseCurrentGPSLocation}
+                    disabled={isGettingCurrentLocation}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-white hover:bg-gray-100 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 cursor-pointer shadow-2xs"
+                  >
+                    {isGettingCurrentLocation ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-[#1a237e]" />
+                    ) : (
+                      <Navigation className="w-3.5 h-3.5 text-[#1a237e]" />
+                    )}
+                    <span>Use My Current GPS</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Styled Interactive Map Preview Card */}
+              <div className="relative h-64 w-full rounded-xl overflow-hidden border border-gray-300 bg-slate-100 flex items-center justify-center shadow-inner">
+                <div className="absolute inset-0 opacity-25 bg-[radial-gradient(#1a237e_1px,transparent_1px)] [background-size:18px_18px]" />
+                
+                {/* Radar pulse animation */}
+                <div className="absolute w-28 h-28 rounded-full bg-[#1a237e]/15 animate-ping" />
+                <div className="absolute w-14 h-14 rounded-full bg-[#1a237e]/20 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full bg-[#1a237e] text-white flex items-center justify-center shadow-xl">
+                    <MapPin className="w-5 h-5 text-white" />
+                  </div>
+                </div>
+
+                {/* Bottom Address / Info Pill */}
+                <div className="absolute bottom-3 left-3 right-3 bg-white/95 backdrop-blur-xs p-3 rounded-xl border border-gray-200 shadow-md flex items-center justify-between">
+                  <div className="truncate pr-3">
+                    <div className="font-bold text-gray-900 text-xs truncate">
+                      {viewingOfficeOnMap?.name || officeName || 'Office Geo-Fence Target'}
+                    </div>
+                    <div className="text-[11px] text-gray-600 truncate mt-0.5">
+                      {viewingOfficeOnMap?.address || officeAddress || '1103, R K World Tower, 150ft Ring Road, Rajkot'}
                     </div>
                   </div>
-                );
-              })}
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${mapPickerLat},${mapPickerLng}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="shrink-0 px-3 py-1.5 bg-[#1a237e] hover:bg-[#283593] text-white rounded-lg text-xs font-bold inline-flex items-center gap-1 shadow-xs transition-colors"
+                  >
+                    <span>Google Maps</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+              </div>
+
+              {/* Footer Buttons */}
+              <div className="pt-2 border-t border-gray-100 flex items-center justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setIsMapModalOpen(false)}
+                  className="px-4 py-2 border border-gray-300 hover:bg-gray-100 text-gray-700 rounded-md font-semibold cursor-pointer"
+                >
+                  Close
+                </button>
+                {mapLocationSource === 'form' && (
+                  <button
+                    type="button"
+                    onClick={handleConfirmMapLocation}
+                    className="px-5 py-2 bg-[#1a237e] hover:bg-[#283593] text-white rounded-md font-semibold cursor-pointer shadow-xs transition-colors"
+                  >
+                    Confirm Location
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* LIVE MAP & LOCATION MODAL (#UserLocationMapView) */}
+      {/* ======================================================== */}
+      {/* MODAL 3: USER LOCATION PREVIEW MODAL                     */}
+      {/* ======================================================== */}
       {selectedLocationUser && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-gray-100 animate-in fade-in zoom-in-95">
-            {/* Modal Header */}
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-gray-100 animate-in fade-in zoom-in-95 text-xs">
             <div className="p-4 bg-gradient-to-r from-[#1a237e] to-[#3949ab] text-white flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-bold text-sm">
@@ -1657,9 +2683,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </button>
             </div>
 
-            {/* Modal Body */}
-            <div className="p-5 space-y-4 text-xs">
-              {/* Status Banner */}
+            <div className="p-5 space-y-4">
               <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-200">
                 <div className="flex items-center space-x-2">
                   <span className={`w-3 h-3 rounded-full ${selectedLocationUser.location_tracking ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'}`} />
@@ -1672,12 +2696,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </span>
               </div>
 
-              {/* Map Visual Card */}
               <div className="relative h-48 w-full rounded-xl overflow-hidden border border-gray-200 bg-slate-100 flex items-center justify-center">
-                {/* Styled Map Background Grid */}
                 <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#3949ab_1px,transparent_1px)] [background-size:16px_16px]" />
-                
-                {/* Radar pulse around pin */}
                 <div className="absolute w-24 h-24 rounded-full bg-[#3949ab]/15 animate-ping" />
                 <div className="absolute w-12 h-12 rounded-full bg-[#3949ab]/25 flex items-center justify-center">
                   <div className="w-7 h-7 rounded-full bg-[#3949ab] text-white flex items-center justify-center shadow-lg">
@@ -1685,7 +2705,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   </div>
                 </div>
 
-                {/* Badge Overlay */}
                 <div className="absolute bottom-3 left-3 right-3 bg-white/95 backdrop-blur-xs p-2.5 rounded-lg border border-gray-200 shadow-sm flex items-center justify-between">
                   <div className="truncate pr-2">
                     <div className="font-bold text-gray-900 text-xs truncate">
@@ -1706,36 +2725,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   </a>
                 </div>
               </div>
-
-              {/* Extra Info Grid */}
-              <div className="grid grid-cols-2 gap-2.5 text-[11px]">
-                <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-100">
-                  <span className="text-gray-400 block mb-0.5">Mobile Contact</span>
-                  <span className="font-bold text-gray-800">{selectedLocationUser.mobile}</span>
-                </div>
-                <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-100">
-                  <span className="text-gray-400 block mb-0.5">Reports To</span>
-                  <span className="font-bold text-gray-800">{selectedLocationUser.reporting_head || 'ADMIN ADMIN'}</span>
-                </div>
-                <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-100">
-                  <span className="text-gray-400 block mb-0.5">Last Logged Device</span>
-                  <span className="font-bold text-gray-800 truncate block">
-                    {selectedLocationUser.device_info || 'Android 14 (MyTeams v2.4)'}
-                  </span>
-                </div>
-                <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-100">
-                  <span className="text-gray-400 block mb-0.5">Last Login Time</span>
-                  <span className="font-bold text-gray-800">{selectedLocationUser.last_login || 'Today, 10:45 AM'}</span>
-                </div>
-              </div>
             </div>
 
-            {/* Modal Footer */}
             <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
               <button
                 type="button"
                 onClick={() => setSelectedLocationUser(null)}
-                className="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-100 text-gray-700 font-semibold rounded-lg text-xs transition-colors cursor-pointer"
+                className="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-100 text-gray-700 font-semibold rounded-lg text-xs cursor-pointer"
               >
                 Close Preview
               </button>
@@ -1744,11 +2740,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       )}
 
-      {/* ADD / EDIT MESSAGE TEMPLATE MODAL */}
+      {/* ======================================================== */}
+      {/* MODAL 4: ADD / EDIT MESSAGE TEMPLATE MODAL               */}
+      {/* ======================================================== */}
       {isTemplateModalOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-gray-100 overflow-hidden text-xs animate-in fade-in zoom-in-95">
-            {/* Modal Header */}
             <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/70">
               <div>
                 <h3 className="text-base font-bold text-gray-900">
@@ -1770,7 +2767,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </button>
             </div>
 
-            {/* Modal Form */}
             <form onSubmit={handleSaveTemplate} className="p-5 space-y-4">
               <div>
                 <label className="block font-semibold text-gray-700 mb-1">Template Name *</label>
@@ -1780,7 +2776,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   value={tmplName}
                   onChange={(e) => setTmplName(e.target.value)}
                   placeholder="e.g. Lead Follow-Up Greeting"
-                  className="w-full border border-gray-300 rounded-lg p-2 focus:ring-[#3949ab] focus:border-[#3949ab]"
+                  className="w-full border border-gray-300 rounded-lg p-2 focus:ring-[#1a237e] focus:border-[#1a237e]"
                 />
               </div>
 
@@ -1799,7 +2795,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </select>
               </div>
 
-              {/* Dynamic Tag Insertion Toolbar */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="font-semibold text-gray-700">Dynamic Variable Tags</label>
@@ -1819,8 +2814,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       key={v.tag}
                       type="button"
                       onClick={() => insertVariableTag(v.tag)}
-                      className="px-2 py-1 bg-white hover:bg-[#3949ab] hover:text-white text-gray-700 font-mono text-[10px] font-bold rounded border border-gray-200 transition-colors shadow-2xs cursor-pointer"
-                      title={`Insert ${v.label}`}
+                      className="px-2 py-1 bg-white hover:bg-[#1a237e] hover:text-white text-gray-700 font-mono text-[10px] font-bold rounded border border-gray-200 transition-colors shadow-2xs cursor-pointer"
                     >
                       + {v.tag}
                     </button>
@@ -1828,7 +2822,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
               </div>
 
-              {/* Textarea */}
               <div>
                 <label className="block font-semibold text-gray-700 mb-1">Message Content *</label>
                 <textarea
@@ -1838,17 +2831,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   value={tmplContent}
                   onChange={(e) => setTmplContent(e.target.value)}
                   placeholder="Type your message with dynamic tags like {{name}}..."
-                  className="w-full border border-gray-300 rounded-lg p-2.5 font-sans focus:ring-[#3949ab] focus:border-[#3949ab]"
+                  className="w-full border border-gray-300 rounded-lg p-2.5 font-sans focus:ring-[#1a237e] focus:border-[#1a237e]"
                 />
               </div>
 
-              {/* Checkbox: Set as Default */}
               <label className="flex items-center space-x-2.5 cursor-pointer p-2.5 rounded-lg border border-gray-200 hover:bg-gray-50">
                 <input
                   type="checkbox"
                   checked={tmplIsDefault}
                   onChange={(e) => setTmplIsDefault(e.target.checked)}
-                  className="rounded text-[#3949ab] focus:ring-[#3949ab]"
+                  className="rounded text-[#1a237e] focus:ring-[#1a237e]"
                 />
                 <div>
                   <span className="font-bold text-gray-800 block">
@@ -1860,7 +2852,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
               </label>
 
-              {/* Modal Footer */}
               <div className="pt-3 border-t border-gray-100 flex items-center justify-end space-x-2">
                 <button
                   type="button"
@@ -1874,7 +2865,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-[#3949ab] hover:bg-[#303f9f] text-white rounded-lg font-semibold shadow-xs cursor-pointer transition-colors"
+                  className="px-5 py-2 bg-[#1a237e] hover:bg-[#283593] text-white rounded-lg font-semibold shadow-xs cursor-pointer transition-colors"
                 >
                   {editingTemplate ? 'Update Template' : 'Save Template'}
                 </button>
@@ -1884,11 +2875,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       )}
 
-      {/* ADD / EDIT USER MODAL WITH GRANULAR PERMISSIONS (.permissions-module) */}
+      {/* ======================================================== */}
+      {/* MODAL 5: ADD / EDIT USER MODAL                           */}
+      {/* ======================================================== */}
       {isUserModalOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl border border-gray-100 overflow-hidden text-xs animate-in fade-in zoom-in-95">
-            {/* Modal Header */}
             <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/70">
               <div>
                 <h3 className="text-base font-bold text-gray-900">
@@ -1912,7 +2904,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </button>
             </div>
 
-            {/* Modal Sub-Tabs: Profile vs Permissions */}
             <div className="flex border-b border-gray-200 bg-white px-4 pt-2">
               <button
                 type="button"
@@ -1939,10 +2930,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </button>
             </div>
 
-            {/* Form */}
             <form onSubmit={handleSaveUser}>
               <div className="p-6 space-y-4 max-h-[68vh] overflow-y-auto">
-                {/* TAB A: PROFILE DETAILS */}
                 {userModalTab === 'profile' && (
                   <div className="space-y-3.5">
                     <div className="grid grid-cols-2 gap-3">
@@ -2062,7 +3051,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   </div>
                 )}
 
-                {/* TAB B: GRANULAR PERMISSIONS (.permissions-module) */}
                 {userModalTab === 'permissions' && (
                   <div className="space-y-4">
                     <div className="p-3 bg-blue-50/80 border border-blue-200 rounded-xl flex items-center justify-between">
@@ -2081,7 +3069,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       </button>
                     </div>
 
-                    {/* 1. Leads Module Permissions */}
                     <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200 space-y-2.5">
                       <div className="flex items-center justify-between border-b border-gray-200 pb-2">
                         <span className="font-bold text-gray-900 text-xs">Leads Management Access</span>
@@ -2160,7 +3147,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       </div>
                     </div>
 
-                    {/* 2. Customers Module Permissions */}
                     <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200 space-y-2.5">
                       <div className="flex items-center justify-between border-b border-gray-200 pb-2">
                         <span className="font-bold text-gray-900 text-xs">Customers Directory Access</span>
@@ -2228,7 +3214,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       </div>
                     </div>
 
-                    {/* 3. Sales & Invoicing Permissions */}
                     <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200 space-y-2.5">
                       <div className="font-bold text-gray-900 text-xs border-b border-gray-200 pb-2">
                         Sales, Invoices & Payments Collection
@@ -2281,7 +3266,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       </div>
                     </div>
 
-                    {/* 4. Visits & Field Tracking */}
                     <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200 space-y-2.5">
                       <div className="font-bold text-gray-900 text-xs border-b border-gray-200 pb-2">
                         Visits & GPS Attendance Tracking
@@ -2315,7 +3299,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 )}
               </div>
 
-              {/* Modal Footer */}
               <div className="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
                 <div>
                   {userModalTab === 'profile' ? (
