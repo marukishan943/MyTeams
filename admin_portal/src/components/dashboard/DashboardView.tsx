@@ -148,7 +148,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* UpTeams Quick Action & Widget Control Bar */}
+      {/* MyTeams Quick Action & Widget Control Bar */}
       <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
@@ -160,7 +160,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          {/* UPTEAMS EXACT #showCardsDropdown */}
+          {/* EXACT #showCardsDropdown */}
           <div className="relative" ref={dropdownRef}>
             <button
               id="showCardsDropdown"
@@ -272,7 +272,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* 1. UpTeams-Style Metric KPI Cards (quickStats) */}
+      {/* 1. MyTeams-Style Metric KPI Cards (quickStats) */}
       {(() => {
         const showLeadsMetric = moduleVisibility.leads !== false;
         const showCustomersMetric = moduleVisibility.customers !== false;
@@ -419,7 +419,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         );
       })()}
 
-      {/* 2. UpTeams Funnel & Operations Blocks (leadsChart, attendanceChart, visitsChart, tasksChart, callsSummary) */}
+      {/* 2. MyTeams Funnel & Operations Blocks (leadsChart, attendanceChart, visitsChart, tasksChart, callsSummary) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Leads Pipeline Funnel */}
         {cardsConfig.leadsChart && moduleVisibility.leads !== false && (

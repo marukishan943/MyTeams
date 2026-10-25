@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase';
 import type { Expense } from '../types/crm';
 
-// Default initial records matching UpTeams inspected data
+// Default initial records matching MyTeams inspected data
 const INITIAL_EXPENSES: Expense[] = [
   {
     id: 'exp-105',

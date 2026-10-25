@@ -61,7 +61,7 @@ export const ExpensesList: React.FC<ExpensesListProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Top Header matching UpTeams */}
+      {/* Top Header matching MyTeams */}
       <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center space-x-2">
           <h2 className="text-base font-bold text-gray-900">Expenses Claims</h2>
@@ -111,7 +111,7 @@ export const ExpensesList: React.FC<ExpensesListProps> = ({
         </div>
       </div>
 
-      {/* UpTeams Status Pills Row */}
+      {/* MyTeams Status Pills Row */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
           {[

@@ -340,7 +340,7 @@ export const ModuleVisibilityModal: React.FC<ModuleVisibilityModalProps> = ({
           ) : (
             <div className="space-y-2.5">
               <p className="text-xs text-gray-500 mb-2">
-                Toggle individual widget blocks on the main Dashboard. UpTeams-style customizable card layout.
+                Toggle individual widget blocks on the main Dashboard. Customizable card layout.
               </p>
               {cardItems.map((card) => {
                 const Icon = card.icon;

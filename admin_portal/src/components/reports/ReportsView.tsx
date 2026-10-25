@@ -107,7 +107,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Top Report Selector Tabs matching UpTeams */}
+      {/* Top Report Selector Tabs matching MyTeams */}
       <div className="bg-white p-2 rounded-xl border border-gray-200 shadow-2xs flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center space-x-1 flex-wrap">
           {[

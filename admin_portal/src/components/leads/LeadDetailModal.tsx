@@ -196,7 +196,7 @@ export const LeadDetailModal: React.FC<LeadDetailModalProps> = ({
           </div>
         </div>
 
-        {/* Lead Notes Stream (UpTeams Style Feed) */}
+        {/* Lead Notes Stream (MyTeams Style Feed) */}
         <div className="bg-white p-5 rounded-xl border border-gray-200 space-y-4">
           <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
             Discussion & Activity Notes ({notes.length})

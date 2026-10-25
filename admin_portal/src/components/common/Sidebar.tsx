@@ -123,7 +123,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
 
-        {/* User Profile Card (UpTeams Style) */}
+        {/* User Profile Card (MyTeams Style) */}
         <div className="p-4 mx-3 my-3 rounded-lg bg-[#263346]/60 border border-gray-700/40">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 rounded-full bg-[#3949ab] text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-xs">

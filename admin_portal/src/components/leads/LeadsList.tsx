@@ -310,7 +310,7 @@ export const LeadsList: React.FC<LeadsListProps> = ({
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Leads');
 
-    XLSX.writeFile(workbook, 'Customers  UpTeams.xlsx');
+    XLSX.writeFile(workbook, 'Leads.xlsx');
   };
 
   const handleConfirmConvert = async (lead: Lead) => {
@@ -374,7 +374,7 @@ export const LeadsList: React.FC<LeadsListProps> = ({
 
   return (
     <div className="w-full bg-white flex flex-col min-h-screen text-gray-800">
-      {/* ── TOP HEADER BAR (Flush edge-to-edge, UpTeams design) ── */}
+      {/* ── TOP HEADER BAR (Flush edge-to-edge, MyTeams design) ── */}
       <div className="w-full bg-white px-4 py-2.5 border-b border-gray-200 flex flex-wrap items-center gap-2.5 shadow-2xs">
         {/* Title & Icon */}
         <div className="flex items-center gap-2 mr-1">
@@ -508,7 +508,7 @@ export const LeadsList: React.FC<LeadsListProps> = ({
         </div>
       </div>
 
-      {/* ── STAGE TABS BAR (Full-width, exact UpTeams styling) ── */}
+      {/* ── STAGE TABS BAR (Full-width, exact MyTeams styling) ── */}
       <div className="w-full bg-white px-4 py-2.5 border-b border-gray-200 flex items-center gap-2 overflow-x-auto">
         {STAGE_TABS.map((tab) => {
           const isActive = stageFilter === tab.id;

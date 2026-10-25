@@ -85,13 +85,13 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Right section: Filters, Refresh, Date & Profile */}
       <div className="flex items-center space-x-2 sm:space-x-3">
-        {/* Date Filter Badge (UpTeams format) */}
+        {/* Date Filter Badge (MyTeams format) */}
         <div className="hidden md:flex items-center space-x-1.5 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs font-medium text-gray-700">
           <Calendar className="w-3.5 h-3.5 text-[#3949ab]" />
           <span>{formattedDate}</span>
         </div>
 
-        {/* Staff Filter Dropdown (UpTeams top navbar feature) */}
+        {/* Staff Filter Dropdown (MyTeams top navbar feature) */}
         <div className="flex items-center space-x-1.5">
           <div className="relative">
             <select

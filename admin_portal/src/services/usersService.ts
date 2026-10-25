@@ -53,7 +53,7 @@ const INITIAL_USERS: TeamUser[] = [
     is_active: true,
     created_at: '2026-09-02T00:00:00Z',
     last_login: 'Today, 01:15 PM',
-    device_info: 'Android 14 (UpTeams v2.4)',
+    device_info: 'Android 14 (MyTeams v2.4)',
     last_location: {
       lat: 22.2882,
       lng: 70.7818,
@@ -91,7 +91,7 @@ const INITIAL_USERS: TeamUser[] = [
     is_active: true,
     created_at: '2026-09-05T00:00:00Z',
     last_login: 'Today, 11:20 AM',
-    device_info: 'Android 13 (UpTeams v2.4)',
+    device_info: 'Android 13 (MyTeams v2.4)',
     last_location: {
       lat: 22.3315,
       lng: 70.8124,
@@ -129,7 +129,7 @@ const INITIAL_USERS: TeamUser[] = [
     is_active: true,
     created_at: '2026-09-10T00:00:00Z',
     last_login: 'Yesterday, 06:45 PM',
-    device_info: 'Android 14 (UpTeams v2.4)',
+    device_info: 'Android 14 (MyTeams v2.4)',
     last_location: {
       lat: 22.2598,
       lng: 70.8037,
@@ -167,7 +167,7 @@ const INITIAL_USERS: TeamUser[] = [
     is_active: true,
     created_at: '2026-09-15T00:00:00Z',
     last_login: 'Today, 09:30 AM',
-    device_info: 'iOS 18.1 (UpTeams v2.4)',
+    device_info: 'iOS 18.1 (MyTeams v2.4)',
     last_location: {
       lat: 22.3082,
       lng: 70.7677,

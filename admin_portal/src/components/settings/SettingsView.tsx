@@ -477,12 +477,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Users');
 
     const dateStr = new Date().toISOString().split('T')[0];
-    XLSX.writeFile(workbook, `UpTeams_Users_${dateStr}.xlsx`);
+    XLSX.writeFile(workbook, `Users_${dateStr}.xlsx`);
   };
 
   return (
     <div className="space-y-4">
-      {/* Settings Sub-Tabs matching UpTeams */}
+      {/* Settings Sub-Tabs */}
       <div className="bg-white p-2 rounded-xl border border-gray-200 shadow-2xs flex items-center space-x-1 overflow-x-auto">
         {[
           { id: 'company', label: 'Company Profile', icon: Building2 },
@@ -515,7 +515,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <div className="flex items-center justify-between border-b border-gray-100 pb-3">
             <div>
               <h3 className="font-bold text-sm text-gray-900">Organization & Profile Configuration</h3>
-              <p className="text-gray-500 text-[11px]">UpTeams Workspace branding and legal information</p>
+              <p className="text-gray-500 text-[11px]">Workspace branding and legal information</p>
             </div>
             {savedSuccess && (
               <span className="text-emerald-600 font-semibold flex items-center gap-1">
@@ -642,7 +642,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <div className="flex items-center space-x-2">
                   <span className="font-bold text-gray-900 text-sm">Workspace License Allocation</span>
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#3949ab] text-white">
-                    UpTeams Enterprise
+                    Enterprise Workspace
                   </span>
                 </div>
                 <p className="text-gray-600 text-[11px] mt-0.5">
@@ -961,7 +961,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                             </div>
                             <div className="flex items-center gap-1 text-[10px] text-gray-500">
                               <Smartphone className="w-2.5 h-2.5 text-gray-400" />
-                              <span>{u.device_info || 'Android 14 (UpTeams v2.4)'}</span>
+                              <span>{u.device_info || 'Android 14 (MyTeams v2.4)'}</span>
                             </div>
                           </div>
                         </td>
@@ -1265,7 +1265,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <h3 className="font-bold text-sm text-gray-900 flex items-center gap-2">
                 <span>Modules & Dashboard Cards Visibility Control</span>
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#3949ab]/10 text-[#3949ab] font-bold">
-                  UpTeams Customizer
+                  Dashboard Customizer
                 </span>
                 {isSaving && (
                   <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#3949ab] bg-[#3949ab]/10 px-2 py-0.5 rounded-full">
@@ -1488,7 +1488,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-100">
                   <span className="text-gray-400 block mb-0.5">Last Logged Device</span>
                   <span className="font-bold text-gray-800 truncate block">
-                    {selectedLocationUser.device_info || 'Android 14 (UpTeams v2.4)'}
+                    {selectedLocationUser.device_info || 'Android 14 (MyTeams v2.4)'}
                   </span>
                 </div>
                 <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-100">

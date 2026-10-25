@@ -598,7 +598,7 @@ export const SalesList: React.FC<SalesListProps> = ({
       );
       XLSX.writeFile(
         workbook,
-        isPFI ? 'Sales_Orders_UpTeams.xlsx' : 'Invoices_UpTeams.xlsx'
+        isPFI ? 'Sales_Orders.xlsx' : 'Invoices.xlsx'
       );
     } else if (subTab === 'payments') {
       if (filteredPayments.length === 0) {
@@ -620,7 +620,7 @@ export const SalesList: React.FC<SalesListProps> = ({
       const worksheet = XLSX.utils.json_to_sheet(exportRows);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Payments');
-      XLSX.writeFile(workbook, 'Payments_UpTeams.xlsx');
+      XLSX.writeFile(workbook, 'Payments.xlsx');
     } else if (subTab === 'inventory') {
       if (filteredInventory.length === 0) {
         alert('No inventory items available to download.');
@@ -641,7 +641,7 @@ export const SalesList: React.FC<SalesListProps> = ({
       const worksheet = XLSX.utils.json_to_sheet(exportRows);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Inventory');
-      XLSX.writeFile(workbook, 'Inventory_UpTeams.xlsx');
+      XLSX.writeFile(workbook, 'Inventory.xlsx');
     }
   };
 

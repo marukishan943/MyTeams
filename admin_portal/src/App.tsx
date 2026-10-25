@@ -641,7 +641,7 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-[#f4f6f9] flex">
-      {/* Sidebar with all 7 UpTeams main sections */}
+      {/* Sidebar with all 7 MyTeams main sections */}
       <Sidebar
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}

@@ -253,7 +253,7 @@ export const CustomersList: React.FC<CustomersListProps> = ({
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Customers');
 
-    XLSX.writeFile(workbook, 'Customers  UpTeams.xlsx');
+    XLSX.writeFile(workbook, 'Customers.xlsx');
   };
 
   const handleConfirmToggle = async (customerId: string, targetStatus: 'Active' | 'Inactive') => {
@@ -272,7 +272,7 @@ export const CustomersList: React.FC<CustomersListProps> = ({
     if (tab.id === 'all') {
       acc['all'] = customers.length;
     } else if (tab.id === 'New') {
-      // In UpTeams, newly converted or retail customers are "New"
+      // In MyTeams, newly converted or retail customers are "New"
       acc['New'] = customers.filter(
         (c) => c.category === 'Retailer' || c.category === 'Other' || !c.category
       ).length;
@@ -333,7 +333,7 @@ export const CustomersList: React.FC<CustomersListProps> = ({
 
   return (
     <div className="w-full bg-white flex flex-col min-h-screen text-gray-800">
-      {/* ── TOP HEADER BAR (Flush edge-to-edge, exact UpTeams styling) ── */}
+      {/* ── TOP HEADER BAR (Flush edge-to-edge, exact MyTeams styling) ── */}
       <div className="w-full bg-white px-4 py-2.5 border-b border-gray-200 flex flex-wrap items-center gap-2.5 shadow-2xs">
         {/* Title & Contact Icon */}
         <div className="flex items-center gap-2 mr-1">
