@@ -457,41 +457,57 @@ class _CustomersScreenState extends State<CustomersScreen> {
             child: Container(
               height: 46,
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: Colors.grey.shade400, width: 1),
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
               ),
-              child: Row(
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12),
-                    child: Icon(Icons.search, color: Colors.grey, size: 22),
+              child: TextField(
+                controller: _searchController,
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: Color(0xFF1E293B),
+                  fontWeight: FontWeight.w500,
+                ),
+                onChanged: (query) {
+                  context.read<CustomerBloc>().add(SearchCustomers(query));
+                  setState(() {});
+                },
+                decoration: InputDecoration(
+                  hintText: 'Search customers...',
+                  hintStyle: const TextStyle(
+                    color: Color(0xFF94A3B8),
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w400,
                   ),
-                  Expanded(
-                    child: TextField(
-                      controller: _searchController,
-                      style: const TextStyle(fontSize: 15),
-                      decoration: const InputDecoration(
-                        hintText: 'Search...',
-                        hintStyle: TextStyle(color: Colors.grey, fontSize: 15),
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      onChanged: (query) {
-                        context.read<CustomerBloc>().add(SearchCustomers(query));
-                      },
-                    ),
+                  prefixIcon: const Icon(
+                    Icons.search,
+                    color: Color(0xFF64748B),
+                    size: 20,
                   ),
-                  if (_searchController.text.isNotEmpty)
-                    IconButton(
-                      icon: const Icon(Icons.clear, color: Colors.grey, size: 18),
-                      onPressed: () {
-                        _searchController.clear();
-                        context.read<CustomerBloc>().add(const SearchCustomers(''));
-                      },
-                    ),
-                ],
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.close, color: Color(0xFF94A3B8), size: 18),
+                          onPressed: () {
+                            _searchController.clear();
+                            context.read<CustomerBloc>().add(const SearchCustomers(''));
+                            setState(() {});
+                          },
+                        )
+                      : null,
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  errorBorder: InputBorder.none,
+                  disabledBorder: InputBorder.none,
+                  focusedErrorBorder: InputBorder.none,
+                  filled: false,
+                  fillColor: Colors.transparent,
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                ),
               ),
             ),
           ),

@@ -364,8 +364,8 @@ class _LeadsScreenState extends State<LeadsScreen>
           child: Container(
             decoration: BoxDecoration(
               color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
             ),
             child: TextField(
               controller: _searchController,
@@ -373,10 +373,10 @@ class _LeadsScreenState extends State<LeadsScreen>
                 context.read<LeadBloc>().add(SearchLeads(query));
                 setState(() {});
               },
-              style: const TextStyle(fontSize: 14.5, color: Color(0xFF1E293B)),
+              style: const TextStyle(fontSize: 15, color: Color(0xFF1E293B), fontWeight: FontWeight.w500),
               decoration: InputDecoration(
                 hintText: 'Search leads by name, company, city...',
-                hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13.5),
+                hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
                 prefixIcon: const Icon(Icons.search, color: Color(0xFF64748B), size: 20),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
@@ -389,6 +389,14 @@ class _LeadsScreenState extends State<LeadsScreen>
                       )
                     : null,
                 border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                errorBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                focusedErrorBorder: InputBorder.none,
+                filled: false,
+                fillColor: Colors.transparent,
+                isDense: true,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 14,
                   vertical: 12,
