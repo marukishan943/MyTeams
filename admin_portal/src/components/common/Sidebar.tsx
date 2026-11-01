@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
   Target,
@@ -39,6 +39,44 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenModuleVisibility: _onOpenModuleVisibility,
 }) => {
   const { user, logout } = useAuth();
+
+  const [companyName, setCompanyName] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem('myteams_company_config');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.company_name || parsed.brand_name) {
+          return parsed.company_name || parsed.brand_name;
+        }
+      }
+    } catch (_) {}
+    return user?.company || 'IV SQUARE STRUCTURE INDIA PVT LTD';
+  });
+
+  useEffect(() => {
+    const updateCompany = () => {
+      try {
+        const saved = localStorage.getItem('myteams_company_config');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.company_name || parsed.brand_name) {
+            setCompanyName(parsed.company_name || parsed.brand_name);
+            return;
+          }
+        }
+      } catch (_) {}
+      if (user?.company) {
+        setCompanyName(user.company);
+      }
+    };
+
+    window.addEventListener('company_config_updated', updateCompany);
+    window.addEventListener('storage', updateCompany);
+    return () => {
+      window.removeEventListener('company_config_updated', updateCompany);
+      window.removeEventListener('storage', updateCompany);
+    };
+  }, [user?.company]);
 
   const navItems = [
     {
@@ -135,7 +173,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <p className="text-xs text-gray-400 truncate flex items-center gap-1 mt-0.5">
                 <Building2 className="w-3 h-3 shrink-0" />
                 <span className="truncate">
-                  {user?.company || 'IV SQUARE STRUCTURE INDIA PVT LTD'}
+                  {companyName}
                 </span>
               </p>
             </div>

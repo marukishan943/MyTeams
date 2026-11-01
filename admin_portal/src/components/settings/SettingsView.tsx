@@ -413,6 +413,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const handleSaveCompany = (e: React.FormEvent) => {
     e.preventDefault();
     localStorage.setItem('myteams_company_config', JSON.stringify(company));
+    window.dispatchEvent(new Event('company_config_updated'));
     setCompanySavedSuccess(true);
     setTimeout(() => setCompanySavedSuccess(false), 3000);
   };
@@ -421,6 +422,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     const updated = { ...company, billing_address: tempBillingAddress.trim() };
     setCompany(updated);
     localStorage.setItem('myteams_company_config', JSON.stringify(updated));
+    window.dispatchEvent(new Event('company_config_updated'));
     setIsEditingBillingAddress(false);
   };
 
