@@ -82,8 +82,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const newLeads = leads.filter((l) => l.stage === 'newLead').length;
   const contactedLeads = leads.filter((l) => l.stage === 'contacted').length;
   const proposalLeads = leads.filter((l) => l.stage === 'proposalSent').length;
-  const sampleLeads = leads.filter((l) => l.stage === 'sampleSent').length;
-  const disqualifiedLeads = leads.filter((l) => l.stage === 'disqualified').length;
 
   const totalCustomers = customers.length;
   const activeCustomers = customers.filter((c) => c.status === 'Active').length;
@@ -129,7 +127,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     moduleKey?: keyof ModuleVisibilityConfig;
   }[] = [
     { key: 'quickStats', label: 'Metric KPI Cards', icon: TrendingUp },
-    { key: 'leadsChart', label: 'Leads Stage Funnel', icon: Target, moduleKey: 'leads' },
     { key: 'attendanceChart', label: 'Attendance & Punch Status', icon: Clock },
     { key: 'visitsChart', label: 'Field Client Visits', icon: Calendar },
     { key: 'tasksChart', label: 'Field Tasks Breakdown', icon: ListTodo },
@@ -421,43 +418,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* 2. MyTeams Funnel & Operations Blocks (leadsChart, attendanceChart, visitsChart, tasksChart, callsSummary) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Leads Pipeline Funnel */}
-        {cardsConfig.leadsChart && moduleVisibility.leads !== false && (
-          <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-2xs space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <div className="flex items-center space-x-2">
-                <Target className="w-4 h-4 text-[#3949ab]" />
-                <h3 className="font-bold text-sm text-gray-900">Leads Pipeline Funnel</h3>
-              </div>
-              <span className="text-[11px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                {totalLeads > 0 ? ((convertedLeads / totalLeads) * 100).toFixed(0) : 0}% Won
-              </span>
-            </div>
-            <div className="space-y-2.5 text-xs">
-              {[
-                { label: 'New Inquiries', count: newLeads, color: 'bg-blue-500' },
-                { label: 'Contacted', count: contactedLeads, color: 'bg-amber-500' },
-                { label: 'Proposal Sent', count: proposalLeads, color: 'bg-purple-500' },
-                { label: 'Sample Sent', count: sampleLeads, color: 'bg-indigo-500' },
-                { label: 'Converted Customers', count: convertedLeads, color: 'bg-emerald-500' },
-                { label: 'Disqualified', count: disqualifiedLeads, color: 'bg-gray-400' },
-              ].map((item) => {
-                const pct = totalLeads > 0 ? (item.count / totalLeads) * 100 : 0;
-                return (
-                  <div key={item.label} className="space-y-1">
-                    <div className="flex justify-between font-semibold text-gray-700">
-                      <span>{item.label}</span>
-                      <span>{item.count} ({pct.toFixed(0)}%)</span>
-                    </div>
-                    <div className="w-full bg-gray-100 rounded-full h-1.5">
-                      <div className={`${item.color} h-1.5 rounded-full`} style={{ width: `${pct}%` }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+
 
         {/* Field Attendance Status */}
         {cardsConfig.attendanceChart && (

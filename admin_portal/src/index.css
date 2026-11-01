@@ -12,6 +12,7 @@
     background-color: #f4f6f9;
     color: #333333;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
 }
 

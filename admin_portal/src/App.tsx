@@ -66,7 +66,7 @@ const DEFAULT_MODULES: ModuleVisibilityConfig = {
 
 const DEFAULT_DASHBOARD_CARDS: DashboardCardsConfig = {
   quickStats: true,
-  leadsChart: true,
+  leadsChart: false,
   attendanceChart: true,
   visitsChart: true,
   tasksChart: true,
@@ -658,7 +658,7 @@ export function App() {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 lg:ml-56 flex flex-col min-h-screen">
+      <div className="flex-1 lg:ml-56 flex flex-col min-h-screen min-w-0 max-w-full">
         {currentTab !== 'leads' && currentTab !== 'customers' && currentTab !== 'sales' && (
           <Navbar
             onToggleSidebar={() => setIsSidebarOpenMobile((prev) => !prev)}
@@ -674,7 +674,7 @@ export function App() {
           />
         )}
 
-        <main className={currentTab === 'leads' || currentTab === 'customers' || currentTab === 'sales' ? 'flex-1 w-full p-0' : currentTab === 'settings' ? 'flex-1 w-full p-4 sm:p-6' : 'flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto'}>
+        <main className={currentTab === 'leads' || currentTab === 'customers' || currentTab === 'sales' ? 'flex-1 w-full p-0' : currentTab === 'settings' ? 'flex-1 w-full min-w-0 max-w-full p-4 sm:p-6' : 'flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto min-w-0'}>
           {isLoadingData ? (
             <div className="flex items-center justify-center py-24">
               <div className="text-center space-y-3">

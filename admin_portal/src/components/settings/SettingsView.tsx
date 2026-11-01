@@ -989,9 +989,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   return (
     <div className="space-y-4">
       {/* Settings Container Layout matching Screenshot 2026-10-25 153809.png */}
-      <div className="flex flex-col md:flex-row gap-4 items-start">
+      <div className="flex flex-col md:flex-row gap-4 items-start w-full min-w-0 max-w-full">
         {/* Left Settings Navigation Menu */}
-        <div className="w-full md:w-48 shrink-0 bg-white rounded-xl border border-gray-200 shadow-2xs p-3 space-y-4 md:sticky md:top-20">
+        <div className="w-full md:w-48 shrink-0 bg-white rounded-xl border border-gray-200 shadow-2xs p-3 space-y-4 md:sticky md:top-20 z-10 self-start max-h-[calc(100vh-6rem)] overflow-y-auto">
           <div>
             <h3 className="font-bold text-sm text-gray-900 px-3 py-1 mb-1">Settings</h3>
             <div className="space-y-0.5">
@@ -1099,7 +1099,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
 
         {/* Right Content Panel */}
-        <div className="flex-1 w-full min-w-0 space-y-4">
+        <div className="flex-1 w-full min-w-0 max-w-full space-y-4">
           {/* Breadcrumb matching screenshots */}
           <div className="flex items-center text-xs text-gray-500 space-x-1.5 font-medium">
             <span className="text-[#1a237e] hover:underline cursor-pointer">Dashboard</span>
