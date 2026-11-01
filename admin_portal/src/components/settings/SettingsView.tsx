@@ -42,6 +42,8 @@ import {
   ArrowUpDown,
   Check,
   Tag,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import type {
@@ -669,6 +671,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [newPermissions, setNewPermissions] = useState<UserModulePermissions>(() =>
     getDefaultPermissions('Staff')
   );
+  const [newUserPassword, setNewUserPassword] = useState('');
+  const [showUserPassword, setShowUserPassword] = useState(false);
 
   const handleOpenAddUser = () => {
     setEditingUser(null);
@@ -682,6 +686,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     setNewLocationTracking(true);
     setNewIsActive(true);
     setNewPermissions(getDefaultPermissions('Staff'));
+    setNewUserPassword('');
+    setShowUserPassword(false);
     setIsUserModalOpen(true);
   };
 
@@ -697,6 +703,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     setNewLocationTracking(u.location_tracking ?? true);
     setNewIsActive(u.is_active ?? true);
     setNewPermissions(u.permissions || getDefaultPermissions(u.role));
+    setNewUserPassword(u.password || '');
+    setShowUserPassword(false);
     setIsUserModalOpen(true);
   };
 
@@ -733,6 +741,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             location_tracking: newLocationTracking,
             is_active: newIsActive,
             permissions: newPermissions,
+            ...(newUserPassword.trim() ? { password: newUserPassword.trim() } : {}),
           });
         }
       } else {
@@ -746,6 +755,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           location_tracking: newLocationTracking,
           is_active: newIsActive,
           permissions: newPermissions,
+          password: newUserPassword.trim(),
         });
       }
       setIsUserModalOpen(false);
@@ -4142,15 +4152,50 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="block font-semibold text-gray-700 mb-1">Email Address</label>
+                        <label className="block font-semibold text-gray-700 mb-1">Email Address {editingUser ? '' : '*'}</label>
                         <input
                           type="email"
+                          required={!editingUser}
                           value={newEmail}
                           onChange={(e) => setNewEmail(e.target.value)}
-                          placeholder="work email"
+                          placeholder="work email (mobile login ID)"
                           className="w-full border border-gray-300 rounded-lg p-2 focus:ring-[#3949ab] focus:border-[#3949ab]"
                         />
                       </div>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-gray-700 mb-1">
+                        {editingUser ? 'Password / Change Password' : 'Password *'}
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showUserPassword ? 'text' : 'password'}
+                          required={!editingUser}
+                          value={newUserPassword}
+                          onChange={(e) => setNewUserPassword(e.target.value)}
+                          placeholder={
+                            editingUser
+                              ? 'Enter new password to change (leave blank to keep current)'
+                              : 'Set login password for mobile app (min 6 characters)'
+                          }
+                          minLength={6}
+                          className="w-full border border-gray-300 rounded-lg p-2 pr-10 focus:ring-[#3949ab] focus:border-[#3949ab]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowUserPassword(!showUserPassword)}
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 cursor-pointer"
+                          title={showUserPassword ? 'Hide password' : 'Show password'}
+                        >
+                          {showUserPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                      <p className="text-[10px] text-gray-500 mt-1">
+                        {editingUser
+                          ? 'Enter a new password here if you want to change the member’s login password for the MyTeams mobile app.'
+                          : 'Set the password this team member will use to log in to the MyTeams mobile app.'}
+                      </p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">

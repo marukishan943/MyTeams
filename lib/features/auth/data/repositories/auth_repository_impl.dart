@@ -41,10 +41,13 @@ class AuthRepositoryImpl implements AuthRepository {
     required String email,
     required String password,
   }) async {
+    final cleanEmail = email.trim().toLowerCase();
+    final cleanPassword = password.trim();
+
     try {
       final response = await _supabaseClient.auth.signInWithPassword(
-        email: email,
-        password: password,
+        email: cleanEmail,
+        password: cleanPassword,
       );
       final user = response.user;
       if (user == null) {
@@ -52,10 +55,68 @@ class AuthRepositoryImpl implements AuthRepository {
       }
       return AppUser(
         id: user.id, 
-        email: user.email ?? '',
+        email: user.email ?? cleanEmail,
         authProvider: user.appMetadata['provider'] as String?,
       );
     } on supabase.AuthException catch (e) {
+      // Check fallback: If admin added/edited user in Web Settings with this password, sync & login!
+      try {
+        final teamUserRes = await _supabaseClient
+            .from('team_users')
+            .select('*')
+            .ilike('email', cleanEmail)
+            .maybeSingle();
+
+        if (teamUserRes != null) {
+          final isActive = teamUserRes['is_active'] != false;
+          if (!isActive) {
+            throw Exception('This account is deactivated. Please contact your administrator.');
+          }
+
+          final dbPassword = teamUserRes['password']?.toString() ?? '';
+          if (dbPassword.isNotEmpty && dbPassword == cleanPassword) {
+            // Password matches credentials set in web portal!
+            // 1. Sync password in auth via RPC
+            try {
+              await _supabaseClient.rpc('admin_set_user_password', params: {
+                'target_email': cleanEmail,
+                'new_password': cleanPassword,
+              });
+              final retryRes = await _supabaseClient.auth.signInWithPassword(
+                email: cleanEmail,
+                password: cleanPassword,
+              );
+              if (retryRes.user != null) {
+                return AppUser(
+                  id: retryRes.user!.id,
+                  email: retryRes.user!.email ?? cleanEmail,
+                  authProvider: retryRes.user!.appMetadata['provider'] as String?,
+                );
+              }
+            } catch (_) {}
+
+            // 2. If user wasn't registered in auth at all, sign up directly
+            try {
+              final signUpRes = await _supabaseClient.auth.signUp(
+                email: cleanEmail,
+                password: cleanPassword,
+              );
+              if (signUpRes.user != null) {
+                return AppUser(
+                  id: signUpRes.user!.id,
+                  email: signUpRes.user!.email ?? cleanEmail,
+                  authProvider: signUpRes.user!.appMetadata['provider'] as String?,
+                );
+              }
+            } catch (_) {}
+          }
+        }
+      } catch (inner) {
+        if (inner is Exception && inner.toString().contains('deactivated')) {
+          rethrow;
+        }
+      }
+
       throw Exception(e.message);
     } catch (e) {
       throw Exception('An unexpected error occurred during signin: $e');

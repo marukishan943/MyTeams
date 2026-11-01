@@ -164,6 +164,7 @@ export interface TeamUser {
   reporting_head: string;
   location_tracking: boolean;
   is_active: boolean;
+  password?: string;
   created_at: string;
   last_login?: string;
   device_info?: string;

@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from '../lib/supabase';
 import type { TeamUser } from '../types/crm';
 
 const INITIAL_USERS: TeamUser[] = [
@@ -195,6 +195,53 @@ const INITIAL_USERS: TeamUser[] = [
 ];
 
 export const usersService = {
+  async syncAuthCredentials(email: string, password: string, fullName?: string): Promise<void> {
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
+    if (!cleanEmail || !cleanPassword) return;
+
+    // 1. Try Supabase RPC 'admin_set_user_password' (works for both new and existing users)
+    try {
+      const { data, error } = await supabase.rpc('admin_set_user_password', {
+        target_email: cleanEmail,
+        new_password: cleanPassword,
+      });
+      if (!error && data?.success) {
+        console.log('User password synced via RPC successfully:', data);
+        return;
+      }
+    } catch (e) {
+      console.warn('RPC admin_set_user_password attempt:', e);
+    }
+
+    // 2. Also attempt signup via Supabase REST API (with isolated headers so admin session is never affected)
+    try {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: cleanEmail,
+          password: cleanPassword,
+          data: {
+            full_name: fullName || 'Team Member',
+          },
+        }),
+      });
+      if (res.ok) {
+        console.log('User registered in Supabase Auth via signup');
+      } else {
+        const errJson = await res.json().catch(() => ({}));
+        console.log('Auth signup status:', res.status, errJson);
+      }
+    } catch (e) {
+      console.warn('Direct auth signup attempt:', e);
+    }
+  },
+
+
   async fetchUsers(): Promise<TeamUser[]> {
     try {
       const { data, error } = await supabase
@@ -226,13 +273,30 @@ export const usersService = {
       reporting_head: user.reporting_head || 'ADMIN ADMIN',
       location_tracking: user.location_tracking ?? true,
       is_active: true,
+      password: user.password || '',
+      permissions: user.permissions,
       created_at: new Date().toISOString(),
     };
 
+    // 1. Sync credentials to Supabase Auth so mobile app login works immediately
+    if (newUser.email && newUser.password) {
+      await this.syncAuthCredentials(
+        newUser.email,
+        newUser.password,
+        `${newUser.first_name} ${newUser.last_name}`.trim()
+      );
+    }
+
+    // 2. Persist in team_users table (with safe fallback if password column does not exist yet)
     try {
-      await supabase.from('team_users').insert([newUser]);
+      const { error } = await supabase.from('team_users').insert([newUser]);
+      if (error && error.message?.includes('password')) {
+        // Retry without password column
+        const { password: _, ...withoutPassword } = newUser;
+        await supabase.from('team_users').insert([withoutPassword]);
+      }
     } catch (e) {
-      console.warn(e);
+      console.warn('team_users insert error:', e);
     }
 
     const current = await this.fetchUsers();
@@ -292,21 +356,39 @@ export const usersService = {
 
     localStorage.setItem('myteams_users', JSON.stringify(updated));
 
+    // 1. If password was updated, sync to Supabase Auth for mobile login
+    if (updates.password && updatedUser) {
+      const targetEmail = updates.email || (updatedUser as TeamUser).email;
+      await this.syncAuthCredentials(
+        targetEmail,
+        updates.password,
+        `${(updatedUser as TeamUser).first_name} ${(updatedUser as TeamUser).last_name}`.trim()
+      );
+    }
+
     try {
       if (updatedUser) {
-        await supabase
-          .from('team_users')
-          .update({
-            first_name: (updatedUser as TeamUser).first_name,
-            last_name: (updatedUser as TeamUser).last_name,
-            mobile: (updatedUser as TeamUser).mobile,
-            email: (updatedUser as TeamUser).email,
-            role: (updatedUser as TeamUser).role,
-            reporting_head: (updatedUser as TeamUser).reporting_head,
-            location_tracking: (updatedUser as TeamUser).location_tracking,
-            is_active: (updatedUser as TeamUser).is_active,
-          })
-          .eq('id', id);
+        const u = updatedUser as TeamUser;
+        const updatePayload: any = {
+          first_name: u.first_name,
+          last_name: u.last_name,
+          mobile: u.mobile,
+          email: u.email,
+          role: u.role,
+          reporting_head: u.reporting_head,
+          location_tracking: u.location_tracking,
+          is_active: u.is_active,
+          permissions: u.permissions,
+        };
+        if (updates.password) {
+          updatePayload.password = updates.password;
+        }
+
+        const { error } = await supabase.from('team_users').update(updatePayload).eq('id', id);
+        if (error && error.message?.includes('password')) {
+          delete updatePayload.password;
+          await supabase.from('team_users').update(updatePayload).eq('id', id);
+        }
       }
     } catch (e) {
       console.warn('Supabase updateUser error:', e);
