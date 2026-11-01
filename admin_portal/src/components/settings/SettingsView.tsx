@@ -8,8 +8,6 @@ import {
   ToggleRight,
   Save,
   SlidersHorizontal,
-  LayoutDashboard,
-  Layers,
   RotateCcw,
   Loader2,
   Pencil,
@@ -201,16 +199,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onDeleteUser,
   onToggleTracking,
   onToggleActive,
-  moduleVisibility,
-  onToggleModule,
-  dashboardCards,
-  onToggleCard,
-  onResetDefaults,
-  isSaving = false,
+  moduleVisibility: _moduleVisibility,
+  onToggleModule: _onToggleModule,
+  dashboardCards: _dashboardCards,
+  onToggleCard: _onToggleCard,
+  onResetDefaults: _onResetDefaults,
+  isSaving: _isSaving = false,
 }) => {
   // Navigation State
   const [activeTab, setActiveTab] = useState<
-    'profile' | 'company' | 'sales_settings' | 'templates' | 'users' | 'roles' | 'modules'
+    'profile' | 'company' | 'sales_settings' | 'templates' | 'users' | 'roles'
   >('company');
 
   const [companySubTab, setCompanySubTab] = useState<'profile' | 'offices' | 'settings' | 'reminders'>('profile');
@@ -1082,18 +1080,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <ShieldCheck className="w-4 h-4" />
                 <span>Roles</span>
               </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('modules')}
-                className={`w-full flex items-center space-x-2.5 px-3 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  activeTab === 'modules'
-                    ? 'bg-[#1a237e] text-white shadow-xs'
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                <SlidersHorizontal className="w-4 h-4" />
-                <span>Modules & Cards</span>
-              </button>
             </div>
           </div>
         </div>
@@ -1117,13 +1103,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 ? 'Templates'
                 : activeTab === 'users'
                 ? 'Users & Team Hierarchy'
-                : activeTab === 'roles'
-                ? rolesSubView === 'list'
-                  ? 'Roles'
-                  : rolesSubView === 'create'
-                  ? 'Add Role'
-                  : 'Edit Role'
-                : 'Modules & Cards'}
+                : rolesSubView === 'list'
+                ? 'Roles'
+                : rolesSubView === 'create'
+                ? 'Add Role'
+                : 'Edit Role'}
             </span>
           </div>
 
@@ -3462,129 +3446,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           )}
 
 
-          {/* SCREEN 6: MODULES & CARDS VISIBILITY */}
-          {activeTab === 'modules' && (
-            <div className="space-y-4">
-              <h2 className="text-base font-bold text-gray-900">Modules & Cards Visibility</h2>
-              <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-2xs space-y-6 text-xs">
-                <div className="flex items-center justify-between border-b border-gray-100 pb-3 flex-wrap gap-2">
-                  <div>
-                    <h3 className="font-bold text-sm text-gray-900 flex items-center gap-2">
-                      <span>Modules & Dashboard Cards Visibility Control</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#1a237e]/10 text-[#1a237e] font-bold">
-                        Dashboard Customizer
-                      </span>
-                      {isSaving && (
-                        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#1a237e] bg-[#1a237e]/10 px-2 py-0.5 rounded-full">
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          Saving to cloud...
-                        </span>
-                      )}
-                    </h3>
-                    <p className="text-gray-500 text-[11px]">
-                      Enable or disable system modules and dashboard widgets for your workspace.
-                    </p>
-                  </div>
-                  {onResetDefaults && (
-                    <button
-                      type="button"
-                      onClick={() => !isSaving && onResetDefaults()}
-                      disabled={isSaving}
-                      className="inline-flex items-center space-x-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                      <span>Reset All Defaults</span>
-                    </button>
-                  )}
-                </div>
 
-                <div className="space-y-3">
-                  <h4 className="font-bold text-xs text-gray-800 uppercase tracking-wider flex items-center gap-2">
-                    <LayoutDashboard className="w-4 h-4 text-[#1a237e]" />
-                    <span>Main Navigation Modules</span>
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {[
-                      { key: 'leads' as const, label: 'Leads Management', desc: 'Inquiries, stages, scoring, WhatsApp chat, and conversion to customer' },
-                      { key: 'customers' as const, label: 'Customers Directory', desc: 'Customer accounts, tiers (Gold/Silver), and purchase history' },
-                      { key: 'sales' as const, label: 'Sales & Invoices Suite', desc: 'Proforma Invoices, Tax Invoices, Orders, Payments, and Stock Inventory' },
-                      { key: 'expenses' as const, label: 'Field Expenses Claims', desc: 'Staff reimbursement claims, travel distance, receipt audit, and approvals' },
-                      { key: 'reports' as const, label: 'Reports & DSR Analytics', desc: 'Daily Status Reports, staff scorecards, and conversion funnel' },
-                      { key: 'settings' as const, label: 'Workspace Settings', desc: 'Company profile, team hierarchy, GPS tracking toggles, and templates' },
-                    ].map((m) => {
-                      const isVisible = moduleVisibility ? moduleVisibility[m.key] : true;
-                      return (
-                        <div
-                          key={m.key}
-                          onClick={() => !isSaving && onToggleModule && onToggleModule(m.key)}
-                          className="p-3.5 rounded-xl border border-gray-200 transition-all flex items-center justify-between cursor-pointer bg-gray-50/50 hover:bg-white hover:border-[#1a237e]/40"
-                        >
-                          <div className="min-w-0 pr-3">
-                            <div className="flex items-center space-x-2">
-                              <span className="font-bold text-gray-900">{m.label}</span>
-                              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${
-                                isVisible ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-gray-200 text-gray-600'
-                              }`}>
-                                {isVisible ? 'Active' : 'Hidden'}
-                              </span>
-                            </div>
-                            <p className="text-gray-500 text-[11px] mt-0.5">{m.desc}</p>
-                          </div>
-                          <div className="shrink-0">
-                            {isVisible ? (
-                              <ToggleRight className="w-6 h-6 text-[#1a237e]" />
-                            ) : (
-                              <ToggleLeft className="w-6 h-6 text-gray-300" />
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="space-y-3 pt-3 border-t border-gray-100">
-                  <h4 className="font-bold text-xs text-gray-800 uppercase tracking-wider flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-[#1a237e]" />
-                    <span>Dashboard Cards & Widgets</span>
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {[
-                      { key: 'quickStats' as const, label: 'Metric KPI Counters' },
-                      { key: 'leadsChart' as const, label: 'Leads Pipeline Funnel' },
-                      { key: 'attendanceChart' as const, label: 'Attendance & Punch Status' },
-                      { key: 'visitsChart' as const, label: 'Field Client Visits' },
-                      { key: 'tasksChart' as const, label: 'Field Tasks Breakdown' },
-                      { key: 'callsSummary' as const, label: 'Calls Summary Log' },
-                      { key: 'visitsList' as const, label: 'Recent Leads Feed' },
-                      { key: 'ordersList' as const, label: 'Recent Invoices & Orders' },
-                      { key: 'customerReminders' as const, label: 'Customer Reminders' },
-                    ].map((c) => {
-                      const isVisible = dashboardCards ? dashboardCards[c.key] : true;
-                      return (
-                        <div
-                          key={c.key}
-                          onClick={() => !isSaving && onToggleCard && onToggleCard(c.key)}
-                          className="p-3 rounded-lg border border-gray-200 transition-all flex items-center justify-between cursor-pointer bg-gray-50/50 hover:bg-white hover:border-[#1a237e]/40"
-                        >
-                          <span className={`font-semibold ${isVisible ? 'text-gray-900' : 'text-gray-400'}`}>
-                            {c.label}
-                          </span>
-                          <div className="shrink-0">
-                            {isVisible ? (
-                              <ToggleRight className="w-5 h-5 text-[#1a237e]" />
-                            ) : (
-                              <ToggleLeft className="w-5 h-5 text-gray-300" />
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 

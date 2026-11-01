@@ -10,7 +10,6 @@ import {
   LogOut,
   Building2,
   ChevronRight,
-  SlidersHorizontal,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import type { ModuleVisibilityConfig } from '../../types/crm';
@@ -27,7 +26,7 @@ interface SidebarProps {
     expenses: number;
   };
   moduleVisibility: ModuleVisibilityConfig;
-  onOpenModuleVisibility: () => void;
+  onOpenModuleVisibility?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -37,7 +36,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onCloseMobile,
   counts,
   moduleVisibility,
-  onOpenModuleVisibility,
+  onOpenModuleVisibility: _onOpenModuleVisibility,
 }) => {
   const { user, logout } = useAuth();
 
@@ -182,25 +181,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </button>
             );
           })}
-        </div>
-
-        {/* Module Customizer Quick Action */}
-        <div className="p-3 border-t border-gray-800/80 bg-[#18202c]/60">
-          <button
-            onClick={() => {
-              onOpenModuleVisibility();
-              onCloseMobile();
-            }}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-white hover:bg-[#263346] transition-colors cursor-pointer"
-          >
-            <div className="flex items-center space-x-2.5">
-              <SlidersHorizontal className="w-4 h-4 text-[#3949ab]" />
-              <span>Hide / Show Modules</span>
-            </div>
-            <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[#3949ab]/20 text-indigo-300 font-bold">
-              Config
-            </span>
-          </button>
         </div>
 
         {/* Footer Logout */}
