@@ -102,12 +102,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-40 w-64 bg-[#1e2837] text-gray-300 flex flex-col transition-transform duration-200 ease-in-out lg:translate-x-0 ${
+        className={`fixed top-0 bottom-0 left-0 z-40 w-56 bg-[#1e2837] text-gray-300 flex flex-col transition-transform duration-200 ease-in-out lg:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* Brand Header */}
-        <div className="h-16 flex items-center px-6 bg-[#18202c] border-b border-gray-800/80">
+        <div className="h-16 flex items-center px-4 bg-[#18202c] border-b border-gray-800/80">
           <div className="flex items-center space-x-3">
             <div className="w-9 h-9 rounded-lg bg-[#3949ab] flex items-center justify-center text-white font-bold text-lg shadow-sm">
               MT
@@ -124,7 +124,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* User Profile Card (MyTeams Style) */}
-        <div className="p-4 mx-3 my-3 rounded-lg bg-[#263346]/60 border border-gray-700/40">
+        <div className="p-3 mx-2.5 my-2.5 rounded-lg bg-[#263346]/60 border border-gray-700/40">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 rounded-full bg-[#3949ab] text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-xs">
               AA
@@ -144,7 +144,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Navigation Section */}
-        <div className="px-3 py-2 flex-1 overflow-y-auto space-y-1">
+        <div className="px-2.5 py-1.5 flex-1 overflow-y-auto space-y-0.5">
           <div className="px-3 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
             Main Menu
           </div>
@@ -158,7 +158,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   setCurrentTab(item.id);
                   onCloseMobile();
                 }}
-                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                   isActive
                     ? 'bg-[#3949ab] text-white shadow-sm'
                     : 'text-gray-300 hover:bg-[#263346] hover:text-white'
@@ -207,7 +207,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div className="p-3 border-t border-gray-800/80 bg-[#18202c]">
           <button
             onClick={logout}
-            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-rose-500/10 hover:text-rose-400 transition-colors cursor-pointer"
+            className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-gray-300 hover:bg-rose-500/10 hover:text-rose-400 transition-colors cursor-pointer"
           >
             <div className="flex items-center space-x-3">
               <LogOut className="w-4 h-4 text-gray-400" />

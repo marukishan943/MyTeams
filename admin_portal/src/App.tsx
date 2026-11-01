@@ -658,7 +658,7 @@ export function App() {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 lg:ml-64 flex flex-col min-h-screen">
+      <div className="flex-1 lg:ml-56 flex flex-col min-h-screen">
         {currentTab !== 'leads' && currentTab !== 'customers' && currentTab !== 'sales' && (
           <Navbar
             onToggleSidebar={() => setIsSidebarOpenMobile((prev) => !prev)}

@@ -991,7 +991,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* Settings Container Layout matching Screenshot 2026-10-25 153809.png */}
       <div className="flex flex-col lg:flex-row gap-5 items-start">
         {/* Left Settings Navigation Menu */}
-        <div className="w-full lg:w-56 shrink-0 bg-white rounded-xl border border-gray-200 shadow-2xs p-3 space-y-4">
+        <div className="w-full lg:w-48 shrink-0 bg-white rounded-xl border border-gray-200 shadow-2xs p-3 space-y-4">
           <div>
             <h3 className="font-bold text-sm text-gray-900 px-3 py-1 mb-1">Settings</h3>
             <div className="space-y-0.5">
