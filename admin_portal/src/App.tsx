@@ -674,7 +674,7 @@ export function App() {
           />
         )}
 
-        <main className={currentTab === 'leads' || currentTab === 'customers' || currentTab === 'sales' ? 'flex-1 w-full p-0' : 'flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto'}>
+        <main className={currentTab === 'leads' || currentTab === 'customers' || currentTab === 'sales' ? 'flex-1 w-full p-0' : currentTab === 'settings' ? 'flex-1 w-full p-4 sm:p-6' : 'flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto'}>
           {isLoadingData ? (
             <div className="flex items-center justify-center py-24">
               <div className="text-center space-y-3">
