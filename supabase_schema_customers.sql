@@ -80,3 +80,35 @@ VALUES
 ('1117', 'Prashantkumar', 'KRUPA PAN PARLOR', 'KRUPA PAN PARLOR syam kutir', '+919876543217', '', 'METODA', 'METODA', 'Retailer', 'Active', 'ISUN BEVERAGES', '2026-09-23 18:40:00+05:30'),
 ('1116', 'Prashantkumar', 'Prit kirana stor', 'PRIT KIRANA STOR.', '+919876543218', '', 'METODA', 'METODA', 'Retailer', 'Active', 'ISUN BEVERAGES', '2026-09-23 17:05:00+05:30')
 ON CONFLICT DO NOTHING;
+
+
+-- ==============================================================================
+-- 6. CUSTOMER NOTES TABLE
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.customer_notes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    customer_id UUID NOT NULL REFERENCES public.customers(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_customer_notes_customer_id ON public.customer_notes(customer_id);
+
+ALTER TABLE public.customer_notes ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow all on customer_notes" ON public.customer_notes;
+CREATE POLICY "Allow all on customer_notes" ON public.customer_notes
+    FOR ALL USING (true) WITH CHECK (true);
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables 
+        WHERE pubname = 'supabase_realtime' 
+        AND schemaname = 'public' 
+        AND tablename = 'customer_notes'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.customer_notes;
+    END IF;
+END $$;

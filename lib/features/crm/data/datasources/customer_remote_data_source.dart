@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/customer_model.dart';
+import '../models/customer_note_model.dart';
 
 abstract class CustomerRemoteDataSource {
   Future<List<CustomerModel>> getCustomers({String? searchQuery, String? category, String? staffName});
@@ -7,9 +8,40 @@ abstract class CustomerRemoteDataSource {
   Future<CustomerModel> createCustomer(CustomerModel customer);
   Future<CustomerModel> updateCustomer(CustomerModel customer);
   Future<void> deleteCustomer(String id);
+  Future<List<CustomerNoteModel>> getCustomerNotes(String customerId);
+  Future<CustomerNoteModel> addCustomerNote(CustomerNoteModel note);
+  Future<void> deleteCustomerNote(String noteId);
 }
 
 class CustomerRemoteDataSourceImpl implements CustomerRemoteDataSource {
+  // In-memory fallback list for customer notes
+  static final List<CustomerNoteModel> _localCustomerNotes = [
+    CustomerNoteModel(
+      id: 'cnote-1',
+      customerId: 'cust-1125',
+      content: '[author: MEHUL AJAGYA]\nCustomer onboarded as Retailer in PAL/RAVKI/LODHIKA territory.',
+      createdAt: DateTime(2026, 9, 25, 17, 10),
+    ),
+    CustomerNoteModel(
+      id: 'cnote-2',
+      customerId: 'cust-1125',
+      content: '[author: MEHUL AJAGYA]\nInitial contact verified. Shared product catalog and pricing details.',
+      createdAt: DateTime(2026, 9, 25, 17, 15),
+    ),
+    CustomerNoteModel(
+      id: 'cnote-3',
+      customerId: 'cust-1124',
+      content: '[author: MEHUL]\nAIIMS Hospital canteen verified. Requested weekly supply quote.',
+      createdAt: DateTime(2026, 9, 25, 16, 35),
+    ),
+    CustomerNoteModel(
+      id: 'cnote-4',
+      customerId: 'cust-1123',
+      content: '[author: MEHUL]\nShiv Hospital contact confirmed. Priority delivery requested.',
+      createdAt: DateTime(2026, 9, 25, 15, 50),
+    ),
+  ];
+
   final SupabaseClient supabaseClient;
 
   // In-memory fallback list initialized with sample records matching the reference screenshots
@@ -372,6 +404,73 @@ class CustomerRemoteDataSourceImpl implements CustomerRemoteDataSource {
     _localCustomers.removeWhere((c) => c.id == id);
     try {
       await supabaseClient.from('customers').delete().eq('id', id);
+    } catch (_) {}
+  }
+  // ─── Customer Notes ──────────────────────────────────────────────
+  @override
+  Future<List<CustomerNoteModel>> getCustomerNotes(String customerId) async {
+    try {
+      final response = await supabaseClient
+          .from('customer_notes')
+          .select('*')
+          .eq('customer_id', customerId)
+          .order('created_at', ascending: false);
+
+      final list = (response as List<dynamic>)
+          .map((json) => CustomerNoteModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+
+      for (final local in _localCustomerNotes.where((n) => n.customerId == customerId)) {
+        if (!list.any((n) => n.id == local.id)) {
+          list.add(local);
+        }
+      }
+      list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return list;
+    } catch (_) {
+      final localList = _localCustomerNotes
+          .where((n) => n.customerId == customerId)
+          .toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return localList;
+    }
+  }
+
+  @override
+  Future<CustomerNoteModel> addCustomerNote(CustomerNoteModel note) async {
+    final newId = note.id.isNotEmpty ? note.id : 'cnote_${DateTime.now().millisecondsSinceEpoch}';
+    final noteWithId = CustomerNoteModel(
+      id: newId,
+      customerId: note.customerId,
+      content: note.content,
+      createdAt: note.createdAt,
+    );
+    _localCustomerNotes.add(noteWithId);
+
+    try {
+      final json = note.toJson(includeId: false);
+      if (_userId != null) {
+        json['user_id'] = _userId;
+      }
+      final response = await supabaseClient
+          .from('customer_notes')
+          .insert(json)
+          .select()
+          .single();
+      final created = CustomerNoteModel.fromJson(response);
+      _localCustomerNotes.removeWhere((n) => n.id == newId);
+      _localCustomerNotes.add(created);
+      return created;
+    } catch (_) {
+      return noteWithId;
+    }
+  }
+
+  @override
+  Future<void> deleteCustomerNote(String noteId) async {
+    _localCustomerNotes.removeWhere((n) => n.id == noteId);
+    try {
+      await supabaseClient.from('customer_notes').delete().eq('id', noteId);
     } catch (_) {}
   }
 }

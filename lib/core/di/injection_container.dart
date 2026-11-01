@@ -10,6 +10,7 @@ import '../../features/crm/data/datasources/customer_remote_data_source.dart';
 import '../../features/crm/data/repositories/customer_repository_impl.dart';
 import '../../features/crm/domain/repositories/customer_repository.dart';
 import '../../features/crm/presentation/bloc/customer_bloc.dart';
+import '../../features/crm/presentation/bloc/customer_detail_bloc.dart';
 import '../../features/crm/presentation/bloc/lead_bloc.dart';
 import '../../features/crm/presentation/bloc/lead_detail_bloc.dart';
 
@@ -59,5 +60,8 @@ Future<void> initDI() async {
   // Singleton CustomerBloc ensures all screens share live state and update instantly
   sl.registerLazySingleton<CustomerBloc>(
     () => CustomerBloc(customerRepository: sl<CustomerRepository>()),
+  );
+  sl.registerFactory<CustomerDetailBloc>(
+    () => CustomerDetailBloc(customerRepository: sl<CustomerRepository>()),
   );
 }

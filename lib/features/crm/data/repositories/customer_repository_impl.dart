@@ -1,7 +1,9 @@
 import '../../domain/entities/customer.dart';
+import '../../domain/entities/customer_note.dart';
 import '../../domain/repositories/customer_repository.dart';
 import '../datasources/customer_remote_data_source.dart';
 import '../models/customer_model.dart';
+import '../models/customer_note_model.dart';
 
 class CustomerRepositoryImpl implements CustomerRepository {
   final CustomerRemoteDataSource remoteDataSource;
@@ -37,5 +39,22 @@ class CustomerRepositoryImpl implements CustomerRepository {
   @override
   Future<void> deleteCustomer(String id) async {
     await remoteDataSource.deleteCustomer(id);
+  }
+
+  // ─── Customer Notes ──────────────────────────────────────────────
+  @override
+  Future<List<CustomerNote>> getCustomerNotes(String customerId) async {
+    return await remoteDataSource.getCustomerNotes(customerId);
+  }
+
+  @override
+  Future<CustomerNote> addCustomerNote(CustomerNote note) async {
+    final model = CustomerNoteModel.fromEntity(note);
+    return await remoteDataSource.addCustomerNote(model);
+  }
+
+  @override
+  Future<void> deleteCustomerNote(String noteId) async {
+    await remoteDataSource.deleteCustomerNote(noteId);
   }
 }
